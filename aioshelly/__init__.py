@@ -13,7 +13,12 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip):
 
 
 class Device:
-    def __init__(self, coap_context: aiocoap.Context, aiohttp_session: aiohttp.ClientSession, ip: str):
+    def __init__(
+        self,
+        coap_context: aiocoap.Context,
+        aiohttp_session: aiohttp.ClientSession,
+        ip: str,
+    ):
         self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
         self.ip = ip

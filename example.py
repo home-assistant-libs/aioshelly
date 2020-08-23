@@ -6,6 +6,7 @@ from pprint import pprint
 import aiohttp
 import aioshelly
 
+
 async def main():
 
     ip = sys.argv[1]
