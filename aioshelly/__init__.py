@@ -34,7 +34,7 @@ class Device:
 
         try:
             await instance.initialize()
-        except asyncio.CancelledError:
+        except Exception:
             await coap_context.shutdown()
             raise
 
