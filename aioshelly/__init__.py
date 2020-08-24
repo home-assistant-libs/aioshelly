@@ -5,6 +5,13 @@ import aiohttp
 import aiocoap
 
 
+MODEL_NAMES = {
+    "SHSW-1": "Shelly 1",
+    "SHSW-PM": "Shelly 1PM",
+    "SHSW-25": "Shelly 2.5",
+}
+
+
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip):
     async with aiohttp_session.get(
         f"http://{ip}/shelly", raise_for_status=True
