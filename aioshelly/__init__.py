@@ -11,6 +11,13 @@ MODEL_NAMES = {
 }
 
 
+class ShellyError(Exception):
+    """Base class for aioshelly errors."""
+
+
+class AuthRequired(ShellyError):
+    """Raised during initialization if auth is required but not given."""
+
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip):
     async with aiohttp_session.get(
         f"http://{ip}/shelly", raise_for_status=True
@@ -32,6 +39,7 @@ class Device:
         self.blocks = None
         self.s = None
         self.settings = None
+        self.shelly = None
 
     @classmethod
     async def create(cls, ip, aiohttp_session):
@@ -47,6 +55,11 @@ class Device:
         return instance
 
     async def initialize(self):
+        self.shelly = await get_info(self.aiohttp_session, self.ip)
+
+        if self.shelly['auth']:
+            raise AuthRequired
+
         self.d = await self.coap_request("d")
         blocks = []
 
