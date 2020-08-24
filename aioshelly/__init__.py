@@ -58,7 +58,7 @@ class Device:
     async def initialize(self):
         self.shelly = await get_info(self.aiohttp_session, self.ip)
 
-        if self.shelly['auth']:
+        if self.shelly["auth"]:
             raise AuthRequired
 
         self.d = await self.coap_request("d")
