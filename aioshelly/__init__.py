@@ -18,6 +18,7 @@ class ShellyError(Exception):
 class AuthRequired(ShellyError):
     """Raised during initialization if auth is required but not given."""
 
+
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip):
     async with aiohttp_session.get(
         f"http://{ip}/shelly", raise_for_status=True

@@ -22,10 +22,13 @@ async def main():
             pprint(block.current_values())
             print()
 
-        print(await device.blocks[0].toggle())
+        # print(await device.blocks[0].toggle())
 
         await device.shutdown()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except aioshelly.AuthRequired:
+        print("This device requires auth which is not implemented yet")
