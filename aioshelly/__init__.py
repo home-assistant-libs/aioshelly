@@ -220,4 +220,3 @@ class RelayBlock(Block, blk_type="relay"):
 
     async def turn_off(self):
         return await self.set_state(turn="off")
-
