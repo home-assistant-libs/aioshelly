@@ -23,12 +23,22 @@ async def main():
         # pprint(device.d)
         # pprint(device.s)
 
+        light_relay_block = None
+
         for block in device.blocks:
             print(block)
             pprint(block.current_values())
             print()
 
-        # print(await device.blocks[0].toggle())
+            if light_relay_block is None and block.type in ("relay", "light"):
+                light_relay_block = block
+
+        # if light_relay_block:
+        #     print(
+        #         await light_relay_block.set_state(
+        #             turn="off" if light_relay_block.output else "on"
+        #         )
+        #     )
 
         await device.shutdown()
 
