@@ -16,6 +16,24 @@ MODEL_NAMES = {
     "SHHT-1": "Shelly H&T",
 }
 
+BLOCK_VALUE_UNIT = "U"
+BLOCK_VALUE_TYPE = "T"
+
+BLOCK_VALUE_TYPE_TEMPERATURE = "T"
+BLOCK_VALUE_TYPE_ALARM = "A"
+BLOCK_VALUE_TYPE_BATTERY_LEVEL = "B"
+BLOCK_VALUE_TYPE_CONCENTRATION = "C"
+BLOCK_VALUE_TYPE_ENERGY = "E"
+BLOCK_VALUE_TYPE_EVENT = "EV"
+BLOCK_VALUE_TYPE_EVENT_COUNTER = "EVC"
+BLOCK_VALUE_TYPE_HUMIDITY = "H"
+BLOCK_VALUE_TYPE_CURRENT = "I"
+BLOCK_VALUE_TYPE_LUMINOSITY = "L"
+BLOCK_VALUE_TYPE_POWER = "P"
+BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
+BLOCK_VALUE_TYPE_TEMPERATURE = "T"
+BLOCK_VALUE_TYPE_VOLTAGE = "V"
+
 
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
@@ -191,6 +209,10 @@ class Block:
     @property
     def channel(self):
         return self.description.split("_")[1]
+
+    def info(self, attr):
+        """Return info over attribute."""
+        return self.sensors[self.sensor_ids[attr]]
 
     def current_values(self):
         return {
