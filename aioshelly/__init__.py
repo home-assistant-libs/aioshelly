@@ -183,20 +183,28 @@ class Block:
     def description(self):
         return self.blk["D"]
 
+    @property
+    def channel(self):
+        return self.description.split("_")[1]
+
     def current_values(self):
         return {
             desc: self.device.s.get(index) for desc, index in self.sensor_ids.items()
         }
+
+    async def set_state(self, **kwargs):
+        return await self.device.http_request(
+            "get", f"{self.type}/{self.channel}", kwargs
+        )
+
+    async def toggle(self):
+        return await self.set_state(turn="off" if self.output else "on")
 
     def __str__(self):
         return f"<{self.type} {self.blk}>"
 
 
 class RelayBlock(Block, blk_type="relay"):
-    @property
-    def channel(self):
-        return self.description.split("_")[1]
-
     @property
     def power(self):
         return self.device.s[self.sensor_ids["power"]]
@@ -210,17 +218,53 @@ class RelayBlock(Block, blk_type="relay"):
         return self.device.s[self.sensor_ids["input"]]
 
     async def turn_on(self):
-        return await self.device.http_request(
-            "get", f"relay/{self.channel}", {"turn": "on"}
-        )
+        return await self.set_state(turn="on")
 
     async def turn_off(self):
-        return await self.device.http_request(
-            "get", f"relay/{self.channel}", {"turn": "off"}
-        )
+        return await self.set_state(turn="off")
 
-    async def toggle(self):
-        if self.output:
-            return await self.turn_off()
-        else:
-            return await self.turn_on()
+
+class LightBlock(Block, blk_type="light"):
+    @property
+    def brightness(self):
+        return self.device.s.get(self.sensor_ids["brightness"])
+
+    @property
+    def mode(self):
+        return self.device.s.get(self.sensor_ids["mode"])
+
+    @property
+    def colorTemp(self):
+        return self.device.s.get(self.sensor_ids["colorTemp"])
+
+    @property
+    def gain(self):
+        return self.device.s.get(self.sensor_ids["gain"])
+
+    @property
+    def white(self):
+        return self.device.s.get(self.sensor_ids["white"])
+
+    @property
+    def red(self):
+        return self.device.s.get(self.sensor_ids["red"])
+
+    @property
+    def green(self):
+        return self.device.s.get(self.sensor_ids["green"])
+
+    @property
+    def blue(self):
+        return self.device.s.get(self.sensor_ids["blue"])
+
+    @property
+    def energy(self):
+        return self.device.s.get(self.sensor_ids["energy"])
+
+    @property
+    def output(self) -> bool:
+        return self.device.s[self.sensor_ids["output"]]
+
+    @property
+    def power(self):
+        return self.device.s.get(self.sensor_ids["power"])
