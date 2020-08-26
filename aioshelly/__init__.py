@@ -5,9 +5,13 @@ import aiocoap
 
 
 MODEL_NAMES = {
+    "SHPLG-S": "Shelly Plug S",
+    "SHPLG2-1": "Shelly Plug",
     "SHSW-1": "Shelly 1",
-    "SHSW-PM": "Shelly 1PM",
+    "SHSW-21": "Shelly 2",
     "SHSW-25": "Shelly 2.5",
+    "SHSW-44": "Shelly 4Pro",
+    "SHSW-PM": "Shelly 1PM",
 }
 
 
