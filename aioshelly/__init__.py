@@ -200,71 +200,20 @@ class Block:
     async def toggle(self):
         return await self.set_state(turn="off" if self.output else "on")
 
+    def __getattr__(self, attr):
+        if attr not in self.sensor_ids:
+            raise AttributeError(f"{self.type} block has no attribute '{attr}'")
+
+        return self.device.s.get(self.sensor_ids[attr])
+
     def __str__(self):
         return f"<{self.type} {self.blk}>"
 
 
 class RelayBlock(Block, blk_type="relay"):
-    @property
-    def power(self):
-        return self.device.s[self.sensor_ids["power"]]
-
-    @property
-    def output(self):
-        return self.device.s[self.sensor_ids["output"]]
-
-    @property
-    def input(self):
-        return self.device.s[self.sensor_ids["input"]]
-
     async def turn_on(self):
         return await self.set_state(turn="on")
 
     async def turn_off(self):
         return await self.set_state(turn="off")
 
-
-class LightBlock(Block, blk_type="light"):
-    @property
-    def brightness(self):
-        return self.device.s.get(self.sensor_ids["brightness"])
-
-    @property
-    def mode(self):
-        return self.device.s.get(self.sensor_ids["mode"])
-
-    @property
-    def colorTemp(self):
-        return self.device.s.get(self.sensor_ids["colorTemp"])
-
-    @property
-    def gain(self):
-        return self.device.s.get(self.sensor_ids["gain"])
-
-    @property
-    def white(self):
-        return self.device.s.get(self.sensor_ids["white"])
-
-    @property
-    def red(self):
-        return self.device.s.get(self.sensor_ids["red"])
-
-    @property
-    def green(self):
-        return self.device.s.get(self.sensor_ids["green"])
-
-    @property
-    def blue(self):
-        return self.device.s.get(self.sensor_ids["blue"])
-
-    @property
-    def energy(self):
-        return self.device.s.get(self.sensor_ids["energy"])
-
-    @property
-    def output(self) -> bool:
-        return self.device.s[self.sensor_ids["output"]]
-
-    @property
-    def power(self):
-        return self.device.s.get(self.sensor_ids["power"])
