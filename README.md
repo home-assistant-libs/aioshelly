@@ -24,8 +24,6 @@ async def main():
             pprint(block.current_values())
             print()
 
-        print(await device.blocks[0].toggle())
-
         await device.shutdown()
 
 
