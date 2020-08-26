@@ -10,9 +10,15 @@ import aioshelly
 async def main():
 
     ip = sys.argv[1]
+    if len(sys.argv) > 3:
+        username = sys.argv[2]
+        password = sys.argv[3]
+    else:
+        username = None
+        password = None
 
     async with aiohttp.ClientSession() as session:
-        device = await aioshelly.Device.create(ip, session)
+        device = await aioshelly.Device.create(ip, session, username, password)
 
         # pprint(device.d)
         # pprint(device.s)
@@ -28,7 +34,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except aioshelly.AuthRequired:
-        print("This device requires auth which is not implemented yet")
+    asyncio.run(main())

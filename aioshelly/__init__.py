@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 import aiohttp
 import aiocoap
@@ -32,20 +33,33 @@ class Device:
         coap_context: aiocoap.Context,
         aiohttp_session: aiohttp.ClientSession,
         ip: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
+        self.auth = aiohttp.BasicAuth(username, password) if username else None
         self.ip = ip
         self.d = None
         self.blocks = None
         self.s = None
-        self.settings = None
+        self._settings = None
         self.shelly = None
 
     @classmethod
-    async def create(cls, ip, aiohttp_session):
+    async def create(
+        cls,
+        ip,
+        aiohttp_session,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+    ):
+        if username is not None:
+            if password is None:
+                raise ValueError("Supply both username and password")
+
         coap_context = await aiocoap.Context.create_client_context()
-        instance = cls(coap_context, aiohttp_session, ip)
+        instance = cls(coap_context, aiohttp_session, ip, username, password)
 
         try:
             await instance.initialize()
@@ -57,9 +71,6 @@ class Device:
 
     async def initialize(self):
         self.shelly = await get_info(self.aiohttp_session, self.ip)
-
-        if self.shelly["auth"]:
-            raise AuthRequired
 
         self.d = await self.coap_request("d")
         blocks = []
@@ -84,7 +95,8 @@ class Device:
 
         await self.update()
 
-        self.settings = await self.http_request("get", "settings")
+        if self.auth or not self.shelly["auth"]:
+            self._settings = await self.http_request("get", "settings")
 
     async def update(self):
         self.s = {info[1]: info[2] for info in (await self.coap_request("s"))["G"]}
@@ -95,13 +107,35 @@ class Device:
         return json.loads(response.payload)
 
     async def http_request(self, method, path, params=None):
+        if self.read_only:
+            raise AuthRequired
+
         resp = await self.aiohttp_session.request(
-            method, f"http://{self.ip}/{path}", params=params
+            method,
+            f"http://{self.ip}/{path}",
+            params=params,
+            auth=self.auth,
+            raise_for_status=True,
         )
         return await resp.json()
 
     async def shutdown(self):
         await self.coap_context.shutdown()
+
+    @property
+    def requires_auth(self):
+        return self.shelly["auth"]
+
+    @property
+    def read_only(self):
+        return self.auth is None and self.requires_auth
+
+    @property
+    def settings(self):
+        if self._settings is None:
+            raise AuthRequired
+
+        return self._settings
 
 
 class Block:
