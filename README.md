@@ -31,17 +31,6 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Supported devices
-
-- Shelly 1
-- Shelly 1 PM
-- Shelly 2 (relay mode for now)
-- Shelly 2.5 (relay mode for now)
-- Shelly 4 Pro
-- Shelly H&T
-- Shelly Plug
-- Shelly Plug S
-
 ## Contribution guidelines
 
 Object hierarchy and property/method names should match the [Shelly API](https://shelly-api-docs.shelly.cloud/).
