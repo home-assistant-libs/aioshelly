@@ -6,6 +6,9 @@ import aiocoap
 
 
 MODEL_NAMES = {
+    "SHDW-1": "Shelly Door/Window",
+    "SHDW-2": "Shelly Door/Window 2",
+    "SHHT-1": "Shelly H&T",
     "SHPLG-S": "Shelly Plug S",
     "SHPLG2-1": "Shelly Plug",
     "SHSW-1": "Shelly 1",
@@ -13,7 +16,7 @@ MODEL_NAMES = {
     "SHSW-25": "Shelly 2.5",
     "SHSW-44": "Shelly 4Pro",
     "SHSW-PM": "Shelly 1PM",
-    "SHHT-1": "Shelly H&T",
+    "SHWT-1": "Shelly Flood",
 }
 
 BLOCK_VALUE_UNIT = "U"
