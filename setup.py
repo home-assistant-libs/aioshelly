@@ -10,7 +10,7 @@ setup(
     url="https://github.com/home-assistant-libs/aioshelly",
     author="Paulus Schoutsen",
     author_email="paulus@home-assistant.io",
-    description="Python module to talk to Philips Hue.",
+    description="Asynchronous library to control Shelly devices.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["aioshelly"],
