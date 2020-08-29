@@ -6,14 +6,31 @@ import aiocoap
 
 
 MODEL_NAMES = {
+    "SHAIR-1": "Shelly Air",
+    "SHBDUO-1": "Shelly DUO",
+    "SHBLB-1": "Shelly Bulb",
+    "SHBTN-1": "Shelly Button1",
+    "SHBVIN-1": "Shelly Vintage",
+    "SHDM-1": "Shelly Dimmer",
+    "SHDM-2": "Shelly Dimmer 2",
+    "SHDW-1": "Shelly Door/Window",
+    "SHDW-2": "Shelly Door/Window 2",
+    "SHEM": "Shelly EM",
+    "SHEM-3": "Shelly 3EM",
+    "SHGS-1": "Shelly Gas",
+    "SHHT-1": "Shelly H&T",
+    "SHIX3-1": "Shelly i3",
     "SHPLG-S": "Shelly Plug S",
     "SHPLG2-1": "Shelly Plug",
+    "SHRGBW2": "Shelly RGBW2",
+    "SHSEN-1": "Shelly Sense",
+    "SHSM-01": "Shelly Smoke",
     "SHSW-1": "Shelly 1",
     "SHSW-21": "Shelly 2",
     "SHSW-25": "Shelly 2.5",
     "SHSW-44": "Shelly 4Pro",
     "SHSW-PM": "Shelly 1PM",
-    "SHHT-1": "Shelly H&T",
+    "SHWT-1": "Shelly Flood",
 }
 
 BLOCK_VALUE_UNIT = "U"
