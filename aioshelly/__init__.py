@@ -6,11 +6,14 @@ import aiocoap
 
 
 MODEL_NAMES = {
+    "SH2LED-1": "Shelly 2LED",
     "SHAIR-1": "Shelly Air",
     "SHBDUO-1": "Shelly DUO",
     "SHBLB-1": "Shelly Bulb",
     "SHBTN-1": "Shelly Button1",
     "SHBVIN-1": "Shelly Vintage",
+    "SHCL-255": "Shelly Color",
+    "SHDIMW-1": "Shelly Dimmer W1",
     "SHDM-1": "Shelly Dimmer",
     "SHDM-2": "Shelly Dimmer 2",
     "SHDW-1": "Shelly Door/Window",
@@ -20,11 +23,17 @@ MODEL_NAMES = {
     "SHGS-1": "Shelly Gas",
     "SHHT-1": "Shelly H&T",
     "SHIX3-1": "Shelly i3",
+    "SHPLG-1": "Shelly Plug",
     "SHPLG-S": "Shelly Plug S",
-    "SHPLG2-1": "Shelly Plug",
+    "SHPLG-U1": "Shelly Plug US",
+    "SHPLG2-1": "Shelly Plug E",
     "SHRGBW2": "Shelly RGBW2",
+    "SHRGBWW-01": "Shelly RGBW",
     "SHSEN-1": "Shelly Sense",
     "SHSM-01": "Shelly Smoke",
+    "SHSM-02": "Shelly Smoke 2",
+    "SHSPOT-1": "Shelly Spot",
+    "SHSPOT-2": "Shelly Spot 2",
     "SHSW-1": "Shelly 1",
     "SHSW-21": "Shelly 2",
     "SHSW-25": "Shelly 2.5",
@@ -36,7 +45,6 @@ MODEL_NAMES = {
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"
 
-BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_ALARM = "A"
 BLOCK_VALUE_TYPE_BATTERY_LEVEL = "B"
 BLOCK_VALUE_TYPE_CONCENTRATION = "C"
