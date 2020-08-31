@@ -87,7 +87,9 @@ class Device:
         self.shelly = None
 
     @classmethod
-    async def create(cls, aiohttp_session, ip_or_options: Union[str, ConnectionOptions]):
+    async def create(
+        cls, aiohttp_session, ip_or_options: Union[str, ConnectionOptions]
+    ):
         if isinstance(ip_or_options, str):
             options = ConnectionOptions(ip_or_options)
         else:
