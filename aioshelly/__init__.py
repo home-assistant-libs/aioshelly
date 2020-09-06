@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 import json
-from typing import Optional
+from typing import Dict, Optional, Union
 
 import aiohttp
 import aiocoap
@@ -69,6 +70,25 @@ class AuthRequired(ShellyError):
     """Raised during initialization if auth is required but not given."""
 
 
+@dataclass(frozen=True)
+class ConnectionOptions:
+    ip: str
+    username: Optional[str] = None
+    password: Optional[str] = None
+    temperature_unit: str = "C"
+    auth: Optional[aiohttp.BasicAuth] = None
+
+    def __post_init__(self):
+        """Called after initialization."""
+        if self.username is not None:
+            if self.password is None:
+                raise ValueError("Supply both username and password")
+
+            object.__setattr__(
+                self, "auth", aiohttp.BasicAuth(self.username, self.password)
+            )
+
+
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip):
     async with aiohttp_session.get(
         f"http://{ip}/shelly", raise_for_status=True
@@ -81,14 +101,11 @@ class Device:
         self,
         coap_context: aiocoap.Context,
         aiohttp_session: aiohttp.ClientSession,
-        ip: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        options: ConnectionOptions,
     ):
         self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
-        self.auth = aiohttp.BasicAuth(username, password) if username else None
-        self.ip = ip
+        self.options = options
         self.d = None
         self.blocks = None
         self.s = None
@@ -97,18 +114,15 @@ class Device:
 
     @classmethod
     async def create(
-        cls,
-        ip,
-        aiohttp_session,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        cls, aiohttp_session, ip_or_options: Union[str, ConnectionOptions]
     ):
-        if username is not None:
-            if password is None:
-                raise ValueError("Supply both username and password")
+        if isinstance(ip_or_options, str):
+            options = ConnectionOptions(ip_or_options)
+        else:
+            options = ip_or_options
 
         coap_context = await aiocoap.Context.create_client_context()
-        instance = cls(coap_context, aiohttp_session, ip, username, password)
+        instance = cls(coap_context, aiohttp_session, options)
 
         try:
             await instance.initialize()
@@ -118,8 +132,12 @@ class Device:
 
         return instance
 
+    @property
+    def ip(self):
+        return self.options.ip
+
     async def initialize(self):
-        self.shelly = await get_info(self.aiohttp_session, self.ip)
+        self.shelly = await get_info(self.aiohttp_session, self.options.ip)
 
         self.d = await self.coap_request("d")
         blocks = []
@@ -144,14 +162,16 @@ class Device:
 
         await self.update()
 
-        if self.auth or not self.shelly["auth"]:
+        if self.options.auth or not self.shelly["auth"]:
             self._settings = await self.http_request("get", "settings")
 
     async def update(self):
         self.s = {info[1]: info[2] for info in (await self.coap_request("s"))["G"]}
 
     async def coap_request(self, path):
-        request = aiocoap.Message(code=aiocoap.GET, uri=f"coap://{self.ip}/cit/{path}")
+        request = aiocoap.Message(
+            code=aiocoap.GET, uri=f"coap://{self.options.ip}/cit/{path}"
+        )
         response = await self.coap_context.request(request).response
         return json.loads(response.payload)
 
@@ -161,9 +181,9 @@ class Device:
 
         resp = await self.aiohttp_session.request(
             method,
-            f"http://{self.ip}/{path}",
+            f"http://{self.options.ip}/{path}",
             params=params,
-            auth=self.auth,
+            auth=self.options.auth,
             raise_for_status=True,
         )
         return await resp.json()
@@ -177,7 +197,7 @@ class Device:
 
     @property
     def read_only(self):
-        return self.auth is None and self.requires_auth
+        return self.options.auth is None and self.requires_auth
 
     @property
     def settings(self):
@@ -197,12 +217,14 @@ class Block:
         Block.TYPES[blk_type] = cls
 
     @staticmethod
-    def create(device, blk, sensors):
+    def create(device: Device, blk: dict, sensors: Dict[str, dict]):
         blk_type = blk["D"].split("_")[0]
         cls = Block.TYPES.get(blk_type, Block)
         return cls(device, blk_type, blk, sensors)
 
-    def __init__(self, device, blk_type, blk, sensors):
+    def __init__(
+        self, device: Device, blk_type: str, blk: dict, sensors: Dict[str, dict]
+    ):
         self.type = blk_type
         self.device = device
         # https://shelly-api-docs.shelly.cloud/#coiot-device-description-cit-d
@@ -222,7 +244,21 @@ class Block:
         #     "L": links
         # }
         self.sensors = sensors
-        self.sensor_ids = {val["D"]: val["I"] for val in sensors.values()}
+        sensor_ids = {}
+        for sensor in sensors.values():
+            if sensor["D"] not in sensor_ids:
+                sensor_ids[sensor["D"]] = sensor["I"]
+                continue
+
+            if sensor[BLOCK_VALUE_TYPE] != BLOCK_VALUE_TYPE_TEMPERATURE:
+                raise ValueError(
+                    "Found duplicate description for non-temperature sensor"
+                )
+
+            if sensor[BLOCK_VALUE_UNIT] == device.options.temperature_unit:
+                sensor_ids[sensor["D"]] = sensor["I"]
+
+        self.sensor_ids = sensor_ids
 
     @property
     def index(self):

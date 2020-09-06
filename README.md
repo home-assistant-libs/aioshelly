@@ -14,10 +14,7 @@ import aioshelly
 
 async def main():
     async with aiohttp.ClientSession() as session:
-        device = await aioshelly.Device.create("192.168.1.165", session)
-
-        # pprint(device.d)
-        # pprint(device.s)
+        device = await aioshelly.Device.create(session, "192.168.1.165")
 
         for block in device.blocks:
             print(block)

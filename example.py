@@ -1,7 +1,6 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
 import sys
-from pprint import pprint
 
 import aiohttp
 import aioshelly
@@ -17,8 +16,10 @@ async def main():
         username = None
         password = None
 
+    options = aioshelly.ConnectionOptions(ip, username, password)
+
     async with aiohttp.ClientSession() as session:
-        device = await aioshelly.Device.create(ip, session, username, password)
+        device = await aioshelly.Device.create(session, options)
 
         # pprint(device.d)
         # pprint(device.s)
@@ -27,7 +28,18 @@ async def main():
 
         for block in device.blocks:
             print(block)
-            pprint(block.current_values())
+            for attr, value in block.current_values().items():
+                info = block.info(attr)
+
+                if value is None:
+                    value = "-"
+
+                if aioshelly.BLOCK_VALUE_UNIT in info:
+                    unit = " " + info[aioshelly.BLOCK_VALUE_UNIT]
+                else:
+                    unit = ""
+
+                print(f"{attr.ljust(16)}{value}{unit}")
             print()
 
             if light_relay_block is None and block.type in ("relay", "light"):
