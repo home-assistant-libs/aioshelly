@@ -13,8 +13,10 @@ import aiohttp
 import aioshelly
 
 async def main():
+    options = aioshelly.ConnectionOptions("192.168.1.165", "username", "password")
+    
     async with aiohttp.ClientSession() as session:
-        device = await aioshelly.Device.create(session, "192.168.1.165")
+        device = await aioshelly.Device.create(session, options)
 
         for block in device.blocks:
             print(block)
