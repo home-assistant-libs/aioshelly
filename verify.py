@@ -97,7 +97,19 @@ def print_example(example):
     print()
 
     for block in example.device.blocks:
-        print(block.current_values())
+        print(block)
+        for attr, value in block.current_values().items():
+            info = block.info(attr)
+
+            if value is None:
+                value = "None"
+
+            if aioshelly.BLOCK_VALUE_UNIT in info:
+                unit = " " + info[aioshelly.BLOCK_VALUE_UNIT]
+            else:
+                unit = ""
+
+            print(f"{attr.ljust(16)}{value}{unit}")
         print()
 
     print("-" * 32)
