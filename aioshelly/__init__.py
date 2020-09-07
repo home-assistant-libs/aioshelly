@@ -138,8 +138,18 @@ class Device:
 
     async def initialize(self):
         self.shelly = await get_info(self.aiohttp_session, self.options.ip)
+        self._update_d(await self.coap_request("d"))
 
-        self.d = await self.coap_request("d")
+        await self.update()
+
+        if self.options.auth or not self.shelly["auth"]:
+            self._settings = await self.http_request("get", "settings")
+
+    async def update(self):
+        self._update_s(await self.coap_request("s"))
+
+    def _update_d(self, data):
+        self.d = data
         blocks = []
 
         for blk in self.d["blk"]:
@@ -160,13 +170,8 @@ class Device:
 
         self.blocks = blocks
 
-        await self.update()
-
-        if self.options.auth or not self.shelly["auth"]:
-            self._settings = await self.http_request("get", "settings")
-
-    async def update(self):
-        self.s = {info[1]: info[2] for info in (await self.coap_request("s"))["G"]}
+    def _update_s(self, data):
+        self.s = {info[1]: info[2] for info in data["G"]}
 
     async def coap_request(self, path):
         request = aiocoap.Message(
