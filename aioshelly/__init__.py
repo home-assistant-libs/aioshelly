@@ -304,9 +304,12 @@ class Block:
         return f"<{self.type} {self.blk}>"
 
 
-class RelayBlock(Block, blk_type="relay"):
-    async def turn_on(self):
-        return await self.set_state(turn="on")
+class LightBlock(Block, blk_type="light"):
+    async def set_state(self, **kwargs):
+        if self.device.settings["device"]["type"] == "SHRGBW2":
+            path = f"{self.device.settings['mode']}/{self.channel}"
+        else:
+            path = f"{self.type}/{self.channel}"
 
-    async def turn_off(self):
-        return await self.set_state(turn="off")
+        return await self.device.http_request("get", path, kwargs)
+
