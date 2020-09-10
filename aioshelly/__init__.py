@@ -312,4 +312,3 @@ class LightBlock(Block, blk_type="light"):
             path = f"{self.type}/{self.channel}"
 
         return await self.device.http_request("get", path, kwargs)
-
