@@ -136,6 +136,10 @@ class Device:
     def ip(self):
         return self.options.ip
 
+    @property
+    def id(self):
+        return self._settings["device"]["hostname"].rsplit("-", 1)[1]
+
     async def initialize(self):
         self.shelly = await get_info(self.aiohttp_session, self.options.ip)
         self._update_d(await self.coap_request("d"))
@@ -257,7 +261,7 @@ class Block:
 
             if sensor[BLOCK_VALUE_TYPE] != BLOCK_VALUE_TYPE_TEMPERATURE:
                 raise ValueError(
-                    "Found duplicate description for non-temperature sensor"
+                    f"Found duplicate description for non-temperature sensor for device {self.device.ip} [{self.device.id}]"
                 )
 
             if sensor[BLOCK_VALUE_UNIT] == device.options.temperature_unit:
@@ -296,7 +300,9 @@ class Block:
 
     def __getattr__(self, attr):
         if attr not in self.sensor_ids:
-            raise AttributeError(f"{self.type} block has no attribute '{attr}'")
+            raise AttributeError(
+                f"{self.type} block has no attribute '{attr}' for device {self.device.ip} [{self.device.id}]"
+            )
 
         return self.device.s.get(self.sensor_ids[attr])
 
