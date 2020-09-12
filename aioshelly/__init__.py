@@ -145,6 +145,7 @@ class Device:
 
         if self.options.auth or not self.shelly["auth"]:
             self._settings = await self.http_request("get", "settings")
+            self._status = await self.http_request("get", "status")
 
     async def update(self):
         self._update_s(await self.coap_request("s"))
