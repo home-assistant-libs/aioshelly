@@ -111,6 +111,7 @@ class Device:
         self.s = None
         self._settings = None
         self.shelly = None
+        self._status = None
 
     @classmethod
     async def create(
@@ -144,6 +145,7 @@ class Device:
 
         if self.options.auth or not self.shelly["auth"]:
             self._settings = await self.http_request("get", "settings")
+            self._status = await self.http_request("get", "status")
 
     async def update(self):
         self._update_s(await self.coap_request("s"))
@@ -211,6 +213,13 @@ class Device:
 
         return self._settings
 
+    @property
+    def status(self):
+        if self._status is None:
+            raise AuthRequired
+
+        return self._status
+
 
 class Block:
     TYPES = {}
@@ -275,7 +284,7 @@ class Block:
 
     @property
     def channel(self):
-        return self.description.split("_")[1]
+        return self.description.split("_")[1] if "_" in self.description else None
 
     def info(self, attr):
         """Return info over attribute."""
