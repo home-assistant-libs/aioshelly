@@ -171,10 +171,8 @@ class Device:
 
         self.blocks = blocks
 
-<<<<<<< HEAD
     def _update_s(self, data):
         self.s = {info[1]: info[2] for info in data["G"]}
-=======
         await self.update()
 
         if self.auth or not self.shelly["auth"]:
@@ -183,7 +181,6 @@ class Device:
 
     async def update(self):
         self.s = {info[1]: info[2] for info in (await self.coap_request("s"))["G"]}
->>>>>>> Add REST call to /status neded for RSSI, Cloud, Uptime sensors
 
     async def coap_request(self, path):
         request = aiocoap.Message(
@@ -229,6 +226,7 @@ class Device:
             raise AuthRequired
 
         return self._status
+
 
 class Block:
     TYPES = {}
