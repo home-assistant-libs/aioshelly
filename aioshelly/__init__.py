@@ -275,7 +275,7 @@ class Block:
 
     @property
     def channel(self):
-        return self.description.split("_")[1]
+        return self.description.split("_")[1] if "_" in self.description else None
 
     def info(self, attr):
         """Return info over attribute."""
