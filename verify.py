@@ -1,12 +1,13 @@
+import json
 import logging
 import re
-import json
-from aiohttp.helpers import reify
+import urllib.parse
 from dataclasses import dataclass, field
 from pprint import pprint
+
 import requests
 import urllib3
-import urllib.parse
+from aiohttp.helpers import reify
 
 import aioshelly
 
