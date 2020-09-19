@@ -175,6 +175,10 @@ class Device:
     def _update_s(self, data):
         self.s = {info[1]: info[2] for info in data["G"]}
 
+    async def update_rest(self):
+            self._settings = await self.http_request("get", "settings")
+            self._status = await self.http_request("get", "status")
+
     async def coap_request(self, path):
         request = aiocoap.Message(
             code=aiocoap.GET, uri=f"coap://{self.options.ip}/cit/{path}"
