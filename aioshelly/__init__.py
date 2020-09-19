@@ -1,3 +1,4 @@
+"""Shelly CoAP library."""
 from dataclasses import dataclass
 import json
 from typing import Dict, Optional, Union
@@ -72,7 +73,9 @@ class AuthRequired(ShellyError):
 
 @dataclass(frozen=True)
 class ConnectionOptions:
-    ip: str
+    """Shelly options for connection."""
+
+    ip_address: str
     username: Optional[str] = None
     password: Optional[str] = None
     temperature_unit: str = "C"
@@ -89,14 +92,17 @@ class ConnectionOptions:
             )
 
 
-async def get_info(aiohttp_session: aiohttp.ClientSession, ip):
+async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
+    """Get info from device trough REST call."""
     async with aiohttp_session.get(
-        f"http://{ip}/shelly", raise_for_status=True
+        f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:
         return await resp.json()
 
 
 class Device:
+    """Shelly device reppresentation."""
+
     def __init__(
         self,
         coap_context: aiocoap.Context,
@@ -106,9 +112,9 @@ class Device:
         self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
         self.options = options
-        self.d = None
+        self.coap_d = None
         self.blocks = None
-        self.s = None
+        self.coap_s = None
         self._settings = None
         self.shelly = None
         self._status = None
@@ -117,6 +123,7 @@ class Device:
     async def create(
         cls, aiohttp_session, ip_or_options: Union[str, ConnectionOptions]
     ):
+        """Device creation."""
         if isinstance(ip_or_options, str):
             options = ConnectionOptions(ip_or_options)
         else:
@@ -134,10 +141,12 @@ class Device:
         return instance
 
     @property
-    def ip(self):
+    def ip_address(self):
+        """Device ip address."""
         return self.options.ip
 
     async def initialize(self):
+        """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip)
         self._update_d(await self.coap_request("d"))
 
@@ -148,17 +157,19 @@ class Device:
             self._status = await self.http_request("get", "status")
 
     async def update(self):
+        """Device update."""
         self._update_s(await self.coap_request("s"))
 
     def _update_d(self, data):
-        self.d = data
+        """Device update from cit/d call."""
+        self.coap_d = data
         blocks = []
 
-        for blk in self.d["blk"]:
+        for blk in self.coap_d["blk"]:
             blk_index = blk["I"]
             blk_sensors = {
                 val["I"]: val
-                for val in self.d["sen"]
+                for val in self.coap_d["sen"]
                 if (
                     val["L"] == blk_index
                     if isinstance(val["L"], int)
@@ -173,9 +184,11 @@ class Device:
         self.blocks = blocks
 
     def _update_s(self, data):
-        self.s = {info[1]: info[2] for info in data["G"]}
+        """Device update from cit/s call."""
+        self.coap_s = {info[1]: info[2] for info in data["G"]}
 
     async def coap_request(self, path):
+        """Device CoAP request."""
         request = aiocoap.Message(
             code=aiocoap.GET, uri=f"coap://{self.options.ip}/cit/{path}"
         )
@@ -183,6 +196,7 @@ class Device:
         return json.loads(response.payload)
 
     async def http_request(self, method, path, params=None):
+        """Device HTTP request."""
         if self.read_only:
             raise AuthRequired
 
@@ -196,18 +210,22 @@ class Device:
         return await resp.json()
 
     async def shutdown(self):
+        """Device shutdown."""
         await self.coap_context.shutdown()
 
     @property
     def requires_auth(self):
+        """Device check for authentication."""
         return self.shelly["auth"]
 
     @property
     def read_only(self):
+        """Device check if can only read data."""
         return self.options.auth is None and self.requires_auth
 
     @property
     def settings(self):
+        """Device get settings (HTTP)."""
         if self._settings is None:
             raise AuthRequired
 
@@ -215,6 +233,7 @@ class Device:
 
     @property
     def status(self):
+        """Device get status (HTTP)."""
         if self._status is None:
             raise AuthRequired
 
@@ -222,6 +241,8 @@ class Device:
 
 
 class Block:
+    """Shelly CoAP block."""
+
     TYPES = {}
     type = None
 
@@ -232,6 +253,7 @@ class Block:
 
     @staticmethod
     def create(device: Device, blk: dict, sensors: Dict[str, dict]):
+        """Block create."""
         blk_type = blk["D"].split("_")[0]
         cls = Block.TYPES.get(blk_type, Block)
         return cls(device, blk_type, blk, sensors)
@@ -239,6 +261,7 @@ class Block:
     def __init__(
         self, device: Device, blk_type: str, blk: dict, sensors: Dict[str, dict]
     ):
+        """Block initialize."""
         self.type = blk_type
         self.device = device
         # https://shelly-api-docs.shelly.cloud/#coiot-device-description-cit-d
@@ -276,14 +299,17 @@ class Block:
 
     @property
     def index(self):
+        """Block index."""
         return self.blk["I"]
 
     @property
     def description(self):
+        """Block description."""
         return self.blk["D"]
 
     @property
     def channel(self):
+        """Block description for channel."""
         return self.description.split("_")[1] if "_" in self.description else None
 
     def info(self, attr):
@@ -291,16 +317,19 @@ class Block:
         return self.sensors[self.sensor_ids[attr]]
 
     def current_values(self):
+        """Block values."""
         return {
             desc: self.device.s.get(index) for desc, index in self.sensor_ids.items()
         }
 
     async def set_state(self, **kwargs):
+        """Set state request (HTTP)."""
         return await self.device.http_request(
             "get", f"{self.type}/{self.channel}", kwargs
         )
 
     async def toggle(self):
+        """Toggle status."""
         return await self.set_state(turn="off" if self.output else "on")
 
     def __getattr__(self, attr):
@@ -314,6 +343,8 @@ class Block:
 
 
 class LightBlock(Block, blk_type="light"):
+    """Get light status."""
+
     async def set_state(self, **kwargs):
         if self.device.settings["device"]["type"] == "SHRGBW2":
             path = f"{self.device.settings['mode']}/{self.channel}"
