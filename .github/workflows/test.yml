@@ -29,3 +29,6 @@ jobs:
       - name: Check formatting with black
         run: |
           black aioshelly --check
+      - name: Pylint review
+        run: |
+          pylint aioshelly
