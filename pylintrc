@@ -57,6 +57,7 @@ score=no
 [TYPECHECK]
 # For attrs
 ignored-classes=_CountingAttr
+generated-members=aiocoap.GET
 
 [FORMAT]
 expected-line-ending-format=LF
