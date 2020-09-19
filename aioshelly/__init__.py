@@ -1,11 +1,10 @@
 """Shelly CoAP library."""
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
-import aiohttp
 import aiocoap
-
+import aiohttp
 
 MODEL_NAMES = {
     "SH2LED-1": "Shelly 2LED",
