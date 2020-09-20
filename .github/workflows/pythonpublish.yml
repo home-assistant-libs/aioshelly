@@ -3,7 +3,7 @@
 
 name: Upload Python Package
 
-true:
+on:
   release:
     types: [published]
 
