@@ -186,6 +186,10 @@ class Device:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
+    async def update_status(self):
+        """Device update from /status (HTTP)."""
+        self._status = await self.http_request("get", "status")
+
     async def coap_request(self, path):
         """Device CoAP request."""
         request = aiocoap.Message(

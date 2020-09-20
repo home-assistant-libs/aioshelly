@@ -32,7 +32,6 @@ disable=
   cyclic-import,
   duplicate-code,
   inconsistent-return-statements,
-<<<<<<< HEAD
 #  locally-disabled,
 #  not-context-manager,
 #  too-few-public-methods,
@@ -47,22 +46,6 @@ disable=
 #  too-many-statements,
 #  too-many-boolean-expressions,
 #  unused-argument,
-=======
-  locally-disabled,
-  not-context-manager,
-  too-few-public-methods,
-  too-many-ancestors,
-  too-many-arguments,
-  too-many-branches,
-  too-many-instance-attributes,
-  too-many-lines,
-  too-many-locals,
-  too-many-public-methods,
-  too-many-return-statements,
-  too-many-statements,
-  too-many-boolean-expressions,
-  unused-argument,
->>>>>>> fdb338265a5c886a1b0a9df50bc4b7895133b05b
   wrong-import-order
 # enable useless-suppression temporarily every now and then to clean them up
 enable=
