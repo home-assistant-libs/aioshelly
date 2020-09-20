@@ -3,7 +3,7 @@
 
 name: Run Tests
 
-on:
+true:
   push:
     branches: [main]
   pull_request:
