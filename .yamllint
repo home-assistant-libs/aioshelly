@@ -1,5 +1,3 @@
-ignore: |
-  azure-*.yml
 rules:
   braces:
     level: error
