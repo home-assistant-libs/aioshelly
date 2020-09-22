@@ -23,9 +23,15 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r requirements-test.txt
+      - name: Isort check
+        run: |
+           pre-commit run --hook-stage manual isort --all-files --show-diff-on-failure
       - name: Lint with flake8
         run: |
           flake8 aioshelly
       - name: Check formatting with black
         run: |
           black aioshelly --check
+      - name: Pylint review
+        run: |
+          pylint aioshelly

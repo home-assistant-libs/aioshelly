@@ -30,6 +30,14 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+## Breaking changes for 0.3.3+
+
+Due to the code quality checks, we changed a few methods/properties:
+
+- `ip()` is now `ip_address()`
+- `d`    is now `coap_d`
+- `s`    is now `coap_s`
+
 ## Contribution guidelines
 
 Object hierarchy and property/method names should match the [Shelly API](https://shelly-api-docs.shelly.cloud/).
