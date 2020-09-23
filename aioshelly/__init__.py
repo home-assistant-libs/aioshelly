@@ -322,7 +322,7 @@ class Block:
     def current_values(self):
         """Block values."""
         return {
-            desc: self.device.s.get(index) for desc, index in self.sensor_ids.items()
+            desc: self.device.coap_s.get(index) for desc, index in self.sensor_ids.items()
         }
 
     async def set_state(self, **kwargs):
@@ -339,7 +339,7 @@ class Block:
         if attr not in self.sensor_ids:
             raise AttributeError(f"{self.type} block has no attribute '{attr}'")
 
-        return self.device.s.get(self.sensor_ids[attr])
+        return self.device.coap_s.get(self.sensor_ids[attr])
 
     def __str__(self):
         return f"<{self.type} {self.blk}>"
