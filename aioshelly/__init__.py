@@ -172,7 +172,6 @@ class Device:
     async def initialize(self):
         """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
-
         self._update_d(await self.coap_request("d"))
 
         await self.update()
