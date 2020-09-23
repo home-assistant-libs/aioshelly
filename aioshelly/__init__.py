@@ -142,11 +142,11 @@ class Device:
     @property
     def ip_address(self):
         """Device ip address."""
-        return self.options.ip
+        return self.options.ip_address
 
     async def initialize(self):
         """Device initialization."""
-        self.shelly = await get_info(self.aiohttp_session, self.options.ip)
+        self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
         self._update_d(await self.coap_request("d"))
 
         await self.update()
@@ -193,7 +193,7 @@ class Device:
     async def coap_request(self, path):
         """Device CoAP request."""
         request = aiocoap.Message(
-            code=aiocoap.GET, uri=f"coap://{self.options.ip}/cit/{path}"
+            code=aiocoap.GET, uri=f"coap://{self.options.ip_address}/cit/{path}"
         )
         response = await self.coap_context.request(request).response
         return json.loads(response.payload)
@@ -205,7 +205,7 @@ class Device:
 
         resp = await self.aiohttp_session.request(
             method,
-            f"http://{self.options.ip}/{path}",
+            f"http://{self.options.ip_address}/{path}",
             params=params,
             auth=self.options.auth,
             raise_for_status=True,
