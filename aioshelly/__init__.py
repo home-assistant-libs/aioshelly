@@ -116,7 +116,7 @@ def supported_firmware(ver_str: str):
         return False
     # We compare firmware release dates because Shelly version numbering is
     # inconsistent, sometimes the word is used as the version number.
-    return date > MIN_FIRMWARE_DATE
+    return date >= MIN_FIRMWARE_DATE
 
 
 class Device:
