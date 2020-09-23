@@ -322,7 +322,8 @@ class Block:
     def current_values(self):
         """Block values."""
         return {
-            desc: self.device.coap_s.get(index) for desc, index in self.sensor_ids.items()
+            desc: self.device.coap_s.get(index)
+            for desc, index in self.sensor_ids.items()
         }
 
     async def set_state(self, **kwargs):
