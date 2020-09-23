@@ -62,8 +62,8 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
+# Firmware release date 1.8.0
 MIN_FIRMWARE_DATE = 20200812
-
 
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
@@ -113,6 +113,8 @@ def supported_firmware(ver_str: str):
         date = int(date_pattern.search(ver_str)[0])
     except TypeError:
         return False
+    # We compare firmware release dates because Shelly version numbering is
+    # inconsistent, sometimes the word is used as the version number.
     return date > MIN_FIRMWARE_DATE
 
 
