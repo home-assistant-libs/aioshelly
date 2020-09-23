@@ -1,5 +1,6 @@
 """Shelly CoAP library."""
 import json
+import re
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
@@ -61,6 +62,8 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
+MIN_FIRMWARE_DATE = 20200812
+
 
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
@@ -68,6 +71,10 @@ class ShellyError(Exception):
 
 class AuthRequired(ShellyError):
     """Raised during initialization if auth is required but not given."""
+
+
+class FirmwareUnsupported(ShellyError):
+    """Raised during initialization if device firmware version is unsupported."""
 
 
 @dataclass(frozen=True)
@@ -97,6 +104,16 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
         f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:
         return await resp.json()
+
+
+def supported_firmware(ver_str: str):
+    """Return True if device firmware version is supported."""
+    date_pattern = re.compile(r"^(\d{8})")
+    try:
+        date = int(date_pattern.search(ver_str)[0])
+    except TypeError:
+        return False
+    return date > MIN_FIRMWARE_DATE
 
 
 class Device:
@@ -147,6 +164,10 @@ class Device:
     async def initialize(self):
         """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+
+        if not supported_firmware(self.shelly["fw"]):
+            raise FirmwareUnsupported
+
         self._update_d(await self.coap_request("d"))
 
         await self.update()
