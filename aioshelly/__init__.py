@@ -142,11 +142,11 @@ class Device:
     @property
     def ip_address(self):
         """Device ip address."""
-        return self.options.ip
+        return self.options.ip_address
 
     async def initialize(self):
         """Device initialization."""
-        self.shelly = await get_info(self.aiohttp_session, self.options.ip)
+        self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
         self._update_d(await self.coap_request("d"))
 
         await self.update()
@@ -193,7 +193,7 @@ class Device:
     async def coap_request(self, path):
         """Device CoAP request."""
         request = aiocoap.Message(
-            code=aiocoap.GET, uri=f"coap://{self.options.ip}/cit/{path}"
+            code=aiocoap.GET, uri=f"coap://{self.options.ip_address}/cit/{path}"
         )
         response = await self.coap_context.request(request).response
         return json.loads(response.payload)
@@ -205,7 +205,7 @@ class Device:
 
         resp = await self.aiohttp_session.request(
             method,
-            f"http://{self.options.ip}/{path}",
+            f"http://{self.options.ip_address}/{path}",
             params=params,
             auth=self.options.auth,
             raise_for_status=True,
@@ -322,7 +322,8 @@ class Block:
     def current_values(self):
         """Block values."""
         return {
-            desc: self.device.s.get(index) for desc, index in self.sensor_ids.items()
+            desc: self.device.coap_s.get(index)
+            for desc, index in self.sensor_ids.items()
         }
 
     async def set_state(self, **kwargs):
@@ -339,7 +340,7 @@ class Block:
         if attr not in self.sensor_ids:
             raise AttributeError(f"{self.type} block has no attribute '{attr}'")
 
-        return self.device.s.get(self.sensor_ids[attr])
+        return self.device.coap_s.get(self.sensor_ids[attr])
 
     def __str__(self):
         return f"<{self.type} {self.blk}>"
