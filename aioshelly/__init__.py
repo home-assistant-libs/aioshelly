@@ -62,7 +62,7 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
-# Firmware release date 1.8.0
+# Firmware 1.8.0 release date
 MIN_FIRMWARE_DATE = 20200812
 
 
