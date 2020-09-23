@@ -22,8 +22,8 @@ async def main():
     async with aiohttp.ClientSession() as session:
         device = await aioshelly.Device.create(session, options)
 
-        # pprint(device.d)
-        # pprint(device.s)
+        # pprint(device.coap_d)
+        # pprint(device.coap_s)
 
         light_relay_block = None
 
