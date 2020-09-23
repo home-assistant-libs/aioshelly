@@ -104,7 +104,12 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     async with aiohttp_session.get(
         f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:
-        return await resp.json()
+        result = await resp.json()
+
+    if not supported_firmware(result["fw"]):
+        raise FirmwareUnsupported
+
+    return result
 
 
 def supported_firmware(ver_str: str):
@@ -167,9 +172,6 @@ class Device:
     async def initialize(self):
         """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
-
-        if not supported_firmware(self.shelly["fw"]):
-            raise FirmwareUnsupported
 
         self._update_d(await self.coap_request("d"))
 
