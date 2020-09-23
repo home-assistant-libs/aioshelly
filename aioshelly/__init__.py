@@ -65,6 +65,7 @@ BLOCK_VALUE_TYPE_VOLTAGE = "V"
 # Firmware release date 1.8.0
 MIN_FIRMWARE_DATE = 20200812
 
+
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
 
