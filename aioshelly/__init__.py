@@ -1,5 +1,6 @@
 """Shelly CoAP library."""
 import json
+import re
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
@@ -61,6 +62,9 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
+# Firmware 1.8.0 release date
+MIN_FIRMWARE_DATE = 20200812
+
 
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
@@ -68,6 +72,10 @@ class ShellyError(Exception):
 
 class AuthRequired(ShellyError):
     """Raised during initialization if auth is required but not given."""
+
+
+class FirmwareUnsupported(ShellyError):
+    """Raised if device firmware version is unsupported."""
 
 
 @dataclass(frozen=True)
@@ -96,7 +104,24 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     async with aiohttp_session.get(
         f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:
-        return await resp.json()
+        result = await resp.json()
+
+    if not supported_firmware(result["fw"]):
+        raise FirmwareUnsupported
+
+    return result
+
+
+def supported_firmware(ver_str: str):
+    """Return True if device firmware version is supported."""
+    date_pattern = re.compile(r"^(\d{8})")
+    try:
+        date = int(date_pattern.search(ver_str)[0])
+    except TypeError:
+        return False
+    # We compare firmware release dates because Shelly version numbering is
+    # inconsistent, sometimes the word is used as the version number.
+    return date >= MIN_FIRMWARE_DATE
 
 
 class Device:
