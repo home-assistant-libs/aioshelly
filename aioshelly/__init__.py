@@ -75,7 +75,7 @@ class AuthRequired(ShellyError):
 
 
 class FirmwareUnsupported(ShellyError):
-    """Raised during initialization if device firmware version is unsupported."""
+    """Raised if device firmware version is unsupported."""
 
 
 @dataclass(frozen=True)
