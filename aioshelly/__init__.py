@@ -219,7 +219,7 @@ class Device:
     async def coap_request(self, path):
         """Device CoAP request."""
         request = aiocoap.Message(
-            code=aiocoap.GET, uri=f"coap://{self.options.ip_address}/cit/{path}"
+            code=aiocoap.GET, mtype=aiocoap.NON, uri=f"coap://{self.options.ip_address}/cit/{path}"
         )
         response = await self.coap_context.request(request).response
         return json.loads(response.payload)
