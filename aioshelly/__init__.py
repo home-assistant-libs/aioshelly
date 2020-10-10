@@ -146,7 +146,10 @@ class Device:
 
     @classmethod
     async def create(
-        cls, aiohttp_session, ip_or_options: Union[str, ConnectionOptions]
+        cls,
+        aiohttp_session: aiohttp.ClientSession,
+        coap_context: aiocoap.Context,
+        ip_or_options: Union[str, ConnectionOptions],
     ):
         """Device creation."""
         if isinstance(ip_or_options, str):
@@ -154,15 +157,8 @@ class Device:
         else:
             options = ip_or_options
 
-        coap_context = await aiocoap.Context.create_client_context()
         instance = cls(coap_context, aiohttp_session, options)
-
-        try:
-            await instance.initialize()
-        except Exception:
-            await coap_context.shutdown()
-            raise
-
+        await instance.initialize()
         return instance
 
     @property
@@ -239,10 +235,6 @@ class Device:
             raise_for_status=True,
         )
         return await resp.json()
-
-    async def shutdown(self):
-        """Device shutdown."""
-        await self.coap_context.shutdown()
 
     @property
     def requires_auth(self):

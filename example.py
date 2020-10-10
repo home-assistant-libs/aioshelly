@@ -1,11 +1,22 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
+from contextlib import asynccontextmanager
 import sys
 import traceback
 
+import aiocoap
 import aiohttp
 
 import aioshelly
+
+
+@asynccontextmanager
+async def create_coap_context():
+    context = await aiocoap.Context.create_client_context()
+    try:
+        yield context
+    finally:
+        await context.shutdown()
 
 
 async def cli():
@@ -23,8 +34,8 @@ async def cli():
 
     options = aioshelly.ConnectionOptions(ip, username, password)
 
-    async with aiohttp.ClientSession() as session:
-        await print_device(session, options)
+    async with aiohttp.ClientSession() as aiohttp_session, create_coap_context() as coap_context:
+        await print_device(aiohttp_session, coap_context, options)
 
 
 async def test_many():
@@ -33,10 +44,13 @@ async def test_many():
         aioshelly.ConnectionOptions("192.168.1.168"),
     ]
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as aiohttp_session, create_coap_context() as coap_context:
         results = await asyncio.gather(
-            *[print_device(session, options) for options in device_options],
-            return_exceptions=True
+            *[
+                print_device(aiohttp_session, coap_context, options)
+                for options in device_options
+            ],
+            return_exceptions=True,
         )
 
     for options, result in zip(device_options, results):
@@ -51,8 +65,8 @@ async def test_many():
         print(result)
 
 
-async def print_device(session, options):
-    device = await aioshelly.Device.create(session, options)
+async def print_device(aiohttp_session, coap_context, options):
+    device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
 
     # pprint(device.coap_d)
     # pprint(device.coap_s)
@@ -93,8 +107,6 @@ async def print_device(session, options):
     #             turn="off" if light_relay_block.output else "on"
     #         )
     #     )
-
-    await device.shutdown()
 
 
 if __name__ == "__main__":
