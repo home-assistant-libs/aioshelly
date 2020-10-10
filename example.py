@@ -1,8 +1,8 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
-from contextlib import asynccontextmanager
 import sys
 import traceback
+from contextlib import asynccontextmanager
 
 import aiocoap
 import aiohttp
