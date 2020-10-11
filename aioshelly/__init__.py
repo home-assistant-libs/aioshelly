@@ -144,7 +144,7 @@ class Device:
         self._settings = None
         self.shelly = None
         self._status = None
-        self.sem = asyncio.Semaphore()
+        self.semaphore = asyncio.Semaphore()
 
     @classmethod
     async def create(
@@ -225,7 +225,7 @@ class Device:
             mtype=aiocoap.NON,
             uri=f"coap://{self.options.ip_address}/cit/{path}",
         )
-        async with self.sem:
+        async with self.semaphore:
             response = await self.coap_context.request(request).response
         return json.loads(response.payload)
 
@@ -234,7 +234,7 @@ class Device:
         if self.read_only:
             raise AuthRequired
 
-        async with self.sem:
+        async with self.semaphore:
             resp = await self.aiohttp_session.request(
                 method,
                 f"http://{self.options.ip_address}/{path}",
