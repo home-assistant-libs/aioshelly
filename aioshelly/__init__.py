@@ -1,4 +1,5 @@
 """Shelly CoAP library."""
+import asyncio
 import json
 import re
 from dataclasses import dataclass
@@ -143,6 +144,7 @@ class Device:
         self._settings = None
         self.shelly = None
         self._status = None
+        self.semaphore = asyncio.Semaphore()
 
     @classmethod
     async def create(
@@ -219,7 +221,8 @@ class Device:
             mtype=aiocoap.NON,
             uri=f"coap://{self.options.ip_address}/cit/{path}",
         )
-        response = await self.coap_context.request(request).response
+        async with self.semaphore:
+            response = await self.coap_context.request(request).response
         return json.loads(response.payload)
 
     async def http_request(self, method, path, params=None):
@@ -227,13 +230,14 @@ class Device:
         if self.read_only:
             raise AuthRequired
 
-        resp = await self.aiohttp_session.request(
-            method,
-            f"http://{self.options.ip_address}/{path}",
-            params=params,
-            auth=self.options.auth,
-            raise_for_status=True,
-        )
+        async with self.semaphore:
+            resp = await self.aiohttp_session.request(
+                method,
+                f"http://{self.options.ip_address}/{path}",
+                params=params,
+                auth=self.options.auth,
+                raise_for_status=True,
+            )
         return await resp.json()
 
     @property
