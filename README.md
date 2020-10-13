@@ -4,17 +4,20 @@
 
 ## This library is under development.
 
-Requires Python 3.5 and uses asyncio, aiohttp and aiocoap.
+Requires Python 3 and uses asyncio, aiohttp and aiocoap.
 
 ```python
 import asyncio
 from pprint import pprint
+import aiocoap
 import aiohttp
 import aioshelly
 
 async def main():
     options = aioshelly.ConnectionOptions("192.168.1.165", "username", "password")
-    
+
+    coap_context = await aiocoap.Context.create_client_context()
+
     async with aiohttp.ClientSession() as session:
         device = await aioshelly.Device.create(session, options)
 
@@ -23,7 +26,7 @@ async def main():
             pprint(block.current_values())
             print()
 
-        await device.shutdown()
+    await coap_context.shutdown()
 
 
 if __name__ == "__main__":
