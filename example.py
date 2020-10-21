@@ -4,19 +4,19 @@ import sys
 import traceback
 from contextlib import asynccontextmanager
 
-import aiocoap
 import aiohttp
 
 import aioshelly
 
 
 @asynccontextmanager
-async def create_coap_context():
-    context = await aiocoap.Context.create_client_context()
+async def create_socket():
+    socket = await aioshelly.socket_init()
     try:
-        yield context
-    finally:
-        await context.shutdown()
+        yield socket
+    # FIX ME !!!!
+    except:
+        pass
 
 
 async def cli():
@@ -34,8 +34,8 @@ async def cli():
 
     options = aioshelly.ConnectionOptions(ip, username, password)
 
-    async with aiohttp.ClientSession() as aiohttp_session, create_coap_context() as coap_context:
-        await print_device(aiohttp_session, coap_context, options)
+    async with aiohttp.ClientSession() as aiohttp_session, create_socket() as mysocket:
+        await print_device(aiohttp_session, mysocket, options)
 
 
 async def test_many():
@@ -44,10 +44,10 @@ async def test_many():
         aioshelly.ConnectionOptions("192.168.1.168"),
     ]
 
-    async with aiohttp.ClientSession() as aiohttp_session, create_coap_context() as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session, create_socket() as mysocket:
         results = await asyncio.gather(
             *[
-                print_device(aiohttp_session, coap_context, options)
+                print_device(aiohttp_session, mysocket, options)
                 for options in device_options
             ],
             return_exceptions=True,
@@ -65,8 +65,8 @@ async def test_many():
         print(result)
 
 
-async def print_device(aiohttp_session, coap_context, options):
-    device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
+async def print_device(aiohttp_session, mysocket, options):
+    device = await aioshelly.Device.create(aiohttp_session, mysocket, options)
 
     # pprint(device.coap_d)
     # pprint(device.coap_s)
