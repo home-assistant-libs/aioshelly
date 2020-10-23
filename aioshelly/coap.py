@@ -34,7 +34,7 @@ class CoapMessage:
     def __init__(self, sender_addr, payload: bytes):
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
-        header, payload = payload.split(b"\xff", 1)
+        header, payload = payload.rsplit(b"\xff", 1)
         self.header = header
         self.payload = json.loads(payload.decode())
 
@@ -72,23 +72,11 @@ class COAP(asyncio.DatagramProtocol):
         self._message_received = message_received
         self.subscriptions = {}
 
-<<<<<<< HEAD
     async def initialize(self):
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
         self.sock = socket_init()
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
-=======
-    def __init__(self, status_update_received=None):
-        self.sock = None
-        self.status_update_received = status_update_received
-
-    async def initialize(self):
-        loop = asyncio.get_running_loop()
-        self.sock = socket_init()
-        if self.status_update_received:
-            await loop.create_datagram_endpoint(lambda: DiscoveryProtocol(self.status_update_received), sock=self.sock)
->>>>>>> Add support for discovery
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
@@ -97,12 +85,6 @@ class COAP(asyncio.DatagramProtocol):
         """
         msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
         self.sock.sendto(msg, (ip, 5683))
-<<<<<<< HEAD
-=======
-        response = await loop.sock_recv(self.sock, BUFFER)
-
-        return CoapMessage((ip, 5683), response).payload
->>>>>>> Add support for discovery
 
     def close(self):
         """Close."""
