@@ -241,6 +241,7 @@ class Device:
             self._update_listener(self)
 
     def subscribe_updates(self, update_listener):
+        """Subscribe to device status updates."""
         self._update_listener = update_listener
 
     async def update_status(self):

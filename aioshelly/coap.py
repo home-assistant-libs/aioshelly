@@ -1,31 +1,29 @@
 """COAP for Shelly."""
 import asyncio
 import json
+import logging
 import socket
 import struct
 
 # Socket buffer
 BUFFER = 2048
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class CoapMessage:
+    """Represents a received coap message."""
+
     def __init__(self, sender_addr, payload: bytes):
+        """Initialize a coap message."""
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
-        header, payload = payload.rsplit(b"\xff", 1)
-        self.header = header
-        self.payload = json.loads(payload.decode())
+        parts = payload.rsplit(b"\xff", 1)
+        if len(parts) != 2:
+            raise ValueError("Unexpected data")
 
-
-class DiscoveryProtocol(asyncio.DatagramProtocol):
-    def __init__(self, msg_received) -> None:
-        self.msg_received = msg_received
-
-    def connection_made(self, transport):
-        self.transport = transport
-
-    def datagram_received(self, data, addr):
-        self.msg_received(CoapMessage(addr, data))
+        self.header = parts[0]
+        self.payload = json.loads(parts[1].decode())
 
 
 def socket_init():
@@ -39,21 +37,21 @@ def socket_init():
     return sock
 
 
-class COAP:
-    """Initialize the COAP manager."""
+class COAP(asyncio.DatagramProtocol):
+    """COAP manager."""
 
     def __init__(self, message_received=None):
+        """Initialize COAP manager."""
         self.sock = None
         # Will receive all updates
         self._message_received = message_received
         self.subscriptions = {}
 
     async def initialize(self):
+        """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
         self.sock = socket_init()
-        await loop.create_datagram_endpoint(
-            lambda: DiscoveryProtocol(self.message_received), sock=self.sock
-        )
+        await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
@@ -64,9 +62,17 @@ class COAP:
         self.sock.sendto(msg, (ip, 5683))
 
     def close(self):
+        """Close."""
         self.sock.close()
 
-    def message_received(self, msg):
+    def datagram_received(self, data, addr):
+        """Handle incoming datagram messages."""
+        try:
+            msg = CoapMessage(addr, data)
+        except ValueError:
+            _LOGGER.warning("Received unexpected data from %s: %s", addr, data)
+            return
+
         if self._message_received:
             self._message_received(msg)
 
@@ -82,11 +88,12 @@ class COAP:
         await self.initialize()
         return self
 
-    async def __aexit__(self, type, value, traceback):
+    async def __aexit__(self, _type, _value, _traceback):
         self.close()
 
 
 async def discovery_dump():
+    """Dump all discovery data as it comes in."""
     async with COAP(lambda msg: print(msg.ip, msg.payload)):
         while True:
             await asyncio.sleep(0.1)

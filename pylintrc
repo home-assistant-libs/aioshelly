@@ -9,7 +9,7 @@ persistent=no
 extension-pkg-whitelist=ciso8601,cv2
 
 [BASIC]
-good-names=id,i,j,k,ex,Run,_,fp,T,ev
+good-names=id,i,j,k,ex,Run,_,fp,T,ev,ip
 
 [MESSAGES CONTROL]
 # Reasons disabled:
@@ -28,10 +28,12 @@ disable=
   duplicate-code,
   inconsistent-return-statements,
   too-many-instance-attributes,
-  wrong-import-order
+  wrong-import-order,
+  too-few-public-methods
+
 # enable useless-suppression temporarily every now and then to clean them up
 enable=
-  use-symbolic-message-instead
+  use-symbolic-message-instead,
 
 [REPORTS]
 score=no
