@@ -30,6 +30,27 @@ class CoapMessage:
             self.payload = json.loads(parts[1].decode()) if len(parts) > 1 else {}
 
 
+class CoapMessage:
+    def __init__(self, sender_addr, payload: bytes):
+        self.ip = sender_addr[0]
+        self.port = sender_addr[1]
+        header, payload = payload.split(b"\xff", 1)
+        self.header = header
+        self.payload = json.loads(payload.decode())
+
+
+class DiscoveryProtocol(asyncio.DatagramProtocol):
+
+    def __init__(self, msg_received) -> None:
+        self.msg_received = msg_received
+
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def datagram_received(self, data, addr):
+        self.msg_received(CoapMessage(addr, data))
+
+
 def socket_init():
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
