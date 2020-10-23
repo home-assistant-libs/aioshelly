@@ -33,7 +33,7 @@ async def cli():
         def device_updated(device):
             print()
             print()
-            print(f"{datetime.now().strftime('%H:%m:%S')}: Device updated!")
+            print(f"{datetime.now().strftime('%H:%m:%S')} Device updated!")
             print()
             print_device(device)
 

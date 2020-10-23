@@ -251,10 +251,11 @@ class Device:
 
     async def coap_request(self, path):
         """Device CoAP request."""
-        if path in self._coap_response_events:
-            self._coap_response_events[path].set()
+        if path not in self._coap_response_events:
+            self._coap_response_events[path] = asyncio.Event()
 
-        event = self._coap_response_events[path] = asyncio.Event()
+        event = self._coap_response_events[path]
+
         await self.coap_context.request(self.ip_address, path)
         return event
 
