@@ -114,7 +114,6 @@ class COAP(asyncio.DatagramProtocol):
 
 
 async def discovery_dump():
-<<<<<<< HEAD
     """Dump all discovery data as it comes in."""
     async with COAP(lambda msg: print(msg.ip, msg.payload)):
         while True:
@@ -122,14 +121,6 @@ async def discovery_dump():
 
 
 if __name__ == "__main__":
-=======
-    async with COAP(lambda msg: print(msg.ip, msg.payload)):
-        while True:
-            await asyncio.sleep(.1)
-
-
-if __name__ == '__main__':
->>>>>>> Add support for discovery
     try:
         asyncio.run(discovery_dump())
     except KeyboardInterrupt:
