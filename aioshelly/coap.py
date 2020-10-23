@@ -1,8 +1,8 @@
 """COAP for Shelly."""
 import asyncio
+import json
 import socket
 import struct
-import json
 
 # Socket buffer
 BUFFER = 2048
