@@ -3,7 +3,6 @@ import asyncio
 from datetime import datetime
 import sys
 import traceback
-from contextlib import asynccontextmanager
 
 import aiohttp
 
@@ -74,8 +73,8 @@ async def connect_and_print_device(aiohttp_session, coap_context, options):
     device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
     print_device(device)
 
-def print_device(device):
 
+def print_device(device):
     # pprint(device.coap_d)
     # pprint(device.coap_s)
 
