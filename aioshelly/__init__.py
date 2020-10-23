@@ -1,12 +1,11 @@
 """Shelly CoAP library."""
 import asyncio
 import re
-import socket
-import struct
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
 import aiohttp
+from .coap import COAP
 
 from .coap import COAP
 
@@ -68,9 +67,6 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
-# Socket buffer
-BUFFER = 2048
-
 # Firmware 1.8.0 release date
 MIN_FIRMWARE_DATE = 20200812
 
@@ -108,16 +104,6 @@ class ConnectionOptions:
             )
 
 
-async def socket_init():
-    """Init UDP socket to send/receive data with Shelly devices."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("", 5683))
-    mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    return sock
-
-
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     """Get info from device trough REST call."""
     async with aiohttp_session.get(
@@ -152,7 +138,7 @@ class Device:
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
-        self.sock = mysocket
+        self.coap = coap
         self.aiohttp_session = aiohttp_session
         self.options = options
         self.coap_d = None
@@ -180,7 +166,7 @@ class Device:
         else:
             options = ip_or_options
 
-        instance = cls(mysocket, aiohttp_session, options)
+        instance = cls(coap, aiohttp_session, options)
         await instance.initialize()
         return instance
 
