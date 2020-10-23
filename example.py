@@ -24,8 +24,8 @@ async def cli():
 
     options = aioshelly.ConnectionOptions(ip, username, password)
 
-    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap:
-        await print_device(aiohttp_session, coap, options)
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
+        await print_device(aiohttp_session, coap_context, options)
 
 
 async def test_many():
@@ -34,10 +34,10 @@ async def test_many():
         aioshelly.ConnectionOptions("192.168.1.168"),
     ]
 
-    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap:
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
             *[
-                print_device(aiohttp_session, coap, options)
+                print_device(aiohttp_session, coap_context, options)
                 for options in device_options
             ],
             return_exceptions=True,
@@ -55,8 +55,8 @@ async def test_many():
         print(result)
 
 
-async def print_device(aiohttp_session, coap, options):
-    device = await aioshelly.Device.create(aiohttp_session, coap, options)
+async def print_device(aiohttp_session, coap_context, options):
+    device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
 
     # pprint(device.coap_d)
     # pprint(device.coap_s)
