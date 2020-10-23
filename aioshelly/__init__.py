@@ -228,7 +228,7 @@ class Device:
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
-    async def coap_request(self, uri):i
+    async def coap_request(self, uri):
         """Device CoAP request."""
         msg = (
             bytes(b"\x50\x01\x00\x0A\xb3cit\x01") + bytes(uri, "utf-8") + bytes(b"\xFF")
