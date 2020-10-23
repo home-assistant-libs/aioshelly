@@ -29,25 +29,22 @@ class CoapMessage:
             self.header = parts[0]
             self.payload = json.loads(parts[1].decode()) if len(parts) > 1 else {}
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class CoapMessage:
+    """Represents a received coap message."""
+
     def __init__(self, sender_addr, payload: bytes):
+        """Initialize a coap message."""
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
-        header, payload = payload.rsplit(b"\xff", 1)
-        self.header = header
-        self.payload = json.loads(payload.decode())
+        parts = payload.rsplit(b"\xff", 1)
+        if len(parts) != 2:
+            raise ValueError("Unexpected data")
 
-
-class DiscoveryProtocol(asyncio.DatagramProtocol):
-    def __init__(self, msg_received) -> None:
-        self.msg_received = msg_received
-
-    def connection_made(self, transport):
-        self.transport = transport
-
-    def datagram_received(self, data, addr):
-        self.msg_received(CoapMessage(addr, data))
+        self.header = parts[0]
+        self.payload = json.loads(parts[1].decode())
 
 
 def socket_init():
