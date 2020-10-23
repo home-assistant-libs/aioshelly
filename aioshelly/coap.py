@@ -40,7 +40,6 @@ class CoapMessage:
 
 
 class DiscoveryProtocol(asyncio.DatagramProtocol):
-
     def __init__(self, msg_received) -> None:
         self.msg_received = msg_received
 
