@@ -44,17 +44,15 @@ class COAP:
     """Initialize the COAP manager."""
 
     def __init__(self, message_received=None):
-        self.send_sock = None
-        self.recv_sock = None
+        self.sock = None
         # Will receive all updates
         self._message_received = message_received
         self.subscriptions = {}
 
     async def initialize(self):
         loop = asyncio.get_running_loop()
-        self.send_sock = socket_init()
-        self.recv_sock = socket_init()
-        await loop.create_datagram_endpoint(lambda: DiscoveryProtocol(self.message_received), sock=self.recv_sock)
+        self.sock = socket_init()
+        await loop.create_datagram_endpoint(lambda: DiscoveryProtocol(self.message_received), sock=self.sock)
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
@@ -64,11 +62,10 @@ class COAP:
         msg = (
             b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
         )
-        self.send_sock.sendto(msg, (ip, 5683))
+        self.sock.sendto(msg, (ip, 5683))
 
     def close(self):
-        self.send_sock.close()
-        self.recv_sock.close()
+        self.sock.close()
 
     def message_received(self, msg):
         if self._message_received:
