@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
 import aiohttp
+
 from .coap import COAP
 
 from .coap import COAP
