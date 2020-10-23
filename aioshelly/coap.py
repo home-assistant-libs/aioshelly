@@ -40,11 +40,8 @@ class CoapMessage:
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
         parts = payload.rsplit(b"\xff", 1)
-        if len(parts) != 2:
-            raise ValueError("Unexpected data")
-
         self.header = parts[0]
-        self.payload = json.loads(parts[1].decode())
+        self.payload = json.loads(parts[1].decode()) if len(parts) > 1 else {}
 
 
 def socket_init():
