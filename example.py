@@ -1,5 +1,6 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
+from datetime import datetime
 import sys
 import traceback
 from contextlib import asynccontextmanager
@@ -25,7 +26,21 @@ async def cli():
     options = aioshelly.ConnectionOptions(ip, username, password)
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
-        await print_device(aiohttp_session, coap_context, options)
+        device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
+
+        print_device(device)
+
+        def device_updated(device):
+            print()
+            print()
+            print(f"{datetime.now().strftime('%H:%m:%S')}: Device updated!")
+            print()
+            print_device(device)
+
+        device.subscribe_updates(device_updated)
+
+        while True:
+            await asyncio.sleep(0.1)
 
 
 async def test_many():
@@ -37,7 +52,7 @@ async def test_many():
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
             *[
-                print_device(aiohttp_session, coap_context, options)
+                connect_and_print_device(aiohttp_session, coap_context, options)
                 for options in device_options
             ],
             return_exceptions=True,
@@ -55,8 +70,11 @@ async def test_many():
         print(result)
 
 
-async def print_device(aiohttp_session, coap_context, options):
+async def connect_and_print_device(aiohttp_session, coap_context, options):
     device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
+    print_device(device)
+
+def print_device(device):
 
     # pprint(device.coap_d)
     # pprint(device.coap_s)
@@ -100,5 +118,8 @@ async def print_device(aiohttp_session, coap_context, options):
 
 
 if __name__ == "__main__":
-    asyncio.run(cli())
-    # asyncio.run(test_many())
+    try:
+        asyncio.run(cli())
+        # asyncio.run(test_many())
+    except KeyboardInterrupt:
+        pass

@@ -12,7 +12,7 @@ class CoapMessage:
     def __init__(self, sender_addr, payload: bytes):
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
-        header, payload = payload.split(b"\xff", 1)
+        header, payload = payload.rsplit(b"\xff", 1)
         self.header = header
         self.payload = json.loads(payload.decode())
 
@@ -43,29 +43,44 @@ def socket_init():
 class COAP:
     """Initialize the COAP manager."""
 
-    def __init__(self, status_update_received=None):
-        self.sock = None
-        self.status_update_received = status_update_received
+    def __init__(self, message_received=None):
+        self.send_sock = None
+        self.recv_sock = None
+        # Will receive all updates
+        self._message_received = message_received
+        self.subscriptions = {}
 
     async def initialize(self):
         loop = asyncio.get_running_loop()
-        self.sock = socket_init()
-        if self.status_update_received:
-            await loop.create_datagram_endpoint(lambda: DiscoveryProtocol(self.status_update_received), sock=self.sock)
+        self.send_sock = socket_init()
+        self.recv_sock = socket_init()
+        await loop.create_datagram_endpoint(lambda: DiscoveryProtocol(self.message_received), sock=self.recv_sock)
 
     async def request(self, ip: str, path: str):
-        """Device CoAP request."""
-        loop = asyncio.get_running_loop()
+        """Request a CoAP message.
+
+        Subscribe with `subscribe_updates` to receive answer.
+        """
         msg = (
             b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
         )
-        self.sock.sendto(msg, (ip, 5683))
-        response = await loop.sock_recv(self.sock, BUFFER)
-
-        return CoapMessage((ip, 5683), response).payload
+        self.send_sock.sendto(msg, (ip, 5683))
 
     def close(self):
-        self.sock.close()
+        self.send_sock.close()
+        self.recv_sock.close()
+
+    def message_received(self, msg):
+        if self._message_received:
+            self._message_received(msg)
+
+        if msg.ip in self.subscriptions:
+            self.subscriptions[msg.ip](msg)
+
+    def subscribe_updates(self, ip, message_received):
+        """Subscribe to received updates."""
+        self.subscriptions[ip] = message_received
+        return lambda: self.subscriptions.pop(ip)
 
     async def __aenter__(self):
         await self.initialize()

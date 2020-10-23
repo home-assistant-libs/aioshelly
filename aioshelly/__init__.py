@@ -144,7 +144,9 @@ class Device:
         self._settings = None
         self.shelly = None
         self._status = None
-        self.semaphore = asyncio.Semaphore()
+        self._unsub_listening = coap_context.subscribe_updates(options.ip_address, self._coap_message_received)
+        self._update_listener = None
+        self._coap_response_events = {}
 
     @classmethod
     async def create(
@@ -171,17 +173,40 @@ class Device:
     async def initialize(self):
         """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
-        self._update_d(await self.coap_request("d"))
+        event_d = await self.coap_request("d")
+        event_s = await self.coap_request("s")
 
-        await self.update()
+        tasks = [event_d.wait(), event_s.wait()]
 
         if self.options.auth or not self.shelly["auth"]:
-            self._settings = await self.http_request("get", "settings")
-            self._status = await self.http_request("get", "status")
+            tasks.append(self.update_settings())
+            tasks.append(self.update_status())
+
+        await asyncio.gather(*tasks)
+
+    def shutdown(self):
+        """Shutdown device."""
+        self._unsub_listening()
+
+    def _coap_message_received(self, msg):
+        if "G" in msg.payload:
+            self._update_s(msg.payload)
+            path = 's'
+        elif "blk" in msg.payload:
+            self._update_d(msg.payload)
+            path = 'd'
+        else:
+            # Unknown msg
+            return
+
+        event = self._coap_response_events.get(path)
+        if event is not None:
+            event.set()
 
     async def update(self):
         """Device update."""
-        self._update_s(await self.coap_request("s"))
+        event = await self.coap_request("s")
+        await event.wait()
 
     def _update_d(self, data):
         """Device update from cit/d call."""
@@ -210,27 +235,41 @@ class Device:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
+        if self._update_listener:
+            self._update_listener(self)
+
+    def subscribe_updates(self, update_listener):
+        self._update_listener = update_listener
+
     async def update_status(self):
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
+    async def update_settings(self):
+        """Device update from /settings (HTTP)."""
+        self._settings = await self.http_request("get", "settings")
+
     async def coap_request(self, path):
         """Device CoAP request."""
-        return await self.coap_context.request(self.ip_address, path)
+        if path in self._coap_response_events:
+            self._coap_response_events[path].set()
+
+        event = self._coap_response_events[path] = asyncio.Event()
+        await self.coap_context.request(self.ip_address, path)
+        return event
 
     async def http_request(self, method, path, params=None):
         """Device HTTP request."""
         if self.read_only:
             raise AuthRequired
 
-        async with self.semaphore:
-            resp = await self.aiohttp_session.request(
-                method,
-                f"http://{self.options.ip_address}/{path}",
-                params=params,
-                auth=self.options.auth,
-                raise_for_status=True,
-            )
+        resp = await self.aiohttp_session.request(
+            method,
+            f"http://{self.options.ip_address}/{path}",
+            params=params,
+            auth=self.options.auth,
+            raise_for_status=True,
+        )
         return await resp.json()
 
     @property
