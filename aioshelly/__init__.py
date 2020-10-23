@@ -106,6 +106,7 @@ class ConnectionOptions:
 
 
 async def socket_init():
+    """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", 5683))
@@ -227,7 +228,8 @@ class Device:
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
-    async def coap_request(self, uri):
+    async def coap_request(self, uri):i
+        """Device CoAP request."""
         msg = (
             bytes(b"\x50\x01\x00\x0A\xb3cit\x01") + bytes(uri, "utf-8") + bytes(b"\xFF")
         )
@@ -241,8 +243,7 @@ class Device:
             prefix = '{"G":'
         payload_bytes = response.split(header)[1]
         payload = prefix + str(payload_bytes, "utf-8")
-        js = json.loads(payload)
-        return js
+        return json.loads(payload)
 
     async def http_request(self, method, path, params=None):
         """Device HTTP request."""
