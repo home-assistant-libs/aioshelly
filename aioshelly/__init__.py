@@ -144,7 +144,9 @@ class Device:
         self._settings = None
         self.shelly = None
         self._status = None
-        self._unsub_listening = coap_context.subscribe_updates(options.ip_address, self._coap_message_received)
+        self._unsub_listening = coap_context.subscribe_updates(
+            options.ip_address, self._coap_message_received
+        )
         self._update_listener = None
         self._coap_response_events = {}
 
@@ -191,10 +193,10 @@ class Device:
     def _coap_message_received(self, msg):
         if "G" in msg.payload:
             self._update_s(msg.payload)
-            path = 's'
+            path = "s"
         elif "blk" in msg.payload:
             self._update_d(msg.payload)
-            path = 'd'
+            path = "d"
         else:
             # Unknown msg
             return

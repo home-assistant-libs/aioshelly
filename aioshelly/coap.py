@@ -18,7 +18,6 @@ class CoapMessage:
 
 
 class DiscoveryProtocol(asyncio.DatagramProtocol):
-
     def __init__(self, msg_received) -> None:
         self.msg_received = msg_received
 
@@ -52,16 +51,16 @@ class COAP:
     async def initialize(self):
         loop = asyncio.get_running_loop()
         self.sock = socket_init()
-        await loop.create_datagram_endpoint(lambda: DiscoveryProtocol(self.message_received), sock=self.sock)
+        await loop.create_datagram_endpoint(
+            lambda: DiscoveryProtocol(self.message_received), sock=self.sock
+        )
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
 
         Subscribe with `subscribe_updates` to receive answer.
         """
-        msg = (
-            b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
-        )
+        msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
         self.sock.sendto(msg, (ip, 5683))
 
     def close(self):
@@ -90,10 +89,10 @@ class COAP:
 async def discovery_dump():
     async with COAP(lambda msg: print(msg.ip, msg.payload)):
         while True:
-            await asyncio.sleep(.1)
+            await asyncio.sleep(0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         asyncio.run(discovery_dump())
     except KeyboardInterrupt:
