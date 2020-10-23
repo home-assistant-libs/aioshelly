@@ -55,8 +55,8 @@ async def test_many():
         print(result)
 
 
-async def print_device(aiohttp_session, mysocket, options):
-    device = await aioshelly.Device.create(aiohttp_session, mysocket, options)
+async def print_device(aiohttp_session, coap, options):
+    device = await aioshelly.Device.create(aiohttp_session, coap, options)
 
     # pprint(device.coap_d)
     # pprint(device.coap_s)

@@ -130,11 +130,11 @@ class Device:
 
     def __init__(
         self,
-        coap: COAP,
+        coap_context: COAP,
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
-        self.coap = coap
+        self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
         self.options = options
         self.coap_d = None
@@ -149,7 +149,7 @@ class Device:
     async def create(
         cls,
         aiohttp_session: aiohttp.ClientSession,
-        coap: COAP,
+        coap_context: COAP,
         ip_or_options: Union[str, ConnectionOptions],
     ):
         """Device creation."""
@@ -158,7 +158,7 @@ class Device:
         else:
             options = ip_or_options
 
-        instance = cls(coap, aiohttp_session, options)
+        instance = cls(coap_context, aiohttp_session, options)
         await instance.initialize()
         return instance
 
@@ -213,9 +213,9 @@ class Device:
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
-    async def coap_request(self, uri: str):
+    async def coap_request(self, path):
         """Device CoAP request."""
-        return await self.coap.request(self.ip_address, uri)
+        return await self.coap_context.request(self.ip_address, path)
 
     async def http_request(self, method, path, params=None):
         """Device HTTP request."""

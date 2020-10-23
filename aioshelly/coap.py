@@ -25,15 +25,15 @@ class COAP:
     def __init__(self):
         self.sock = socket_init()
 
-    async def request(self, ip: str, uri: str):
+    async def request(self, ip: str, path: str):
         """Device CoAP request."""
         loop = asyncio.get_running_loop()
         msg = (
-            b"\x50\x01\x00\x0A\xb3cit\x01" + uri.encode() + b"\xFF"
+            b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
         )
         self.sock.sendto(msg, (ip, 5683))
         response = await loop.sock_recv(self.sock, BUFFER)
-        if uri == "d":
+        if path == "d":
             header = b'"blk":'
             prefix = '{"blk":'
         else:
