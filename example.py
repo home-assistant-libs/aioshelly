@@ -1,5 +1,6 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
+from datetime import datetime
 import sys
 import traceback
 from datetime import datetime

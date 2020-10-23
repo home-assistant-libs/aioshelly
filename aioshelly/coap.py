@@ -34,7 +34,7 @@ class CoapMessage:
     def __init__(self, sender_addr, payload: bytes):
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
-        header, payload = payload.split(b"\xff", 1)
+        header, payload = payload.rsplit(b"\xff", 1)
         self.header = header
         self.payload = json.loads(payload.decode())
 
