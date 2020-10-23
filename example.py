@@ -9,16 +9,6 @@ import aiohttp
 import aioshelly
 
 
-@asynccontextmanager
-async def create_socket():
-    socket = await aioshelly.socket_init()
-    try:
-        yield socket
-    # FIX ME !!!!
-    except:
-        pass
-
-
 async def cli():
     if len(sys.argv) < 2:
         print("Error! Run with <ip> or <ip> <user> <pass>")
@@ -34,8 +24,8 @@ async def cli():
 
     options = aioshelly.ConnectionOptions(ip, username, password)
 
-    async with aiohttp.ClientSession() as aiohttp_session, create_socket() as mysocket:
-        await print_device(aiohttp_session, mysocket, options)
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap:
+        await print_device(aiohttp_session, coap, options)
 
 
 async def test_many():
@@ -44,10 +34,10 @@ async def test_many():
         aioshelly.ConnectionOptions("192.168.1.168"),
     ]
 
-    async with aiohttp.ClientSession() as aiohttp_session, create_socket() as mysocket:
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap:
         results = await asyncio.gather(
             *[
-                print_device(aiohttp_session, mysocket, options)
+                print_device(aiohttp_session, coap, options)
                 for options in device_options
             ],
             return_exceptions=True,

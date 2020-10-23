@@ -1,13 +1,11 @@
 """Shelly CoAP library."""
 import asyncio
-import json
 import re
-import socket
-import struct
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
 import aiohttp
+from .coap import COAP
 
 MODEL_NAMES = {
     "SH2LED-1": "Shelly 2LED",
@@ -65,9 +63,6 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
-# Socket buffer
-BUFFER = 2048
-
 # Firmware 1.8.0 release date
 MIN_FIRMWARE_DATE = 20200812
 
@@ -105,16 +100,6 @@ class ConnectionOptions:
             )
 
 
-async def socket_init():
-    """Init UDP socket to send/receive data with Shelly devices."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("", 5683))
-    mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    return sock
-
-
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     """Get info from device trough REST call."""
     async with aiohttp_session.get(
@@ -145,11 +130,11 @@ class Device:
 
     def __init__(
         self,
-        mysocket: socket,
+        coap: COAP,
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
-        self.sock = mysocket
+        self.coap = coap
         self.aiohttp_session = aiohttp_session
         self.options = options
         self.coap_d = None
@@ -164,7 +149,7 @@ class Device:
     async def create(
         cls,
         aiohttp_session: aiohttp.ClientSession,
-        mysocket: socket,
+        coap: COAP,
         ip_or_options: Union[str, ConnectionOptions],
     ):
         """Device creation."""
@@ -173,7 +158,7 @@ class Device:
         else:
             options = ip_or_options
 
-        instance = cls(mysocket, aiohttp_session, options)
+        instance = cls(coap, aiohttp_session, options)
         await instance.initialize()
         return instance
 
@@ -228,22 +213,9 @@ class Device:
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
-    async def coap_request(self, uri):
+    async def coap_request(self, uri: str):
         """Device CoAP request."""
-        msg = (
-            bytes(b"\x50\x01\x00\x0A\xb3cit\x01") + bytes(uri, "utf-8") + bytes(b"\xFF")
-        )
-        self.sock.sendto(msg, (self.ip_address, 5683))
-        response = self.sock.recv(BUFFER)
-        if uri == "d":
-            header = b'"blk":'
-            prefix = '{"blk":'
-        else:
-            header = b'"G":'
-            prefix = '{"G":'
-        payload_bytes = response.split(header)[1]
-        payload = prefix + str(payload_bytes, "utf-8")
-        return json.loads(payload)
+        return await self.coap.request(self.ip_address, uri)
 
     async def http_request(self, method, path, params=None):
         """Device HTTP request."""
