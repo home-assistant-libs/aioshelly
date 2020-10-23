@@ -3,7 +3,6 @@ import asyncio
 from datetime import datetime
 import sys
 import traceback
-from datetime import datetime
 
 import aiohttp
 
