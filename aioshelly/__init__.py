@@ -136,7 +136,7 @@ class Device:
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
-        self.coap = coap
+        self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
         self.options = options
         self.coap_d = None
@@ -164,7 +164,7 @@ class Device:
         else:
             options = ip_or_options
 
-        instance = cls(coap, aiohttp_session, options)
+        instance = cls(coap_context, aiohttp_session, options)
         await instance.initialize()
         return instance
 
