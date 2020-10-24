@@ -25,10 +25,10 @@ class CoapMessage:
         self.port = sender_addr[1]
 
         try:
-            (vttkl, code, mid) = struct.unpack("!BBH", payload[:4])
-        except struct.error:
-            raise UnparsableMessage("Incoming message too short for CoAP")
-        if code != 30 and code != 69:
+            (_vttkl, code, _mid) = struct.unpack("!BBH", payload[:4])
+        except struct.error as struct_error:
+            raise UnparsableMessage("Incoming message too short for CoAP") from struct_error
+        if code not in (30, 69):
             _LOGGER.warning("Received packet type: %s, host ip: %s", code, self.ip)
             self.payload = None
         else:
