@@ -8,17 +8,12 @@ import aiohttp
 
 from .coap import COAP
 
-from .coap import COAP
-
-from .coap import COAP
-
 MODEL_NAMES = {
     "SH2LED-1": "Shelly 2LED",
     "SHAIR-1": "Shelly Air",
     "SHBDUO-1": "Shelly DUO",
     "SHBLB-1": "Shelly Bulb",
     "SHBTN-1": "Shelly Button1",
-    "SHVIN-1": "Shelly Vintage",
     "SHBVIN-1": "Shelly Vintage",
     "SHCL-255": "Shelly Color",
     "SHDIMW-1": "Shelly Dimmer W1",
@@ -48,6 +43,7 @@ MODEL_NAMES = {
     "SHSW-44": "Shelly 4Pro",
     "SHSW-PM": "Shelly 1PM",
     "SHUNI-1": "Shelly UNI",
+    "SHVIN-1": "Shelly Vintage",
     "SHWT-1": "Shelly Flood",
 }
 
