@@ -5,7 +5,6 @@ import logging
 import socket
 import struct
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
