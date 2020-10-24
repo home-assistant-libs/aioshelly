@@ -191,6 +191,8 @@ class Device:
         self._unsub_listening()
 
     def _coap_message_received(self, msg):
+        if not msg.payload:
+            return
         if "G" in msg.payload:
             self._update_s(msg.payload)
             path = "s"

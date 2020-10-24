@@ -5,8 +5,6 @@ import logging
 import socket
 import struct
 
-# Socket buffer
-BUFFER = 2048
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,9 +16,18 @@ class CoapMessage:
         """Initialize a coap message."""
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
-        parts = payload.rsplit(b"\xff", 1)
-        self.header = parts[0]
-        self.payload = json.loads(parts[1].decode()) if len(parts) > 1 else {}
+
+        try:
+            (vttkl, code, mid) = struct.unpack("!BBH", payload[:4])
+        except struct.error:
+            raise error.UnparsableMessage("Incoming message too short for CoAP")
+        if (code != 30 and code !=69):
+            _LOGGER.warning("Received packet type: %s, host ip: %s", code, self.ip)
+            self.payload = None
+        else:
+            parts = payload.rsplit(b"\xff", 1)
+            self.header = parts[0]
+            self.payload = json.loads(parts[1].decode()) if len(parts) > 1 else {}
 
 
 def socket_init():
