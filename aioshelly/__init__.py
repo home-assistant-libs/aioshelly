@@ -148,7 +148,7 @@ class Device:
             options.ip_address, self._coap_message_received
         )
         self._update_listener = None
-        self._coap_response_events = {}
+        self._coap_response_events: dict = {}
 
     @classmethod
     async def create(
@@ -191,6 +191,7 @@ class Device:
         self._unsub_listening()
 
     def _coap_message_received(self, msg):
+        """CoAP message received."""
         if not msg.payload:
             return
         if "G" in msg.payload:
@@ -308,7 +309,7 @@ class Device:
 class Block:
     """Shelly CoAP block."""
 
-    TYPES = {}
+    TYPES: dict = {}
     type = None
 
     def __init_subclass__(cls, blk_type, **kwargs):
