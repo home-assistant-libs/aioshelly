@@ -8,14 +8,6 @@ import struct
 _LOGGER = logging.getLogger(__name__)
 
 
-class CoapError(Exception):
-    """Base class for CoAP errors."""
-
-
-class UnparsableMessage(CoapError):
-    """CoAP unparsable message"""
-
-
 class CoapMessage:
     """Represents a received coap message."""
 
@@ -25,18 +17,15 @@ class CoapMessage:
         self.port = sender_addr[1]
 
         try:
-            (_vttkl, code, _mid) = struct.unpack("!BBH", payload[:4])
-        except struct.error as struct_error:
-            raise UnparsableMessage(
-                "Incoming message too short for CoAP"
-            ) from struct_error
-        if code not in (30, 69):
-            _LOGGER.info("Received packet type: %s, host ip: %s", code, self.ip)
-            self.payload = None
+            self.vttkl, self.code, self.mid = struct.unpack("!BBH", payload[:4])
+        except struct.error as err:
+            raise ValueError("Incoming message too short for CoAP") from err
+
+        if self.code in (30, 69):
+            self.payload = json.loads(payload.rsplit(b"\xff", 1)[1].decode())
         else:
-            parts = payload.rsplit(b"\xff", 1)
-            self.header = parts[0]
-            self.payload = json.loads(parts[1].decode()) if len(parts) > 1 else {}
+            _LOGGER.debug("Received packet type: %s, host ip: %s", self.code, self.ip)
+            self.payload = None
 
 
 def socket_init():
@@ -82,6 +71,10 @@ class COAP(asyncio.DatagramProtocol):
         """Handle incoming datagram messages."""
         msg = CoapMessage(addr, data)
 
+        # Don't know how to handle these right now.
+        if msg.payload is None:
+            return
+
         if self._message_received:
             self._message_received(msg)
 
@@ -94,10 +87,12 @@ class COAP(asyncio.DatagramProtocol):
         return lambda: self.subscriptions.pop(ip)
 
     async def __aenter__(self):
+        """Entering async context manager."""
         await self.initialize()
         return self
 
     async def __aexit__(self, _type, _value, _traceback):
+        """Leaving async context manager."""
         self.close()
 
 

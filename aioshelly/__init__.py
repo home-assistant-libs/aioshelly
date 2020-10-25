@@ -175,16 +175,20 @@ class Device:
     async def initialize(self):
         """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+
         event_d = await self.coap_request("d")
+
+        # We need to wait for D to come in before we request S
+        # Or else we might miss the answer to D
+        await event_d.wait()
+
         event_s = await self.coap_request("s")
 
-        tasks = [event_d.wait(), event_s.wait()]
-
         if self.options.auth or not self.shelly["auth"]:
-            tasks.append(self.update_settings())
-            tasks.append(self.update_status())
+            await self.update_settings()
+            await self.update_status()
 
-        await asyncio.gather(*tasks)
+        await event_s.wait()
 
     def shutdown(self):
         """Shutdown device."""
@@ -204,7 +208,7 @@ class Device:
             # Unknown msg
             return
 
-        event = self._coap_response_events.get(path)
+        event = self._coap_response_events.pop(path, None)
         if event is not None:
             event.set()
 
