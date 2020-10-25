@@ -48,12 +48,10 @@ async def test_many():
     with open("devices.json") as fp:
         for line in fp:
             obj = json.loads(line)
-            device_data = []
             if "username" in obj:
-                device_data = [obj["ip"], obj["username"], obj["password"]]
+                device_options.append(aioshelly.ConnectionOptions(obj['ip'], obj['username'], obj["password"]))
             else:
-                device_data = [obj["ip"]]
-            device_options.append(aioshelly.ConnectionOptions(device_data[0]))
+                device_options.append(aioshelly.ConnectionOptions(obj['ip']))
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
