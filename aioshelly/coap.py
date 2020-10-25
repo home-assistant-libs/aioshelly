@@ -31,7 +31,7 @@ class CoapMessage:
                 "Incoming message too short for CoAP"
             ) from struct_error
         if code not in (30, 69):
-            _LOGGER.warning("Received packet type: %s, host ip: %s", code, self.ip)
+            _LOGGER.info("Received packet type: %s, host ip: %s", code, self.ip)
             self.payload = None
         else:
             parts = payload.rsplit(b"\xff", 1)
