@@ -1,5 +1,6 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
+import json
 import sys
 import traceback
 from datetime import datetime
@@ -43,10 +44,17 @@ async def cli():
 
 
 async def test_many():
-    device_options = [
-        aioshelly.ConnectionOptions("192.168.1.165", "admin", "test-password"),
-        aioshelly.ConnectionOptions("192.168.1.168"),
-    ]
+    with open("devices.json") as j:
+        json_data = json.load(j)
+    print(json_data)
+    device_data = []
+    device_options = []
+    for json_row in json_data["devices"]:
+        if "username" in json_row:
+            device_data = [json_row["ip"], json_row["username"], json_row["password"]]
+        else:
+            device_data = [json_row["ip"]]
+    device_options.append(aioshelly.ConnectionOptions(device_data[0]))
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
