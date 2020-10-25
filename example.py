@@ -46,7 +46,6 @@ async def cli():
 async def test_many():
     with open("devices.json") as j:
         json_data = json.load(j)
-    print(json_data)
     device_data = []
     device_options = []
     for json_row in json_data["devices"]:
