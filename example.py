@@ -44,16 +44,16 @@ async def cli():
 
 
 async def test_many():
-    with open("devices.json") as j:
-        json_data = json.load(j)
-    device_data = []
     device_options = []
-    for json_row in json_data["devices"]:
-        if "username" in json_row:
-            device_data = [json_row["ip"], json_row["username"], json_row["password"]]
-        else:
-            device_data = [json_row["ip"]]
-        device_options.append(aioshelly.ConnectionOptions(device_data[0]))
+    with open("devices.json") as fp:
+        for line in fp:
+            obj = json.loads(line)
+            device_data = []
+            if "username" in obj:
+                device_data = [obj["ip"], obj["username"], obj["password"]]
+            else:
+                device_data = [obj["ip"]]
+            device_options.append(aioshelly.ConnectionOptions(device_data[0]))
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
@@ -126,8 +126,8 @@ def print_device(device):
 if __name__ == "__main__":
     try:
         if len(sys.argv) < 2:
-            asyncio.run(cli())
-        else:
             asyncio.run(test_many())
+        else:
+            asyncio.run(cli())
     except KeyboardInterrupt:
         pass
