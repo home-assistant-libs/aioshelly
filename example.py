@@ -54,7 +54,7 @@ async def test_many():
             device_data = [json_row["ip"], json_row["username"], json_row["password"]]
         else:
             device_data = [json_row["ip"]]
-    device_options.append(aioshelly.ConnectionOptions(device_data[0]))
+        device_options.append(aioshelly.ConnectionOptions(device_data[0]))
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
@@ -126,7 +126,9 @@ def print_device(device):
 
 if __name__ == "__main__":
     try:
-        asyncio.run(cli())
-        # asyncio.run(test_many())
+        if len(sys.argv) < 2:
+            asyncio.run(cli())
+        else:
+            asyncio.run(test_many())
     except KeyboardInterrupt:
         pass
