@@ -1,12 +1,12 @@
 """Shelly CoAP library."""
 import asyncio
-import json
 import re
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
-import aiocoap
 import aiohttp
+
+from .coap import COAP
 
 MODEL_NAMES = {
     "SH2LED-1": "Shelly 2LED",
@@ -14,7 +14,6 @@ MODEL_NAMES = {
     "SHBDUO-1": "Shelly DUO",
     "SHBLB-1": "Shelly Bulb",
     "SHBTN-1": "Shelly Button1",
-    "SHVIN-1": "Shelly Vintage",
     "SHBVIN-1": "Shelly Vintage",
     "SHCL-255": "Shelly Color",
     "SHDIMW-1": "Shelly Dimmer W1",
@@ -44,6 +43,7 @@ MODEL_NAMES = {
     "SHSW-44": "Shelly 4Pro",
     "SHSW-PM": "Shelly 1PM",
     "SHUNI-1": "Shelly UNI",
+    "SHVIN-1": "Shelly Vintage",
     "SHWT-1": "Shelly Flood",
 }
 
@@ -131,7 +131,7 @@ class Device:
 
     def __init__(
         self,
-        coap_context: aiocoap.Context,
+        coap_context: COAP,
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
@@ -144,13 +144,17 @@ class Device:
         self._settings = None
         self.shelly = None
         self._status = None
-        self.semaphore = asyncio.Semaphore()
+        self._unsub_listening = coap_context.subscribe_updates(
+            options.ip_address, self._coap_message_received
+        )
+        self._update_listener = None
+        self._coap_response_events: dict = {}
 
     @classmethod
     async def create(
         cls,
         aiohttp_session: aiohttp.ClientSession,
-        coap_context: aiocoap.Context,
+        coap_context: COAP,
         ip_or_options: Union[str, ConnectionOptions],
     ):
         """Device creation."""
@@ -171,17 +175,47 @@ class Device:
     async def initialize(self):
         """Device initialization."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
-        self._update_d(await self.coap_request("d"))
 
-        await self.update()
+        event_d = await self.coap_request("d")
+
+        # We need to wait for D to come in before we request S
+        # Or else we might miss the answer to D
+        await event_d.wait()
+
+        event_s = await self.coap_request("s")
 
         if self.options.auth or not self.shelly["auth"]:
-            self._settings = await self.http_request("get", "settings")
-            self._status = await self.http_request("get", "status")
+            await self.update_settings()
+            await self.update_status()
+
+        await event_s.wait()
+
+    def shutdown(self):
+        """Shutdown device."""
+        self._unsub_listening()
+
+    def _coap_message_received(self, msg):
+        """CoAP message received."""
+        if not msg.payload:
+            return
+        if "G" in msg.payload:
+            self._update_s(msg.payload)
+            path = "s"
+        elif "blk" in msg.payload:
+            self._update_d(msg.payload)
+            path = "d"
+        else:
+            # Unknown msg
+            return
+
+        event = self._coap_response_events.pop(path, None)
+        if event is not None:
+            event.set()
 
     async def update(self):
         """Device update."""
-        self._update_s(await self.coap_request("s"))
+        event = await self.coap_request("s")
+        await event.wait()
 
     def _update_d(self, data):
         """Device update from cit/d call."""
@@ -210,34 +244,43 @@ class Device:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
+        if self._update_listener:
+            self._update_listener(self)
+
+    def subscribe_updates(self, update_listener):
+        """Subscribe to device status updates."""
+        self._update_listener = update_listener
+
     async def update_status(self):
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
+    async def update_settings(self):
+        """Device update from /settings (HTTP)."""
+        self._settings = await self.http_request("get", "settings")
+
     async def coap_request(self, path):
         """Device CoAP request."""
-        request = aiocoap.Message(
-            code=aiocoap.GET,
-            mtype=aiocoap.NON,
-            uri=f"coap://{self.options.ip_address}/cit/{path}",
-        )
-        async with self.semaphore:
-            response = await self.coap_context.request(request).response
-        return json.loads(response.payload)
+        if path not in self._coap_response_events:
+            self._coap_response_events[path] = asyncio.Event()
+
+        event = self._coap_response_events[path]
+
+        await self.coap_context.request(self.ip_address, path)
+        return event
 
     async def http_request(self, method, path, params=None):
         """Device HTTP request."""
         if self.read_only:
             raise AuthRequired
 
-        async with self.semaphore:
-            resp = await self.aiohttp_session.request(
-                method,
-                f"http://{self.options.ip_address}/{path}",
-                params=params,
-                auth=self.options.auth,
-                raise_for_status=True,
-            )
+        resp = await self.aiohttp_session.request(
+            method,
+            f"http://{self.options.ip_address}/{path}",
+            params=params,
+            auth=self.options.auth,
+            raise_for_status=True,
+        )
         return await resp.json()
 
     @property
@@ -270,7 +313,7 @@ class Device:
 class Block:
     """Shelly CoAP block."""
 
-    TYPES = {}
+    TYPES: dict = {}
     type = None
 
     def __init_subclass__(cls, blk_type, **kwargs):
