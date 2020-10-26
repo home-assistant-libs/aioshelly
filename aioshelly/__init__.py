@@ -144,9 +144,10 @@ class Device:
         self._settings = None
         self.shelly = None
         self._status = None
-        self._unsub_listening = coap_context.subscribe_updates(
-            options.ip_address, self._coap_message_received
-        )
+        if(coap_context):
+            self._unsub_listening = coap_context.subscribe_updates(
+                options.ip_address, self._coap_message_received
+            )
         self._update_listener = None
         self._coap_response_events: dict = {}
 
