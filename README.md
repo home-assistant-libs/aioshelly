@@ -9,24 +9,25 @@ Requires Python 3 and uses asyncio, aiohttp and aiocoap.
 ```python
 import asyncio
 from pprint import pprint
-import aiocoap
 import aiohttp
 import aioshelly
 
 async def main():
     options = aioshelly.ConnectionOptions("192.168.1.165", "username", "password")
 
-    coap_context = await aiocoap.Context.create_client_context()
-
-    async with aiohttp.ClientSession() as session:
-        device = await aioshelly.Device.create(session, options)
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
+        try:
+            device = await asyncio.wait_for(
+                aioshelly.Device.create(aiohttp_session, coap_context, options), 5
+            )
+        except asyncio.TimeoutError:
+            print("Timeout connecting to", ip)
+            return
 
         for block in device.blocks:
             print(block)
             pprint(block.current_values())
             print()
-
-    await coap_context.shutdown()
 
 
 if __name__ == "__main__":
