@@ -33,13 +33,21 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Breaking changes for 0.3.3+
+## Included examples
 
-Due to the code quality checks, we changed a few methods/properties:
+The repository includes two examples to quickly try it out.
 
-- `ip()` is now `ip_address()`
-- `d`    is now `coap_d`
-- `s`    is now `coap_s`
+Connect to a device and print its status whenever we receive a state change:
+
+```
+python3 example.py <ip> [<username> <password]
+```
+
+Connect to all the devices in `devices.json` at once and print their status:
+
+```
+python3 example.py
+```
 
 ## Contribution guidelines
 
