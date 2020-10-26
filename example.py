@@ -1,5 +1,6 @@
 # Run with python3 example.py <ip of shelly device>
 import asyncio
+import json
 import sys
 import traceback
 from datetime import datetime
@@ -25,7 +26,13 @@ async def cli():
     options = aioshelly.ConnectionOptions(ip, username, password)
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
-        device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
+        try:
+            device = await asyncio.wait_for(
+                aioshelly.Device.create(aiohttp_session, coap_context, options), 5
+            )
+        except asyncio.TimeoutError:
+            print("Timeout connecting to", ip)
+            return
 
         print_device(device)
 
@@ -43,15 +50,17 @@ async def cli():
 
 
 async def test_many():
-    device_options = [
-        aioshelly.ConnectionOptions("192.168.1.165", "admin", "test-password"),
-        aioshelly.ConnectionOptions("192.168.1.168"),
-    ]
+    device_options = []
+    with open("devices.json") as fp:
+        for line in fp:
+            device_options.append(aioshelly.ConnectionOptions(**json.loads(line)))
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         results = await asyncio.gather(
             *[
-                connect_and_print_device(aiohttp_session, coap_context, options)
+                asyncio.wait_for(
+                    connect_and_print_device(aiohttp_session, coap_context, options), 5
+                )
                 for options in device_options
             ],
             return_exceptions=True,
@@ -63,10 +72,13 @@ async def test_many():
 
         print()
         print(f"Error printing device @ {options.ip_address}")
-        print()
 
-        traceback.print_tb(result.__traceback__)
-        print(result)
+        if isinstance(result, asyncio.TimeoutError):
+            print("Timeout connecting to device")
+        else:
+            print()
+            traceback.print_tb(result.__traceback__)
+            print(result)
 
 
 async def connect_and_print_device(aiohttp_session, coap_context, options):
@@ -118,7 +130,9 @@ def print_device(device):
 
 if __name__ == "__main__":
     try:
-        asyncio.run(cli())
-        # asyncio.run(test_many())
+        if len(sys.argv) < 2:
+            asyncio.run(test_many())
+        else:
+            asyncio.run(cli())
     except KeyboardInterrupt:
         pass
