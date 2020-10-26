@@ -47,7 +47,6 @@ repos:
     hooks:
       - id: check-executables-have-shebangs
         stages: [manual]
-      - id: check-json
       - id: no-commit-to-branch
         args:
           - --branch=dev
@@ -62,10 +61,6 @@ repos:
     hooks:
       - id: prettier
         stages: [manual]
-  - repo: https://github.com/pre-commit/mirrors-pylint
-    rev: v2.6.0
-    hooks:
-      - id: pylint
   - repo: local
     hooks:
       # Run mypy through our wrapper script in order to get the possible
