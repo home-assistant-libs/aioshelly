@@ -49,9 +49,7 @@ repos:
         stages: [manual]
       - id: no-commit-to-branch
         args:
-          - --branch=dev
-          - --branch=master
-          - --branch=rc
+          - --branch=main
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.24.2
     hooks:
