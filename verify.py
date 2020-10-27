@@ -4,6 +4,7 @@ import re
 import urllib.parse
 from dataclasses import dataclass, field
 from pprint import pprint
+from unittest.mock import Mock
 
 import requests
 import urllib3
@@ -74,7 +75,7 @@ class CoiotExample:
 
     @reify
     def device(self):
-        device = aioshelly.Device(None, None, aioshelly.ConnectionOptions("mock-ip"))
+        device = aioshelly.Device(None, Mock(), aioshelly.ConnectionOptions("mock-ip"))
         device._update_d(self.cit_d)
         device._update_s(self.cit_s)
         return device
