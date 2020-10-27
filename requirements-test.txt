@@ -5,3 +5,4 @@ pylint==2.6.0
 pylint-strict-informational==0.1
 pre-commit==2.7.1
 requests
+mypy==1.4.1

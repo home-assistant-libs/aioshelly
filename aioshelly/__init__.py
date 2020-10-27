@@ -66,6 +66,7 @@ BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
 # Firmware 1.8.0 release date
 MIN_FIRMWARE_DATE = 20200812
+FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
 
 class ShellyError(Exception):
@@ -116,14 +117,14 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
 
 def supported_firmware(ver_str: str):
     """Return True if device firmware version is supported."""
-    date_pattern = re.compile(r"^(\d{8})")
-    try:
-        date = int(date_pattern.search(ver_str)[0])
-    except TypeError:
+    match = FIRMWARE_PATTERN.search(ver_str)
+
+    if match is None:
         return False
+
     # We compare firmware release dates because Shelly version numbering is
     # inconsistent, sometimes the word is used as the version number.
-    return date >= MIN_FIRMWARE_DATE
+    return int(match[0]) >= MIN_FIRMWARE_DATE
 
 
 class Device:

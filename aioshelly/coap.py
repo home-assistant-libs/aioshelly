@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 import struct
+from typing import Optional, cast
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ class COAP(asyncio.DatagramProtocol):
         # Will receive all updates
         self._message_received = message_received
         self.subscriptions = {}
+        self.transport: Optional[asyncio.DatagramTransport] = None
 
     async def initialize(self):
         """Initialize the COAP manager."""
@@ -60,12 +62,17 @@ class COAP(asyncio.DatagramProtocol):
 
         Subscribe with `subscribe_updates` to receive answer.
         """
+        assert self.transport is not None
         msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
-        self.sock.sendto(msg, (ip, 5683))
+        self.transport.sendto(msg, (ip, 5683))
 
     def close(self):
         """Close."""
         self.sock.close()
+
+    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        """When the socket is set up."""
+        self.transport = cast(asyncio.DatagramTransport, transport)
 
     def datagram_received(self, data, addr):
         """Handle incoming datagram messages."""
