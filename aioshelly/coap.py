@@ -68,8 +68,6 @@ class COAP(asyncio.DatagramProtocol):
 
     def close(self):
         """Close."""
-        print("CLOSING")
-        print(self.transport.close.__code__)
         self.transport.close()
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
