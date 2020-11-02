@@ -193,6 +193,7 @@ class Device:
 
     def shutdown(self):
         """Shutdown device."""
+        self._update_listener = None
         self._unsub_listening()
 
     def _coap_message_received(self, msg):
