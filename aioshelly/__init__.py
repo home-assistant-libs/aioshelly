@@ -41,6 +41,7 @@ MODEL_NAMES = {
     "SHSW-21": "Shelly 2",
     "SHSW-25": "Shelly 2.5",
     "SHSW-44": "Shelly 4Pro",
+    "SHSW-L": "Shelly 1L",
     "SHSW-PM": "Shelly 1PM",
     "SHUNI-1": "Shelly UNI",
     "SHVIN-1": "Shelly Vintage",
