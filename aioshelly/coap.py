@@ -32,7 +32,7 @@ class CoapMessage:
                     self.ip,
                     payload,
                 )
-                raise ValueError("Invalid JSON in CoAP message")
+                self.payload = None
         else:
             _LOGGER.debug("Received packet type: %s, host ip: %s", self.code, self.ip)
             self.payload = None
