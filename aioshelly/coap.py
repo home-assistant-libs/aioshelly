@@ -23,7 +23,16 @@ class CoapMessage:
             raise ValueError("Incoming message too short for CoAP") from err
 
         if self.code in (30, 69):
-            self.payload = json.loads(payload.rsplit(b"\xff", 1)[1].decode())
+            try:
+                self.payload = json.loads(payload.rsplit(b"\xff", 1)[1].decode())
+            except json.decoder.JSONDecodeError:
+                _LOGGER.error(
+                    "CoAP message of type %s from host %s is not a valid JSON format: %s",
+                    self.code,
+                    self.ip,
+                    payload,
+                )
+                raise ValueError("Invalid JSON in CoAP message")
         else:
             _LOGGER.debug("Received packet type: %s, host ip: %s", self.code, self.ip)
             self.payload = None
