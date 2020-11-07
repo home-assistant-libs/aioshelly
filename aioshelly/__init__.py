@@ -26,6 +26,7 @@ MODEL_NAMES = {
     "SHGS-1": "Shelly Gas",
     "SHHT-1": "Shelly H&T",
     "SHIX3-1": "Shelly i3",
+    "SHMOS-01": "Shelly Motion",
     "SHPLG-1": "Shelly Plug",
     "SHPLG-S": "Shelly Plug S",
     "SHPLG-U1": "Shelly Plug US",
