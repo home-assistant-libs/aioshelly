@@ -2,8 +2,8 @@
 import asyncio
 import re
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
 from socket import gethostbyname
+from typing import Dict, Optional, Union
 
 import aiohttp
 
