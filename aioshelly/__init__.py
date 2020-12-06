@@ -3,6 +3,7 @@ import asyncio
 import re
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
+from socket import gethostbyname
 
 import aiohttp
 
@@ -83,7 +84,7 @@ class FirmwareUnsupported(ShellyError):
     """Raised if device firmware version is unsupported."""
 
 
-@dataclass(frozen=True)
+@dataclass
 class ConnectionOptions:
     """Shelly options for connection."""
 
@@ -162,8 +163,9 @@ class Device:
     ):
         """Device creation."""
         if isinstance(ip_or_options, str):
-            options = ConnectionOptions(ip_or_options)
+            options = ConnectionOptions(gethostbyname(ip_or_options))
         else:
+            ip_or_options.ip_address = gethostbyname(ip_or_options.ip_address)
             options = ip_or_options
 
         instance = cls(coap_context, aiohttp_session, options)
