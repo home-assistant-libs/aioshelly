@@ -15,6 +15,7 @@ MODEL_NAMES = {
     "SHBLB-1": "Shelly Bulb",
     "SHBTN-1": "Shelly Button1",
     "SHBVIN-1": "Shelly Vintage",
+    "SHCB-1": "Shelly Bulb RGBW",
     "SHCL-255": "Shelly Color",
     "SHDIMW-1": "Shelly Dimmer W1",
     "SHDM-1": "Shelly Dimmer",
