@@ -162,10 +162,14 @@ class Device:
         ip_or_options: Union[str, ConnectionOptions],
     ):
         """Device creation."""
+        loop = asyncio.get_running_loop()
         if isinstance(ip_or_options, str):
-            options = ConnectionOptions(gethostbyname(ip_or_options))
+            ip_addr = await loop.run_in_executor(None, gethostbyname, ip_or_options)
+            options = ConnectionOptions(ip_addr)
         else:
-            ip_or_options.ip_address = gethostbyname(ip_or_options.ip_address)
+            ip_or_options.ip_address = await loop.run_in_executor(
+                None, gethostbyname, ip_or_options.ip_address
+            )
             options = ip_or_options
 
         instance = cls(coap_context, aiohttp_session, options)
