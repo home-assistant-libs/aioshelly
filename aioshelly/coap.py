@@ -6,7 +6,11 @@ import socket
 import struct
 from typing import Optional, cast
 
+import netifaces
+
 _LOGGER = logging.getLogger(__name__)
+
+MULTICAST_IP = "224.0.1.187"
 
 
 class CoapMessage:
@@ -38,13 +42,27 @@ class CoapMessage:
             self.payload = None
 
 
+def get_all_ips():
+    """Get all ip from ethernet interfaces."""
+    ip_list = []
+    for iface in netifaces.interfaces():
+        iface_details = netifaces.ifaddresses(iface)
+        if netifaces.AF_INET in iface_details:
+            ip_list.append(iface_details[netifaces.AF_INET][0]["addr"])
+    return ip_list
+
+
 def socket_init():
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", 5683))
-    mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+    for ip in get_all_ips():
+        _LOGGER.debug("Adding ip %s to multicast %s membership", ip, MULTICAST_IP)
+        group = socket.inet_aton(MULTICAST_IP) + socket.inet_aton(ip)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, group)
+
     sock.setblocking(False)
     return sock
 
