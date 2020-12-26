@@ -41,6 +41,7 @@ score=no
 [TYPECHECK]
 # For attrs
 ignored-classes=_CountingAttr
+generated-members=netifaces
 
 [FORMAT]
 expected-line-ending-format=LF
