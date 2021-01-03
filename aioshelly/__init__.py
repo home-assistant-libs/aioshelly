@@ -1,5 +1,6 @@
 """Shelly CoAP library."""
 import asyncio
+import ipaddress
 import re
 from dataclasses import dataclass
 from socket import gethostbyname
@@ -164,13 +165,16 @@ class Device:
         """Device creation."""
         loop = asyncio.get_running_loop()
         if isinstance(ip_or_options, str):
-            ip_addr = await loop.run_in_executor(None, gethostbyname, ip_or_options)
-            options = ConnectionOptions(ip_addr)
+            options = ConnectionOptions(ip_or_options)
         else:
-            ip_or_options.ip_address = await loop.run_in_executor(
-                None, gethostbyname, ip_or_options.ip_address
-            )
             options = ip_or_options
+
+        try:
+            ipaddress.ip_address(options.ip_address)
+        except ValueError:
+            options.ip_address = await loop.run_in_executor(
+                None, gethostbyname, options.ip_address
+            )
 
         instance = cls(coap_context, aiohttp_session, options)
         await instance.initialize()
