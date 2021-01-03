@@ -163,7 +163,6 @@ class Device:
         ip_or_options: Union[str, ConnectionOptions],
     ):
         """Device creation."""
-        loop = asyncio.get_running_loop()
         if isinstance(ip_or_options, str):
             options = ConnectionOptions(ip_or_options)
         else:
@@ -172,6 +171,7 @@ class Device:
         try:
             ipaddress.ip_address(options.ip_address)
         except ValueError:
+            loop = asyncio.get_running_loop()
             options.ip_address = await loop.run_in_executor(
                 None, gethostbyname, options.ip_address
             )
