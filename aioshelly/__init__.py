@@ -1,7 +1,9 @@
 """Shelly CoAP library."""
 import asyncio
+import ipaddress
 import re
 from dataclasses import dataclass
+from socket import gethostbyname
 from typing import Dict, Optional, Union
 
 import aiohttp
@@ -85,7 +87,7 @@ class FirmwareUnsupported(ShellyError):
     """Raised if device firmware version is unsupported."""
 
 
-@dataclass(frozen=True)
+@dataclass
 class ConnectionOptions:
     """Shelly options for connection."""
 
@@ -167,6 +169,14 @@ class Device:
             options = ConnectionOptions(ip_or_options)
         else:
             options = ip_or_options
+
+        try:
+            ipaddress.ip_address(options.ip_address)
+        except ValueError:
+            loop = asyncio.get_running_loop()
+            options.ip_address = await loop.run_in_executor(
+                None, gethostbyname, options.ip_address
+            )
 
         instance = cls(coap_context, aiohttp_session, options)
         await instance.initialize()
