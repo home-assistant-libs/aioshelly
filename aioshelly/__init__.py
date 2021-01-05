@@ -98,7 +98,7 @@ class ConnectionOptions:
     auth: Optional[aiohttp.BasicAuth] = None
 
     def __post_init__(self):
-        """Called after initialization."""
+        """Call after initialization."""
         if self.username is not None:
             if self.password is None:
                 raise ValueError("Supply both username and password")
@@ -142,6 +142,7 @@ class Device:
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
+        """Device init."""
         self.coap_context = coap_context
         self.aiohttp_session = aiohttp_session
         self.options = options
@@ -420,12 +421,14 @@ class Block:
         return await self.set_state(turn="off" if self.output else "on")
 
     def __getattr__(self, attr):
+        """Get attribute."""
         if attr not in self.sensor_ids:
             raise AttributeError(f"{self.type} block has no attribute '{attr}'")
 
         return self.device.coap_s.get(self.sensor_ids[attr])
 
     def __str__(self):
+        """Format string."""
         return f"<{self.type} {self.blk}>"
 
 
@@ -433,6 +436,7 @@ class LightBlock(Block, blk_type="light"):
     """Get light status."""
 
     async def set_state(self, **kwargs):
+        """Set light state."""
         if self.device.settings["device"]["type"] == "SHRGBW2":
             path = f"{self.device.settings['mode']}/{self.channel}"
         else:
