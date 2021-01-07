@@ -1,5 +1,6 @@
 """COAP for Shelly."""
 import asyncio
+import errno
 import json
 import logging
 import socket
@@ -58,13 +59,23 @@ def socket_init():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", 5683))
 
-    for ip in get_all_ips():
-        _LOGGER.debug("Adding ip %s to multicast %s membership", ip, MULTICAST_IP)
-        group = socket.inet_aton(MULTICAST_IP) + socket.inet_aton(ip)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, group)
+    multicast_membership(sock)
 
     sock.setblocking(False)
     return sock
+
+
+def multicast_membership(sock: socket.socket):
+    """Register for multicast membership."""
+    for ip in get_all_ips():
+        _LOGGER.debug("Adding ip %s to multicast %s membership", ip, MULTICAST_IP)
+        group = socket.inet_aton(MULTICAST_IP) + socket.inet_aton(ip)
+        try:
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_DROP_MEMBERSHIP, group)
+        except OSError as err:
+            if err.errno != errno.EADDRNOTAVAIL:
+                raise
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, group)
 
 
 class COAP(asyncio.DatagramProtocol):
@@ -119,6 +130,10 @@ class COAP(asyncio.DatagramProtocol):
         """Subscribe to received updates."""
         self.subscriptions[ip] = message_received
         return lambda: self.subscriptions.pop(ip)
+
+    def add_multicast_membership(self):
+        """Re-register for multicast membership."""
+        multicast_membership(self.sock)
 
     async def __aenter__(self):
         """Entering async context manager."""
