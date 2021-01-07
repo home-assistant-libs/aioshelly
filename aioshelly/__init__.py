@@ -299,7 +299,7 @@ class Device:
         )
         return await resp.json()
 
-    async def switch_mode(self, mode):
+    async def switch_light_mode(self, mode):
         """Change device mode color/white."""
         return await self.http_request("get", "settings", {"mode": mode})
 
