@@ -300,6 +300,10 @@ class Device:
         )
         return await resp.json()
 
+    async def switch_mode(self, mode):
+        """Change device mode color/white."""
+        return await self.http_request("get" "settings", {"mode": mode})
+
     @property
     def requires_auth(self):
         """Device check for authentication."""
