@@ -12,13 +12,15 @@ import aioshelly
 
 async def cli():
     if len(sys.argv) < 2:
-        print("Error! Run with <ip> or <ip> <user> <pass>")
+        print("Error! Run with <ip> <init> or <ip> <init> <user> <pass>")
         return
 
     ip = sys.argv[1]
-    if len(sys.argv) > 3:
-        username = sys.argv[2]
-        password = sys.argv[3]
+    init = bool(sys.argv[2] in ["True", "true", "1"])
+
+    if len(sys.argv) > 4:
+        username = sys.argv[3]
+        password = sys.argv[4]
     else:
         username = None
         password = None
@@ -28,20 +30,21 @@ async def cli():
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         try:
             device = await asyncio.wait_for(
-                aioshelly.Device.create(aiohttp_session, coap_context, options), 5
+                aioshelly.Device.create(aiohttp_session, coap_context, options, init), 5
             )
         except asyncio.TimeoutError:
             print("Timeout connecting to", ip)
             return
 
-        print_device(device)
+        if device.initialized:
+            print_device(device)
 
-        def device_updated(device):
+        def device_updated(cb_device):
             print()
             print()
             print(f"{datetime.now().strftime('%H:%m:%S')} Device updated!")
             print()
-            print_device(device)
+            print_device(cb_device)
 
         device.subscribe_updates(device_updated)
 

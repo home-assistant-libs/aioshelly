@@ -157,6 +157,8 @@ class Device:
         )
         self._update_listener = None
         self._coap_response_events: dict = {}
+        self._initialized = False
+        self._initializing = False
 
     @classmethod
     async def create(
@@ -164,6 +166,7 @@ class Device:
         aiohttp_session: aiohttp.ClientSession,
         coap_context: COAP,
         ip_or_options: Union[str, ConnectionOptions],
+        initialize: bool = True,
     ):
         """Device creation."""
         if isinstance(ip_or_options, str):
@@ -180,7 +183,10 @@ class Device:
             )
 
         instance = cls(coap_context, aiohttp_session, options)
-        await instance.initialize()
+
+        if initialize:
+            await instance.initialize(True)
+
         return instance
 
     @property
@@ -188,9 +194,15 @@ class Device:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self):
+    async def initialize(self, request_s):
         """Device initialization."""
+        self._initializing = True
+
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+
+        if self.options.auth or not self.shelly["auth"]:
+            await self.update_settings()
+            await self.update_status()
 
         event_d = await self.coap_request("d")
 
@@ -198,13 +210,15 @@ class Device:
         # Or else we might miss the answer to D
         await event_d.wait()
 
-        event_s = await self.coap_request("s")
+        if request_s:
+            event_s = await self.coap_request("s")
+            await event_s.wait()
 
-        if self.options.auth or not self.shelly["auth"]:
-            await self.update_settings()
-            await self.update_status()
+        self._initialized = True
+        self._initializing = False
 
-        await event_s.wait()
+        if self._update_listener:
+            self._update_listener(self)
 
     def shutdown(self):
         """Shutdown device."""
@@ -213,6 +227,10 @@ class Device:
 
     def _coap_message_received(self, msg):
         """CoAP message received."""
+        if not self._initializing and not self._initialized:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.initialize(False))
+
         if not msg.payload:
             return
         if "G" in msg.payload:
@@ -261,7 +279,7 @@ class Device:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
-        if self._update_listener:
+        if self._update_listener and self._initialized:
             self._update_listener(self)
 
     def subscribe_updates(self, update_listener):
@@ -303,6 +321,11 @@ class Device:
     async def switch_light_mode(self, mode):
         """Change device mode color/white."""
         return await self.http_request("get", "settings", {"mode": mode})
+
+    @property
+    def initialized(self):
+        """Device initialized."""
+        return self._initialized
 
     @property
     def requires_auth(self):
