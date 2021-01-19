@@ -26,13 +26,6 @@ async def test_single(ip, username, password, init, timeout):
 
         print_device(device)
 
-        def device_updated(cb_device):
-            print()
-            print()
-            print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
-            print()
-            print_device(cb_device)
-
         device.subscribe_updates(device_updated)
 
         while True:
@@ -59,24 +52,36 @@ async def test_devices(init, timeout):
             return_exceptions=True,
         )
 
-    for options, result in zip(device_options, results):
-        if not isinstance(result, Exception):
-            continue
+        for options, result in zip(device_options, results):
+            if not isinstance(result, Exception):
+                continue
 
-        print()
-        print(f"Error printing device @ {options.ip_address}")
-
-        if isinstance(result, asyncio.TimeoutError):
-            print("Timeout connecting to device")
-        else:
             print()
-            traceback.print_tb(result.__traceback__)
-            print(result)
+            print(f"Error printing device @ {options.ip_address}")
+
+            if isinstance(result, asyncio.TimeoutError):
+                print("Timeout connecting to device")
+            else:
+                print()
+                traceback.print_tb(result.__traceback__)
+                print(result)
+
+        while True:
+            await asyncio.sleep(0.1)
 
 
 async def connect_and_print_device(aiohttp_session, coap_context, options, init):
     device = await aioshelly.Device.create(aiohttp_session, coap_context, options, init)
     print_device(device)
+    device.subscribe_updates(device_updated)
+
+
+def device_updated(cb_device):
+    print()
+    print()
+    print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
+    print()
+    print_device(cb_device)
 
 
 def print_device(device):
