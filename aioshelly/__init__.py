@@ -83,6 +83,10 @@ class AuthRequired(ShellyError):
     """Raised during initialization if auth is required but not given."""
 
 
+class NotInitialized(ShellyError):
+    """Raised if device is not initialized."""
+
+
 class FirmwareUnsupported(ShellyError):
     """Raised if device firmware version is unsupported."""
 
@@ -340,6 +344,9 @@ class Device:
     @property
     def settings(self):
         """Device get settings (HTTP)."""
+        if not self._initialized:
+            raise NotInitialized
+
         if self._settings is None:
             raise AuthRequired
 
@@ -348,6 +355,9 @@ class Device:
     @property
     def status(self):
         """Device get status (HTTP)."""
+        if not self._initialized:
+            raise NotInitialized
+
         if self._status is None:
             raise AuthRequired
 

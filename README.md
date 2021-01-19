@@ -4,7 +4,7 @@
 
 ## This library is under development.
 
-Requires Python 3 and uses asyncio, aiohttp and aiocoap.
+Requires Python 3 and uses asyncio, aiohttp, socket and netifaces.
 
 ```python
 import asyncio
@@ -41,13 +41,17 @@ The repository includes two examples to quickly try it out.
 Connect to a device and print its status whenever we receive a state change:
 
 ```
-python3 example.py <ip> [<username> <password]
+python3 example.py -ip <ip> [-u <username>] [-p <password]
 ```
 
 Connect to all the devices in `devices.json` at once and print their status:
 
 ```
-python3 example.py
+python3 example.py -d -i
+```
+## Show usage help:
+```
+python3 example.py -h
 ```
 
 ## Contribution guidelines

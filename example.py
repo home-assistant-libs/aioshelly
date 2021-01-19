@@ -1,4 +1,5 @@
 # Run with python3 example.py <ip of shelly device>
+import argparse
 import asyncio
 import json
 import sys
@@ -10,39 +11,25 @@ import aiohttp
 import aioshelly
 
 
-async def cli():
-    if len(sys.argv) < 2:
-        print("Error! Run with <ip> <init> or <ip> <init> <user> <pass>")
-        return
-
-    ip = sys.argv[1]
-    init = bool(sys.argv[2] in ["True", "true", "1"])
-
-    if len(sys.argv) > 4:
-        username = sys.argv[3]
-        password = sys.argv[4]
-    else:
-        username = None
-        password = None
-
+async def test_single(ip, username, password, init, timeout):
     options = aioshelly.ConnectionOptions(ip, username, password)
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         try:
             device = await asyncio.wait_for(
-                aioshelly.Device.create(aiohttp_session, coap_context, options, init), 5
+                aioshelly.Device.create(aiohttp_session, coap_context, options, init),
+                timeout,
             )
         except asyncio.TimeoutError:
             print("Timeout connecting to", ip)
             return
 
-        if device.initialized:
-            print_device(device)
+        print_device(device)
 
         def device_updated(cb_device):
             print()
             print()
-            print(f"{datetime.now().strftime('%H:%m:%S')} Device updated!")
+            print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
             print()
             print_device(cb_device)
 
@@ -52,7 +39,7 @@ async def cli():
             await asyncio.sleep(0.1)
 
 
-async def test_many():
+async def test_devices(init, timeout):
     device_options = []
     with open("devices.json") as fp:
         for line in fp:
@@ -62,7 +49,10 @@ async def test_many():
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
-                    connect_and_print_device(aiohttp_session, coap_context, options), 5
+                    connect_and_print_device(
+                        aiohttp_session, coap_context, options, init
+                    ),
+                    timeout,
                 )
                 for options in device_options
             ],
@@ -84,14 +74,17 @@ async def test_many():
             print(result)
 
 
-async def connect_and_print_device(aiohttp_session, coap_context, options):
-    device = await aioshelly.Device.create(aiohttp_session, coap_context, options)
+async def connect_and_print_device(aiohttp_session, coap_context, options, init):
+    device = await aioshelly.Device.create(aiohttp_session, coap_context, options, init)
     print_device(device)
 
 
 def print_device(device):
-    # pprint(device.coap_d)
-    # pprint(device.coap_s)
+    if not device.initialized:
+        print()
+        print(f"** Device @ {device.ip_address} not initialized **")
+        print()
+        return
 
     model = (
         aioshelly.MODEL_NAMES.get(device.settings["device"]["type"])
@@ -131,11 +124,53 @@ def print_device(device):
     #     )
 
 
+def get_arguments() -> argparse.Namespace:
+    """Get parsed passed in arguments."""
+    parser = argparse.ArgumentParser(description="aioshelly example")
+    parser.add_argument(
+        "--ip_address", "-ip", type=str, help="Test single device by IP address"
+    )
+    parser.add_argument(
+        "--devices",
+        "-d",
+        action="store_true",
+        help='Connect to all the devices in "devices.json" at once and print their status',
+    )
+    parser.add_argument(
+        "--init", "-i", action="store_true", help="Init device(s) at startup"
+    )
+    parser.add_argument(
+        "--timeout",
+        "-t",
+        type=int,
+        default=5,
+        help="Device init timeout in seconds (default=5)",
+    )
+    parser.add_argument("--username", "-u", type=str, help="Set device username")
+    parser.add_argument("--password", "-p", type=str, help="Set device password")
+
+    arguments = parser.parse_args()
+
+    return parser, arguments
+
+
+async def main() -> None:
+    """Run main."""
+    parser, args = get_arguments()
+    if args.devices:
+        await test_devices(args.init, args.timeout)
+    elif args.ip_address:
+        if args.username and args.password is None:
+            parser.error("--username and --password must be used together")
+        await test_single(
+            args.ip_address, args.username, args.password, args.init, args.timeout
+        )
+    else:
+        parser.error("--ip_address or --devices must be specified")
+
+
 if __name__ == "__main__":
     try:
-        if len(sys.argv) < 2:
-            asyncio.run(test_many())
-        else:
-            asyncio.run(cli())
+        asyncio.run(main())
     except KeyboardInterrupt:
         pass
