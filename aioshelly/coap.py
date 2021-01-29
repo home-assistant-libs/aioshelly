@@ -1,17 +1,26 @@
 """COAP for Shelly."""
 import asyncio
+import ipaddress
 import json
 import logging
 import socket
 import struct
+import time
 from typing import Optional, cast
 
 import netifaces
-
-_LOGGER = logging.getLogger(__name__)
+from scapy.contrib.igmp import IGMP
+from scapy.layers.inet import IP
+from scapy.sendrecv import send, sniff
 
 MAIN_MULTICAST_IP = "224.0.1.187"
 WF200_MULTICAST_IP = "224.0.1.188"
+
+MULTICAST_QUERY_IGMPTYPE = 0x11
+MULTICAST_QUERY_GRP = "224.0.0.1"
+MULTICAST_QUERY_TIMEOUT = 240
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class CoapMessage:
@@ -43,14 +52,20 @@ class CoapMessage:
             self.payload = None
 
 
-def get_all_ips():
-    """Get all ip from ethernet interfaces."""
-    ip_list = []
-    for iface in netifaces.interfaces():
+def get_network_objects(objtype: str):
+    """Get all ip/iface from system interfaces."""
+    obj_list = []
+    ifaces = netifaces.interfaces()
+    ifaces.remove("lo")
+
+    for iface in ifaces:
         iface_details = netifaces.ifaddresses(iface)
         if netifaces.AF_INET in iface_details:
-            ip_list.append(iface_details[netifaces.AF_INET][0]["addr"])
-    return ip_list
+            if objtype == "iface":
+                obj_list.append(iface)
+            else:
+                obj_list.append(iface_details[netifaces.AF_INET][0]["addr"])
+    return obj_list
 
 
 def socket_init():
@@ -59,7 +74,7 @@ def socket_init():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", 5683))
 
-    for ip in get_all_ips():
+    for ip in get_network_objects("ip"):
         for multicast_ip in MAIN_MULTICAST_IP, WF200_MULTICAST_IP:
             _LOGGER.debug("Adding ip %s to multicast %s membership", ip, multicast_ip)
             group = socket.inet_aton(multicast_ip) + socket.inet_aton(ip)
@@ -67,6 +82,49 @@ def socket_init():
 
     sock.setblocking(False)
     return sock
+
+
+class MulticastQuerier:
+    """Multicast querier management."""
+
+    def __init__(self):
+        """Initialize multicast querier thread."""
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, self.async_start)
+
+    @classmethod
+    def async_start(cls):
+        """Start sniffing for multicast query."""
+        filter_igmp_query = f"igmp and igmp[0] == {int(MULTICAST_QUERY_IGMPTYPE)} and (igmp[4:4] == {int(ipaddress.IPv4Address(MAIN_MULTICAST_IP))} or igmp[4:4] == 0)"
+        pkt_snd = IP(dst=MULTICAST_QUERY_GRP) / IGMP(
+            type=MULTICAST_QUERY_IGMPTYPE,
+            mrcode=100,
+            gaddr=MAIN_MULTICAST_IP,
+        )
+        while True:
+            result = sniff(
+                filter=filter_igmp_query,
+                store=1,
+                count=1,
+                timeout=MULTICAST_QUERY_TIMEOUT,
+            )
+            _LOGGER.debug("Multicast query sniff result: %s", result)
+            if not result:
+                _LOGGER.info(
+                    "Multicast query not received in %s seconds",
+                    MULTICAST_QUERY_TIMEOUT,
+                )
+                for eth_iface in get_network_objects("iface"):
+                    send(pkt_snd, iface=eth_iface, verbose=False)
+                    _LOGGER.info("Multicast query sent for %s interface", eth_iface)
+            else:
+                _LOGGER.info(
+                    "Multicast query received from network, no action required"
+                )
+            _LOGGER.debug(
+                "Multicast querier sleeping for %s seconds", MULTICAST_QUERY_TIMEOUT
+            )
+            time.sleep(MULTICAST_QUERY_TIMEOUT)
 
 
 class COAP(asyncio.DatagramProtocol):
@@ -85,6 +143,7 @@ class COAP(asyncio.DatagramProtocol):
         loop = asyncio.get_running_loop()
         self.sock = socket_init()
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
+        MulticastQuerier()
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
