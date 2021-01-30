@@ -5,7 +5,6 @@ import json
 import logging
 import socket
 import struct
-import time
 from typing import Optional, cast
 
 import netifaces
