@@ -56,7 +56,6 @@ def get_network_objects(objtype: str):
     """Get all ip/iface from system interfaces."""
     obj_list = []
     ifaces = netifaces.interfaces()
-    ifaces.remove("lo")
 
     for iface in ifaces:
         iface_details = netifaces.ifaddresses(iface)
@@ -90,10 +89,10 @@ class MulticastQuerier:
     def __init__(self):
         """Initialize multicast querier thread."""
         loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, self.async_start)
+        loop.run_in_executor(None, self.start)
 
     @classmethod
-    def async_start(cls):
+    def start(cls):
         """Start sniffing for multicast query."""
         filter_igmp_query = f"igmp and igmp[0] == {int(MULTICAST_QUERY_IGMPTYPE)} and (igmp[4:4] == {int(ipaddress.IPv4Address(MAIN_MULTICAST_IP))} or igmp[4:4] == 0)"
         pkt_snd = IP(dst=MULTICAST_QUERY_GRP) / IGMP(
@@ -121,10 +120,6 @@ class MulticastQuerier:
                 _LOGGER.info(
                     "Multicast query received from network, no action required"
                 )
-            _LOGGER.debug(
-                "Multicast querier sleeping for %s seconds", MULTICAST_QUERY_TIMEOUT
-            )
-            time.sleep(MULTICAST_QUERY_TIMEOUT)
 
 
 class COAP(asyncio.DatagramProtocol):
