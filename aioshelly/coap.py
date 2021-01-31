@@ -5,6 +5,7 @@ import json
 import logging
 import socket
 import struct
+import threading
 from typing import Optional, cast
 
 import netifaces
@@ -87,11 +88,12 @@ class MulticastQuerier:
 
     def __init__(self):
         """Initialize multicast querier thread."""
-        loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, self.start)
+        _LOGGER.debug("Multicast querier thread started")
+        self.stop_thread = False
+        self.thread = threading.Thread(target=self.run)
+        self.thread.start()
 
-    @classmethod
-    def start(cls):
+    def run(self):
         """Start sniffing for multicast query."""
         filter_igmp_query = f"igmp and igmp[0] == {int(MULTICAST_QUERY_IGMPTYPE)} and (igmp[4:4] == {int(ipaddress.IPv4Address(MAIN_MULTICAST_IP))} or igmp[4:4] == 0)"
         pkt_snd = IP(dst=MULTICAST_QUERY_GRP) / IGMP(
@@ -99,7 +101,7 @@ class MulticastQuerier:
             mrcode=100,
             gaddr=MAIN_MULTICAST_IP,
         )
-        while True:
+        while not self.stop_thread:
             result = sniff(
                 filter=filter_igmp_query,
                 store=1,
@@ -120,6 +122,11 @@ class MulticastQuerier:
                     "Multicast query received from network, no action required"
                 )
 
+    def stop(self):
+        """Stop multicast querier thread."""
+        _LOGGER.debug("Multicast querier thread stopped")
+        self.stop_thread = True
+
 
 class COAP(asyncio.DatagramProtocol):
     """COAP manager."""
@@ -131,13 +138,14 @@ class COAP(asyncio.DatagramProtocol):
         self._message_received = message_received
         self.subscriptions = {}
         self.transport: Optional[asyncio.DatagramTransport] = None
+        self.querier = None
 
     async def initialize(self):
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
         self.sock = socket_init()
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
-        MulticastQuerier()
+        self.querier = MulticastQuerier()
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
@@ -151,6 +159,7 @@ class COAP(asyncio.DatagramProtocol):
     def close(self):
         """Close."""
         self.transport.close()
+        self.querier.stop()
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """When the socket is set up."""
