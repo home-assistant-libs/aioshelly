@@ -3,13 +3,16 @@ import asyncio
 import ipaddress
 import json
 import logging
+import os
 import socket
 import struct
 import threading
 from typing import Optional, cast
 
 import netifaces
+from scapy.config import conf
 from scapy.contrib.igmp import IGMP
+from scapy.error import Scapy_Exception
 from scapy.layers.inet import IP
 from scapy.sendrecv import send, sniff
 
@@ -83,11 +86,34 @@ def socket_init():
     return sock
 
 
+def verify_l2socket_creation_permission():
+    """Create a socket using the scapy configured l2socket.
+
+    Try to create the socket
+    to see if we have permissions
+    since sniff will do it another
+    thread so we will not be able to capture
+    any permission or bind errors.
+    """
+    conf.L2socket()
+
+
 class MulticastQuerier:
     """Multicast querier management."""
 
     def __init__(self):
         """Initialize multicast querier thread."""
+        try:
+            verify_l2socket_creation_permission()
+        except (Scapy_Exception, OSError) as ex:
+            if os.geteuid() == 0:
+                _LOGGER.error("Cannot watch for multicast query packets: %s", ex)
+            else:
+                _LOGGER.debug(
+                    "Cannot watch for multicast query packets without root or CAP_NET_RAW: %s",
+                    ex,
+                )
+            return
         _LOGGER.debug("Multicast querier thread started")
         self.stop_thread = False
         self.thread = threading.Thread(target=self.run)
