@@ -95,14 +95,15 @@ def verify_l2socket_creation_permission():
     thread so we will not be able to capture
     any permission or bind errors.
     """
-    conf.L2socket()
+    s = conf.L2socket()
+    s.close()
 
 
 class MulticastQuerier:
     """Multicast querier management."""
 
     def __init__(self):
-        """Initialize multicast querier thread."""
+        """Initialize multicast querier."""
         try:
             verify_l2socket_creation_permission()
         except (Scapy_Exception, OSError) as ex:
@@ -114,10 +115,13 @@ class MulticastQuerier:
                     ex,
                 )
             return
-        _LOGGER.debug("Multicast querier thread started")
         self.stop_thread = False
+
+    def start(self):
+        """Start multicast querier thread."""
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
+        _LOGGER.debug("Multicast querier thread started")
 
     def run(self):
         """Start sniffing for multicast query."""
@@ -172,6 +176,7 @@ class COAP(asyncio.DatagramProtocol):
         self.sock = socket_init()
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
         self.querier = MulticastQuerier()
+        self.querier.start()
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
