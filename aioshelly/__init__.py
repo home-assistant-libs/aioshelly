@@ -113,7 +113,7 @@ class ConnectionOptions:
 
 
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
-    """Get info from device trough REST call."""
+    """Get info from device through REST call."""
     async with aiohttp_session.get(
         f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:

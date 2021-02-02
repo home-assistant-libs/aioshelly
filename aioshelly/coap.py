@@ -118,7 +118,7 @@ class MulticastQuerier:
         self.stop_thread = None
         self.thread = None
 
-    def start(self):
+    async def start(self):
         """Start multicast querier thread."""
         self.stop_thread = False
         self.thread = threading.Thread(
@@ -156,7 +156,7 @@ class MulticastQuerier:
                     "Multicast query received from network, no action required"
                 )
 
-    def stop(self):
+    async def stop(self):
         """Stop multicast querier thread."""
         _LOGGER.debug("Multicast querier thread stopped")
         self.stop_thread = True
@@ -172,15 +172,12 @@ class COAP(asyncio.DatagramProtocol):
         self._message_received = message_received
         self.subscriptions = {}
         self.transport: Optional[asyncio.DatagramTransport] = None
-        self.querier = None
 
     async def initialize(self):
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
         self.sock = socket_init()
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
-        self.querier = MulticastQuerier()
-        self.querier.start()
 
     async def request(self, ip: str, path: str):
         """Request a CoAP message.
@@ -194,7 +191,6 @@ class COAP(asyncio.DatagramProtocol):
     def close(self):
         """Close."""
         self.transport.close()
-        self.querier.stop()
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """When the socket is set up."""
