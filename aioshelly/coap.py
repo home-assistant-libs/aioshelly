@@ -95,8 +95,8 @@ def verify_l2socket_creation_permission():
     thread so we will not be able to capture
     any permission or bind errors.
     """
-    s = conf.L2socket()
-    s.close()
+    sock = conf.L2socket()
+    sock.close()
 
 
 class MulticastQuerier:
@@ -115,10 +115,12 @@ class MulticastQuerier:
                     ex,
                 )
             return
-        self.stop_thread = False
+        self.stop_thread = None
+        self.thread = None
 
     def start(self):
         """Start multicast querier thread."""
+        self.stop_thread = False
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
         _LOGGER.debug("Multicast querier thread started")
