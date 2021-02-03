@@ -8,6 +8,7 @@ from typing import Dict, Optional, Union
 
 import aiohttp
 
+from .coap import MulticastQuerier  # noqa: F401
 from .coap import COAP
 
 MODEL_NAMES = {

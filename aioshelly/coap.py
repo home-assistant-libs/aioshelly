@@ -7,6 +7,7 @@ import os
 import socket
 import struct
 import threading
+from ctypes.util import find_library
 from typing import Optional, cast
 
 import netifaces
@@ -115,17 +116,24 @@ class MulticastQuerier:
                     ex,
                 )
             return
+        _lib_name = find_library("pcap")
+        if not _lib_name:
+            _LOGGER.debug(
+                "Cannot watch for multicast query packets without libpcap.so library"
+            )
+            return
+
         self.stop_thread = None
         self.thread = None
 
-    async def start(self):
+    def start(self):
         """Start multicast querier thread."""
         self.stop_thread = False
         self.thread = threading.Thread(
             name="MulticastQuerierThread", target=self.run, daemon=True
         )
-        self.thread.start()
         _LOGGER.debug("Multicast querier thread started")
+        self.thread.start()
 
     def run(self):
         """Start sniffing for multicast query."""
@@ -156,7 +164,7 @@ class MulticastQuerier:
                     "Multicast query received from network, no action required"
                 )
 
-    async def stop(self):
+    def stop(self):
         """Stop multicast querier thread."""
         _LOGGER.debug("Multicast querier thread stopped")
         self.stop_thread = True
