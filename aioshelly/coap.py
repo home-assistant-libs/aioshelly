@@ -7,11 +7,16 @@ import struct
 from typing import Optional, cast
 
 import netifaces
+from netaddr import IPAddress, IPNetwork
 
 _LOGGER = logging.getLogger(__name__)
 
 MAIN_MULTICAST_IP = "224.0.1.187"
 WF200_MULTICAST_IP = "224.0.1.188"
+
+CIDR_NET_10 = "10.0.0.0/8"
+CIDR_NET_172 = "172.16.0.0/12"
+CIDR_NET_192 = "192.168.0.0/16"
 
 
 class CoapMessage:
@@ -49,7 +54,10 @@ def get_all_ips():
     for iface in netifaces.interfaces():
         iface_details = netifaces.ifaddresses(iface)
         if netifaces.AF_INET in iface_details:
-            ip_list.append(iface_details[netifaces.AF_INET][0]["addr"])
+            for net_addr in CIDR_NET_10, CIDR_NET_172, CIDR_NET_192:
+                ip_addr = iface_details[netifaces.AF_INET][0]["addr"]
+                if IPAddress(ip_addr) in IPNetwork(net_addr):
+                    ip_list.append(ip_addr)
     return ip_list
 
 
