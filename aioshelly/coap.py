@@ -132,7 +132,7 @@ class MulticastQuerier:
         self.thread = threading.Thread(
             name="MulticastQuerierThread", target=self.run, daemon=True
         )
-        _LOGGER.debug("Multicast querier thread started")
+        _LOGGER.debug("Starting multicast querier thread")
         self.thread.start()
 
     def run(self):
@@ -152,7 +152,7 @@ class MulticastQuerier:
             )
             _LOGGER.debug("Multicast query sniff result: %s", result)
             if not result:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "Multicast query not received in %s seconds",
                     MULTICAST_QUERY_TIMEOUT,
                 )
@@ -160,13 +160,13 @@ class MulticastQuerier:
                     send(pkt_snd, iface=eth_iface, verbose=False)
                     _LOGGER.info("Multicast query sent for %s interface", eth_iface)
             else:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "Multicast query received from network, no action required"
                 )
 
     def stop(self):
         """Stop multicast querier thread."""
-        _LOGGER.debug("Multicast querier thread stopped")
+        _LOGGER.debug("Stopping multicast querier thread")
         self.stop_thread = True
 
 
