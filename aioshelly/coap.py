@@ -96,6 +96,7 @@ def verify_l2socket_creation_permission():
     thread so we will not be able to capture
     any permission or bind errors.
     """
+    conf.sniff_promisc = 0
     sock = conf.L2socket()
     sock.close()
 
