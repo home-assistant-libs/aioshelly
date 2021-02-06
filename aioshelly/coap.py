@@ -7,10 +7,10 @@ import os
 import socket
 import struct
 import threading
-from ctypes.util import find_library
 from typing import Optional, cast
 
 import netifaces
+from scapy.arch.common import compile_filter
 from scapy.config import conf
 from scapy.contrib.igmp import IGMP
 from scapy.error import Scapy_Exception
@@ -100,6 +100,15 @@ def verify_l2socket_creation_permission():
     sock.close()
 
 
+def verify_working_pcap(cap_filter):
+    """Verify we can create a packet filter.
+
+    If we cannot create a filter we will be listening for
+    all traffic which is too intensive.
+    """
+    compile_filter(cap_filter)
+
+
 class MulticastQuerier:
     """Multicast querier management."""
 
@@ -111,15 +120,18 @@ class MulticastQuerier:
             if os.geteuid() == 0:
                 _LOGGER.error("Cannot watch for multicast query packets: %s", ex)
             else:
-                _LOGGER.debug(
+                _LOGGER.warning(
                     "Cannot watch for multicast query packets without root or CAP_NET_RAW: %s",
                     ex,
                 )
             return
-        _lib_name = find_library("pcap")
-        if not _lib_name:
-            _LOGGER.debug(
-                "Cannot watch for multicast query packets without libpcap.so library"
+        self.filter_igmp_query = f"igmp and igmp[0] == {int(MULTICAST_QUERY_IGMPTYPE)} and (igmp[4:4] == {int(ipaddress.IPv4Address(MAIN_MULTICAST_IP))} or igmp[4:4] == 0)"
+        try:
+            verify_working_pcap(self.filter_igmp_query)
+        except (Scapy_Exception, ImportError) as ex:
+            _LOGGER.error(
+                "Cannot watch for multicast query packets without libpcap.so library: %s",
+                ex,
             )
             return
 
@@ -137,7 +149,6 @@ class MulticastQuerier:
 
     def run(self):
         """Start sniffing for multicast query."""
-        filter_igmp_query = f"igmp and igmp[0] == {int(MULTICAST_QUERY_IGMPTYPE)} and (igmp[4:4] == {int(ipaddress.IPv4Address(MAIN_MULTICAST_IP))} or igmp[4:4] == 0)"
         pkt_snd = IP(dst=MULTICAST_QUERY_GRP) / IGMP(
             type=MULTICAST_QUERY_IGMPTYPE,
             mrcode=100,
@@ -145,7 +156,7 @@ class MulticastQuerier:
         )
         while not self.stop_thread:
             result = sniff(
-                filter=filter_igmp_query,
+                filter=self.filter_igmp_query,
                 store=1,
                 count=1,
                 timeout=MULTICAST_QUERY_TIMEOUT,
