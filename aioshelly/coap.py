@@ -10,8 +10,7 @@ import netifaces
 
 _LOGGER = logging.getLogger(__name__)
 
-MAIN_MULTICAST_IP = "224.0.1.187"
-WF200_MULTICAST_IP = "224.0.1.188"
+MULTICAST_IP = "224.0.1.187"
 
 
 class CoapMessage:
@@ -60,10 +59,9 @@ def socket_init():
     sock.bind(("", 5683))
 
     for ip in get_all_ips():
-        for multicast_ip in MAIN_MULTICAST_IP, WF200_MULTICAST_IP:
-            _LOGGER.debug("Adding ip %s to multicast %s membership", ip, multicast_ip)
-            group = socket.inet_aton(multicast_ip) + socket.inet_aton(ip)
-            sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, group)
+        _LOGGER.debug("Adding ip %s to multicast %s membership", ip, MULTICAST_IP)
+        group = socket.inet_aton(MULTICAST_IP) + socket.inet_aton(ip)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, group)
 
     sock.setblocking(False)
     return sock
