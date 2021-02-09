@@ -4,7 +4,7 @@
 
 ## This library is under development.
 
-Requires Python 3 and uses asyncio, aiohttp, socket and netifaces.
+Requires Python 3 and uses asyncio, aiohttp and socket.
 
 ```python
 import asyncio
