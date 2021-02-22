@@ -26,7 +26,7 @@ class CoapMessage:
             try:
                 self.payload = json.loads(payload.rsplit(b"\xff", 1)[1].decode())
             except (json.decoder.JSONDecodeError, IndexError):
-                _LOGGER.error(
+                _LOGGER.debug(
                     "CoAP message of type %s from host %s is not a valid JSON format: %s",
                     self.code,
                     self.ip,
