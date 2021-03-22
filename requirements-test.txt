@@ -1,6 +1,6 @@
 flake8==3.9.0
 black==20.8b1
-isort==5.7.0
+isort==5.8.0
 pylint==2.7.2
 pylint-strict-informational==0.1
 pre-commit==2.11.1
