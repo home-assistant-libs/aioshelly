@@ -40,6 +40,11 @@ class CoapMessage:
                 f"Message type {self.code} is not a valid JSON format: {str(payload)}"
             ) from err
 
+        if(self.code == 30):
+            coap_type = "cit/s"
+        else:
+            coap_type = "cit/d"
+        _LOGGER.debug("CoapMessage: ip=%s, type=%s, payload=%s", self.ip, coap_type, self.payload)
 
 def socket_init():
     """Init UDP socket to send/receive data with Shelly devices."""
@@ -76,6 +81,7 @@ class COAP(asyncio.DatagramProtocol):
         """
         assert self.transport is not None
         msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
+        _LOGGER.debug("Sending request 'cit/%s' to device %s", path, ip)
         self.transport.sendto(msg, (ip, 5683))
 
     def close(self):
@@ -102,10 +108,12 @@ class COAP(asyncio.DatagramProtocol):
             self._message_received(msg)
 
         if msg.ip in self.subscriptions:
+            _LOGGER.debug("Adding CoAP message to subscriptions for device %s", msg.ip)
             self.subscriptions[msg.ip](msg)
 
     def subscribe_updates(self, ip, message_received):
         """Subscribe to received updates."""
+        _LOGGER.debug("Adding CoAP message to subscriptions for device %s", ip)
         self.subscriptions[ip] = message_received
         return lambda: self.subscriptions.pop(ip)
 
