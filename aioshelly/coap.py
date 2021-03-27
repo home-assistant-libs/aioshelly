@@ -40,11 +40,14 @@ class CoapMessage:
                 f"Message type {self.code} is not a valid JSON format: {str(payload)}"
             ) from err
 
-        if(self.code == 30):
+        if self.code == 30:
             coap_type = "cit/s"
         else:
             coap_type = "cit/d"
-        _LOGGER.debug("CoapMessage: ip=%s, type=%s, payload=%s", self.ip, coap_type, self.payload)
+        _LOGGER.debug(
+            "CoapMessage: ip=%s, type=%s, payload=%s", self.ip, coap_type, self.payload
+        )
+
 
 def socket_init():
     """Init UDP socket to send/receive data with Shelly devices."""
