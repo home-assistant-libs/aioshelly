@@ -119,7 +119,8 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     ) as resp:
         result = await resp.json()
 
-    if not supported_firmware(result["fw"]):
+    # Shelly4Pro will never get CoAP v2, but still get some firmware updates
+    if not supported_firmware(result["fw"]) or result["type"] == "SHSW-44":
         raise FirmwareUnsupported
 
     return result
