@@ -1,8 +1,8 @@
 """Shelly CoAP library."""
 import asyncio
-from dataclasses import dataclass
 import ipaddress
 import re
+from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Dict, Optional, Union
 
