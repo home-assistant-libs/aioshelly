@@ -41,11 +41,12 @@ class CoapMessage:
             ) from err
 
 
-def socket_init():
+def socket_init(socket_port):
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("", 5683))
+    sock.bind(("", socket_port))
+    _LOGGER.debug("Socket initialized on port %s", socket_port)
     mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     sock.setblocking(False)
@@ -63,10 +64,10 @@ class COAP(asyncio.DatagramProtocol):
         self.subscriptions = {}
         self.transport: Optional[asyncio.DatagramTransport] = None
 
-    async def initialize(self):
+    async def initialize(self, socket_port: int = 5683):
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
-        self.sock = socket_init()
+        self.sock = socket_init(socket_port)
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
 
     async def request(self, ip: str, path: str):
