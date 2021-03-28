@@ -1,8 +1,8 @@
 """Shelly CoAP library."""
 import asyncio
+from dataclasses import dataclass
 import ipaddress
 import re
-from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Dict, Optional, Union
 
@@ -37,7 +37,7 @@ MODEL_NAMES = {
     "SHPLG2-1": "Shelly Plug E",
     "SHRGBW2": "Shelly RGBW2",
     "SHRGBWW-01": "Shelly RGBW",
-    "SHSEN-1": "Shelly Sense", # CoAP v1, unsupported
+    "SHSEN-1": "Shelly Sense",  # CoAP v1, unsupported
     "SHSM-01": "Shelly Smoke",
     "SHSM-02": "Shelly Smoke 2",
     "SHSPOT-1": "Shelly Spot",
@@ -45,7 +45,7 @@ MODEL_NAMES = {
     "SHSW-1": "Shelly 1",
     "SHSW-21": "Shelly 2",
     "SHSW-25": "Shelly 2.5",
-    "SHSW-44": "Shelly 4Pro", # CoAP v1, unsupported
+    "SHSW-44": "Shelly 4Pro",  # CoAP v1, unsupported
     "SHSW-L": "Shelly 1L",
     "SHSW-PM": "Shelly 1PM",
     "SHUNI-1": "Shelly UNI",
