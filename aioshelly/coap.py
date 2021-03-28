@@ -116,7 +116,7 @@ class COAP(asyncio.DatagramProtocol):
 
     def subscribe_updates(self, ip, message_received):
         """Subscribe to received updates."""
-        _LOGGER.debug("Adding CoAP message to subscriptions for device %s", ip)
+        _LOGGER.debug("Adding device %s to CoAP message subscriptions", ip)
         self.subscriptions[ip] = message_received
         return lambda: self.subscriptions.pop(ip)
 
