@@ -37,7 +37,7 @@ MODEL_NAMES = {
     "SHPLG2-1": "Shelly Plug E",
     "SHRGBW2": "Shelly RGBW2",
     "SHRGBWW-01": "Shelly RGBW",
-    "SHSEN-1": "Shelly Sense",
+    "SHSEN-1": "Shelly Sense",  # CoAP v1, unsupported
     "SHSM-01": "Shelly Smoke",
     "SHSM-02": "Shelly Smoke 2",
     "SHSPOT-1": "Shelly Spot",
@@ -45,7 +45,7 @@ MODEL_NAMES = {
     "SHSW-1": "Shelly 1",
     "SHSW-21": "Shelly 2",
     "SHSW-25": "Shelly 2.5",
-    "SHSW-44": "Shelly 4Pro",
+    "SHSW-44": "Shelly 4Pro",  # CoAP v1, unsupported
     "SHSW-L": "Shelly 1L",
     "SHSW-PM": "Shelly 1PM",
     "SHUNI-1": "Shelly UNI",
@@ -119,7 +119,7 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     ) as resp:
         result = await resp.json()
 
-    if not supported_firmware(result["fw"]):
+    if not supported_firmware(result["fw"]) or result["type"] in ["SHSW-44", "SHSEN-1"]:
         raise FirmwareUnsupported
 
     return result
