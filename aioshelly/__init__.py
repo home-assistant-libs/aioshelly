@@ -1,14 +1,18 @@
 """Shelly CoAP library."""
 import asyncio
-import ipaddress
-import re
 from dataclasses import dataclass
+import ipaddress
+import logging
+import re
 from socket import gethostbyname
 from typing import Dict, Optional, Union
 
 import aiohttp
+import async_timeout
 
 from .coap import COAP
+
+_LOGGER = logging.getLogger(__name__)
 
 MODEL_NAMES = {
     "SH2LED-1": "Shelly 2LED",
@@ -113,7 +117,7 @@ class ConnectionOptions:
 
 
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
-    """Get info from device trough REST call."""
+    """Get info from device through REST call."""
     async with aiohttp_session.get(
         f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:
@@ -190,6 +194,8 @@ class Device:
 
         if initialize:
             await instance.initialize(True)
+        else:
+            await instance.coap_request("s")
 
         return instance
 
@@ -201,25 +207,27 @@ class Device:
     async def initialize(self, request_s):
         """Device initialization."""
         self._initializing = True
+        self._initialized = False
+        try:
+            self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
-        self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+            if self.options.auth or not self.shelly["auth"]:
+                await self.update_settings()
+                await self.update_status()
 
-        if self.options.auth or not self.shelly["auth"]:
-            await self.update_settings()
-            await self.update_status()
+            event_d = await self.coap_request("d")
 
-        event_d = await self.coap_request("d")
+            # We need to wait for D to come in before we request S
+            # Or else we might miss the answer to D
+            await event_d.wait()
 
-        # We need to wait for D to come in before we request S
-        # Or else we might miss the answer to D
-        await event_d.wait()
+            if request_s:
+                event_s = await self.coap_request("s")
+                await event_s.wait()
 
-        if request_s:
-            event_s = await self.coap_request("s")
-            await event_s.wait()
-
-        self._initialized = True
-        self._initializing = False
+            self._initialized = True
+        finally:
+            self._initializing = False
 
         if self._update_listener:
             self._update_listener(self)
@@ -229,11 +237,21 @@ class Device:
         self._update_listener = None
         self._unsub_listening()
 
+    async def _async_init(self):
+        """Async init upon CoAP message event."""
+        try:
+            async with async_timeout.timeout(10):
+                await self.initialize(False)
+        except (asyncio.TimeoutError, OSError) as err:
+            _LOGGER.warning(
+                "device %s initialize error - %s", self.options.ip_address, repr(err)
+            )
+
     def _coap_message_received(self, msg):
         """CoAP message received."""
         if not self._initializing and not self._initialized:
             loop = asyncio.get_running_loop()
-            loop.create_task(self.initialize(False))
+            loop.create_task(self._async_init())
 
         if not msg.payload:
             return
