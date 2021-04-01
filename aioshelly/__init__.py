@@ -78,6 +78,8 @@ BLOCK_VALUE_TYPE_VOLTAGE = "V"
 MIN_FIRMWARE_DATE = 20200812
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
+DEVICE_TIMEOUT_SEC = 10
+
 
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
@@ -240,7 +242,7 @@ class Device:
     async def _async_init(self):
         """Async init upon CoAP message event."""
         try:
-            async with async_timeout.timeout(10):
+            async with async_timeout.timeout(DEVICE_TIMEOUT_SEC):
                 await self.initialize(False)
         except (asyncio.TimeoutError, OSError) as err:
             _LOGGER.warning(
