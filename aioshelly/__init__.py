@@ -346,6 +346,17 @@ class Device:
         """Change device mode color/white."""
         return await self.http_request("get", "settings", {"mode": mode})
 
+    async def trigger_ota_update(self, beta=False, url=None):
+        """Trigger an ota update."""
+        params = {"update": "true"}
+
+        if url:
+            params = {"url": url}
+        elif beta:
+            params = {"beta": "true"}
+
+        return await self.http_request("get", "ota", params=params)
+
     @property
     def initialized(self):
         """Device initialized."""
