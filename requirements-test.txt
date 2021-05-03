@@ -1,5 +1,5 @@
 flake8==3.9.1
-black==21.4b0
+black==21.4b2
 isort==5.8.0
 pylint==2.8.2
 pylint-strict-informational==0.1
