@@ -45,7 +45,7 @@ class CoapMessage:
         else:
             coap_type = "reply"
         _LOGGER.debug(
-            "CoapMessage: ip=%s, type=%s(%s), payload=%s", self.ip, coap_type, , self.code, self.payload
+            "CoapMessage: ip=%s, type=%s(%s), payload=%s", self.ip, coap_type, self.code, self.payload
         )
 
 
