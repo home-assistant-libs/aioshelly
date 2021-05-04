@@ -41,11 +41,11 @@ class CoapMessage:
             ) from err
 
         if self.code == 30:
-            coap_type = "cit/s"
+            coap_type = "periodic"
         else:
-            coap_type = "cit/d"
+            coap_type = "reply"
         _LOGGER.debug(
-            "CoapMessage: ip=%s, type=%s, payload=%s", self.ip, coap_type, self.payload
+            "CoapMessage: ip=%s, type=%s(%s), payload=%s", self.ip, coap_type, , self.code, self.payload
         )
 
 
