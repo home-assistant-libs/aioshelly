@@ -3,7 +3,6 @@ import logging
 import re
 import urllib.parse
 from dataclasses import dataclass, field
-from pprint import pprint
 from unittest.mock import Mock
 
 import requests
