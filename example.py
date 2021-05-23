@@ -2,7 +2,6 @@
 import argparse
 import asyncio
 import json
-import sys
 import traceback
 from datetime import datetime
 
