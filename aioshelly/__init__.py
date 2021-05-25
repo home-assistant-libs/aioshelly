@@ -125,7 +125,11 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     ) as resp:
         result = await resp.json()
 
-    if not supported_firmware(result["fw"]) or result["type"] in ["SHSW-44", "SHSEN-1"]:
+    if (
+        "fw" not in result
+        or not supported_firmware(result["fw"])
+        or result["type"] in ["SHSW-44", "SHSEN-1"]
+    ):
         raise FirmwareUnsupported
 
     return result
@@ -250,7 +254,7 @@ class Device:
             )
 
     def _coap_message_received(self, msg):
-        """CoAP message received."""
+        """COAP message received."""
         if not self._initializing and not self._initialized:
             loop = asyncio.get_running_loop()
             loop.create_task(self._async_init())
@@ -374,7 +378,7 @@ class Device:
 
     @property
     def settings(self):
-        """Device get settings (HTTP)."""
+        """Get device settings via HTTP."""
         if not self._initialized:
             raise NotInitialized
 
@@ -385,7 +389,7 @@ class Device:
 
     @property
     def status(self):
-        """Device get status (HTTP)."""
+        """Get device status via HTTP."""
         if not self._initialized:
             raise NotInitialized
 
