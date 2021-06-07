@@ -1,7 +1,7 @@
 flake8==3.9.2
 black==21.5b1
 isort==5.8.0
-pylint==2.8.2
+pylint==2.8.3
 pylint-strict-informational==0.1
 pre-commit==2.13.0
 requests
