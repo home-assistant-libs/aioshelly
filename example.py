@@ -1,4 +1,5 @@
 # Run with python3 example.py <ip of shelly device>
+"""aioshelly usage example."""
 import argparse
 import asyncio
 import json
@@ -8,15 +9,19 @@ from datetime import datetime
 import aiohttp
 
 import aioshelly
+from aioshelly.common import ShellyGeneration
 
 
-async def test_single(ip, username, password, init, timeout):
+async def test_single(ip, username, password, init, timeout, gen):
+    """Test single device."""
     options = aioshelly.ConnectionOptions(ip, username, password)
 
     async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
         try:
             device = await asyncio.wait_for(
-                aioshelly.Device.create(aiohttp_session, coap_context, options, init),
+                aioshelly.Device.create(
+                    aiohttp_session, coap_context, options, init, gen
+                ),
                 timeout,
             )
         except asyncio.TimeoutError:
@@ -31,7 +36,8 @@ async def test_single(ip, username, password, init, timeout):
             await asyncio.sleep(0.1)
 
 
-async def test_devices(init, timeout):
+async def test_devices(init, timeout, gen):
+    """Test multiple devices."""
     device_options = []
     with open("devices.json") as fp:
         for line in fp:
@@ -42,7 +48,7 @@ async def test_devices(init, timeout):
             *[
                 asyncio.wait_for(
                     connect_and_print_device(
-                        aiohttp_session, coap_context, options, init
+                        aiohttp_session, coap_context, options, init, gen
                     ),
                     timeout,
                 )
@@ -69,38 +75,41 @@ async def test_devices(init, timeout):
             await asyncio.sleep(0.1)
 
 
-async def connect_and_print_device(aiohttp_session, coap_context, options, init):
-    device = await aioshelly.Device.create(aiohttp_session, coap_context, options, init)
+async def connect_and_print_device(aiohttp_session, coap_context, options, init, gen):
+    """Connect and print device data."""
+    device = await aioshelly.Device.create(
+        aiohttp_session, coap_context, options, init, gen
+    )
     print_device(device)
     device.subscribe_updates(device_updated)
 
 
 def device_updated(cb_device):
-    print()
+    """Device updated callback."""
     print()
     print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
-    print()
     print_device(cb_device)
 
 
 def print_device(device):
+    """Print device data."""
     if not device.initialized:
         print()
         print(f"** Device @ {device.ip_address} not initialized **")
         print()
         return
 
-    model = (
-        aioshelly.MODEL_NAMES.get(device.settings["device"]["type"])
-        or f'Unknown model {device.settings["device"]["type"]}'
-    )
-
-    print()
-    print(f"** {model} @ {device.ip_address} **")
+    print(f"** {device.model_name} @ {device.ip_address} **")
     print()
 
-    light_relay_block = None
+    if device.gen == ShellyGeneration.GEN1:
+        print_block_device(device)
+    elif device.gen == ShellyGeneration.GEN2:
+        print_rpc_device(device)
 
+
+def print_block_device(device):
+    """Print block (GEN1) device data."""
     for block in device.blocks:
         print(block)
         for attr, value in block.current_values().items():
@@ -109,23 +118,18 @@ def print_device(device):
             if value is None:
                 value = "-"
 
-            if aioshelly.BLOCK_VALUE_UNIT in info:
-                unit = " " + info[aioshelly.BLOCK_VALUE_UNIT]
+            if aioshelly.block_device.BLOCK_VALUE_UNIT in info:
+                unit = " " + info[aioshelly.block_device.BLOCK_VALUE_UNIT]
             else:
                 unit = ""
 
             print(f"{attr.ljust(16)}{value}{unit}")
         print()
 
-        if light_relay_block is None and block.type in ("relay", "light"):
-            light_relay_block = block
 
-    # if light_relay_block:
-    #     print(
-    #         await light_relay_block.set_state(
-    #             turn="off" if light_relay_block.output else "on"
-    #         )
-    #     )
+def print_rpc_device(device):
+    """Print RPC (GEN2) device data."""
+    print(device.status)
 
 
 def get_arguments() -> argparse.Namespace:
@@ -153,6 +157,8 @@ def get_arguments() -> argparse.Namespace:
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
 
+    parser.add_argument("--gen", "-g", action="store_true", help="Gen 2 (RPC) device")
+
     arguments = parser.parse_args()
 
     return parser, arguments
@@ -161,13 +167,19 @@ def get_arguments() -> argparse.Namespace:
 async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
+
+    if args.gen:
+        gen = ShellyGeneration.GEN2
+    else:
+        gen = ShellyGeneration.GEN1
+
     if args.devices:
-        await test_devices(args.init, args.timeout)
+        await test_devices(args.init, args.timeout, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         await test_single(
-            args.ip_address, args.username, args.password, args.init, args.timeout
+            args.ip_address, args.username, args.password, args.init, args.timeout, gen
         )
     else:
         parser.error("--ip_address or --devices must be specified")
