@@ -43,7 +43,11 @@ GEN1_MODEL_NAMES = {
     "SHWT-1": "Shelly Flood",
 }
 
-GEN2_MODEL_NAMES = {"SHPSW04P": "Shelly 4Pro Plus"}
+GEN2_MODEL_NAMES = {
+    "SHPSW04P": "Shelly 4Pro Plus",
+    "SNSW-001P16EU": "Shelly 1PM Plus",
+    "SNSW-001X16EU": "Shelly 1 Plus",
+}
 
 DEVICE_TIMEOUT_SEC = 10
 
