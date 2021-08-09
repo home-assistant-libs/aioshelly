@@ -3,6 +3,6 @@ black==21.7b0
 isort==5.9.3
 pylint==2.9.6
 pylint-strict-informational==0.1
-pre-commit==2.13.0
+pre-commit==2.14.0
 requests
 mypy==0.910
