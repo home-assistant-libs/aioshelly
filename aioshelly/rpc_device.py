@@ -88,10 +88,10 @@ class RpcDevice:
         if self._update_listener:
             self._update_listener(self)
 
-    def shutdown(self):
+    async def shutdown(self):
         """Shutdown device."""
         self._update_listener = None
-        self._wsrpc.disconnect()
+        await self._wsrpc.disconnect()
 
     def subscribe_updates(self, update_listener):
         """Subscribe to device status updates."""
