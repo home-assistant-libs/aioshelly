@@ -1,8 +1,8 @@
 """Shelly Gen2 RPC based device."""
 import aiohttp
 
-from .common import ConnectionOptions, ShellyGeneration, get_info
-from .const import GEN2_MODEL_NAMES
+from .common import ConnectionOptions, get_info
+from .const import MODEL_NAMES
 from .exceptions import AuthRequired, NotInitialized
 from .wsrpc import WsRPC
 
@@ -35,6 +35,7 @@ class RpcDevice:
         self.shelly = None
         self._status = None
         self._device_info = None
+        self._config = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
         self._update_listener = None
         self._initialized = False
@@ -77,6 +78,7 @@ class RpcDevice:
 
             if self.options.auth or not self.shelly["auth_en"]:
                 await self.update_device_info()
+                await self.update_config()
                 await self.update_status()
 
             self._initialized = True
@@ -96,12 +98,16 @@ class RpcDevice:
         self._update_listener = update_listener
 
     async def update_status(self):
-        """Device update from 'Shelly.GetStatus'."""
+        """Get device status from 'Shelly.GetStatus'."""
         self._status = await self._wsrpc.call("Shelly.GetStatus")
 
     async def update_device_info(self):
-        """Device update from 'Shelly.GetDeviceInfo'."""
+        """Get device info from 'Shelly.GetDeviceInfo'."""
         self._device_info = await self._wsrpc.call("Shelly.GetDeviceInfo")
+
+    async def update_config(self):
+        """Get device config from 'Shelly.GetConfig'."""
+        self._config = await self._wsrpc.call("Shelly.GetConfig")
 
     @property
     def initialized(self):
@@ -111,12 +117,16 @@ class RpcDevice:
     @property
     def requires_auth(self):
         """Device check for authentication."""
-        return self.shelly["auth"]
+        return self.shelly["auth_en"]
 
     @property
     def read_only(self):
         """Device check if can only read data."""
         return self.options.auth is None and self.requires_auth
+
+    async def set_state(self, method, params):
+        """Set state request (RPC Call)."""
+        return await self._wsrpc.call(method, params)
 
     @property
     def status(self):
@@ -141,9 +151,20 @@ class RpcDevice:
         return self._device_info
 
     @property
+    def config(self):
+        """Get device config."""
+        if not self._initialized:
+            raise NotInitialized
+
+        if self._config is None:
+            raise AuthRequired
+
+        return self._config
+
+    @property
     def gen(self):
         """Device generation: GEN2 - RPC."""
-        return ShellyGeneration.GEN2
+        return 2
 
     @property
     def firmware_version(self):
@@ -164,4 +185,9 @@ class RpcDevice:
     @property
     def model_name(self):
         """Device model name."""
-        return GEN2_MODEL_NAMES.get(self.model) or f"Unknown ({self.model})"
+        return MODEL_NAMES.get(self.model) or f"Unknown ({self.model})"
+
+    @property
+    def hostname(self):
+        """Device hostname."""
+        return self.device_info["id"]

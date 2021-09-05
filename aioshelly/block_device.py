@@ -7,8 +7,8 @@ import aiohttp
 import async_timeout
 
 from .coap import COAP
-from .common import ConnectionOptions, ShellyGeneration, get_info
-from .const import DEVICE_TIMEOUT_SEC, GEN1_MODEL_NAMES
+from .common import ConnectionOptions, get_info
+from .const import DEVICE_TIMEOUT_SEC, MODEL_NAMES
 from .exceptions import AuthRequired, NotInitialized
 
 BLOCK_VALUE_UNIT = "U"
@@ -58,6 +58,7 @@ class BlockDevice:
         self._coap_response_events: dict = {}
         self._initialized = False
         self._initializing = False
+        self._request_s = True
 
     @classmethod
     async def create(
@@ -71,7 +72,7 @@ class BlockDevice:
         instance = cls(coap_context, aiohttp_session, options)
 
         if initialize:
-            await instance.initialize(True)
+            await instance.initialize()
         else:
             await instance.coap_request("s")
 
@@ -82,7 +83,7 @@ class BlockDevice:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self, request_s):
+    async def initialize(self):
         """Device initialization."""
         self._initializing = True
         self._initialized = False
@@ -99,18 +100,19 @@ class BlockDevice:
             # Or else we might miss the answer to D
             await event_d.wait()
 
-            if request_s:
+            if self._request_s:
                 event_s = await self.coap_request("s")
                 await event_s.wait()
 
             self._initialized = True
         finally:
             self._initializing = False
+            self._request_s = True
 
         if self._update_listener:
             self._update_listener(self)
 
-    def shutdown(self):
+    async def shutdown(self):
         """Shutdown device."""
         self._update_listener = None
         self._unsub_listening()
@@ -119,7 +121,7 @@ class BlockDevice:
         """Async init upon CoAP message event."""
         try:
             async with async_timeout.timeout(DEVICE_TIMEOUT_SEC):
-                await self.initialize(False)
+                await self.initialize()
         except (asyncio.TimeoutError, OSError) as err:
             _LOGGER.warning(
                 "device %s initialize error - %s", self.options.ip_address, repr(err)
@@ -128,6 +130,7 @@ class BlockDevice:
     def _coap_message_received(self, msg):
         """COAP message received."""
         if not self._initializing and not self._initialized:
+            self._request_s = False
             loop = asyncio.get_running_loop()
             loop.create_task(self._async_init())
 
@@ -273,7 +276,7 @@ class BlockDevice:
     @property
     def gen(self):
         """Device generation: GEN1 - CoAP."""
-        return ShellyGeneration.GEN1
+        return 1
 
     @property
     def firmware_version(self):
@@ -294,7 +297,12 @@ class BlockDevice:
     @property
     def model_name(self):
         """Device model name."""
-        return GEN1_MODEL_NAMES.get(self.model) or f"Unknown ({self.model})"
+        return MODEL_NAMES.get(self.model) or f"Unknown ({self.model})"
+
+    @property
+    def hostname(self):
+        """Device hostname."""
+        return self.settings["device"]["hostname"]
 
 
 class Block:

@@ -1,12 +1,11 @@
 """Common code for Shelly library."""
 import re
 from dataclasses import dataclass
-from enum import Enum
 from typing import Optional
 
 import aiohttp
 
-from .const import MIN_FIRMWARE_DATE
+from .const import GEN1_MIN_FIRMWARE_DATE
 from .exceptions import FirmwareUnsupported
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
@@ -44,13 +43,16 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
         # GEN2 device all versions supported
         return result
 
-    if not supported_firmware(result["fw"]) or result["type"] in ["SHSW-44", "SHSEN-1"]:
+    if not gen1_supported_firmware(result["fw"]) or result["type"] in [
+        "SHSW-44",
+        "SHSEN-1",
+    ]:
         raise FirmwareUnsupported
 
     return result
 
 
-def supported_firmware(ver_str: str):
+def gen1_supported_firmware(ver_str: str):
     """Return True if device firmware version is supported."""
     match = FIRMWARE_PATTERN.search(ver_str)
 
@@ -59,11 +61,4 @@ def supported_firmware(ver_str: str):
 
     # We compare firmware release dates because Shelly version numbering is
     # inconsistent, sometimes the word is used as the version number.
-    return int(match[0]) >= MIN_FIRMWARE_DATE
-
-
-class ShellyGeneration(Enum):
-    """Device Generation."""
-
-    GEN1 = 1  # CoAP
-    GEN2 = 2  # RPC
+    return int(match[0]) >= GEN1_MIN_FIRMWARE_DATE

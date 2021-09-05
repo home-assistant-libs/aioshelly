@@ -1,6 +1,7 @@
 """Constants for aioshelly."""
 
-GEN1_MODEL_NAMES = {
+MODEL_NAMES = {
+    # Gen1 CoAP based models
     "SH2LED-1": "Shelly 2LED",
     "SHAIR-1": "Shelly Air",
     "SHBDUO-1": "Shelly DUO",
@@ -41,15 +42,13 @@ GEN1_MODEL_NAMES = {
     "SHUNI-1": "Shelly UNI",
     "SHVIN-1": "Shelly Vintage",
     "SHWT-1": "Shelly Flood",
-}
-
-GEN2_MODEL_NAMES = {
-    "SHPSW04P": "Shelly 4Pro Plus",
-    "SNSW-001P16EU": "Shelly 1PM Plus",
-    "SNSW-001X16EU": "Shelly 1 Plus",
+    # Gen2 RPC based models
+    "SNSW-001P16EU": "Shelly Plus 1PM",
+    "SNSW-001X16EU": "Shelly Plus 1",
+    "SPSW-004PE16EU": "Shelly Pro 4PM",
 }
 
 DEVICE_TIMEOUT_SEC = 10
 
-# Firmware 1.8.0 release date
-MIN_FIRMWARE_DATE = 20200812
+# Firmware 1.8.0 release date (CoAP v2)
+GEN1_MIN_FIRMWARE_DATE = 20200812

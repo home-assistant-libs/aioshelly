@@ -9,7 +9,6 @@ from datetime import datetime
 import aiohttp
 
 import aioshelly
-from aioshelly.common import ShellyGeneration
 
 
 async def test_single(ip, username, password, init, timeout, gen):
@@ -99,12 +98,12 @@ def print_device(device):
         print()
         return
 
-    print(f"** {device.model_name} @ {device.ip_address} **")
+    print(f"** {device.model_name} - {device.hostname} @ {device.ip_address} **")
     print()
 
-    if device.gen == ShellyGeneration.GEN1:
+    if device.gen == 1:
         print_block_device(device)
-    elif device.gen == ShellyGeneration.GEN2:
+    elif device.gen == 2:
         print_rpc_device(device)
 
 
@@ -157,7 +156,7 @@ def get_arguments() -> argparse.Namespace:
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
 
-    parser.add_argument("--gen", "-g", action="store_true", help="Gen 2 (RPC) device")
+    parser.add_argument("--gen2", "-g2", action="store_true", help="Gen 2 (RPC) device")
 
     arguments = parser.parse_args()
 
@@ -168,10 +167,7 @@ async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
 
-    if args.gen:
-        gen = ShellyGeneration.GEN2
-    else:
-        gen = ShellyGeneration.GEN1
+    gen = 2 if args.gen2 else 1
 
     if args.devices:
         await test_devices(args.init, args.timeout, gen)

@@ -8,7 +8,7 @@ import aiohttp
 
 from .block_device import BlockDevice
 from .coap import COAP
-from .common import ConnectionOptions, ShellyGeneration
+from .common import ConnectionOptions
 from .exceptions import ShellyError
 from .rpc_device import RpcDevice
 
@@ -23,7 +23,7 @@ class Device:
         coap_context: COAP,
         ip_or_options: Union[str, ConnectionOptions],
         initialize: bool = True,
-        gen=ShellyGeneration.GEN1,
+        gen=1,
     ):
         """Device creation."""
         if isinstance(ip_or_options, str):
@@ -39,15 +39,15 @@ class Device:
                 None, gethostbyname, options.ip_address
             )
 
-        if gen == ShellyGeneration.GEN1:
+        if gen == 1:
             block_instance = BlockDevice(coap_context, aiohttp_session, options)
             if initialize:
-                await block_instance.initialize(True)
+                await block_instance.initialize()
             else:
                 await block_instance.coap_request("s")
             return block_instance
 
-        if gen == ShellyGeneration.GEN2:
+        if gen == 2:
             rpc_instance = RpcDevice(aiohttp_session, options)
             if initialize:
                 await rpc_instance.initialize()
