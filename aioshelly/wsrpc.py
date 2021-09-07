@@ -158,7 +158,7 @@ class WsRPC:
             else:
                 await self._handle_frame(frame)
 
-        error = str(self.websocket.exception()) if self.websocket else ""
+        error = str(self.websocket.exception()) if self.websocket else "Disconnected"
         _LOGGER.debug("Websocket error: %s", error)
         await self.on_notification("WebSocketClosed", {"error": error})
 
