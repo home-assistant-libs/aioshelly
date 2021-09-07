@@ -6,7 +6,6 @@ from typing import Any, Dict
 import aiohttp
 
 from .common import ConnectionOptions, get_info
-from .const import MODEL_NAMES
 from .exceptions import AuthRequired, NotInitialized
 from .wsrpc import WsRPC
 
@@ -126,11 +125,6 @@ class RpcDevice:
         """Device check for authentication."""
         return self.shelly["auth_en"]
 
-    @property
-    def read_only(self):
-        """Device check if can only read data."""
-        return self.options.auth is None and self.requires_auth
-
     async def set_state(self, method, params):
         """Set state request (RPC Call)."""
         return await self._wsrpc.call(method, params)
@@ -196,11 +190,6 @@ class RpcDevice:
             raise NotInitialized
 
         return self.shelly["model"]
-
-    @property
-    def model_name(self):
-        """Device model name."""
-        return MODEL_NAMES.get(self.model) or f"Unknown ({self.model})"
 
     @property
     def hostname(self):

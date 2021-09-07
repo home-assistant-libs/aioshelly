@@ -9,6 +9,7 @@ from datetime import datetime
 import aiohttp
 
 import aioshelly
+from aioshelly.const import MODEL_NAMES
 
 
 async def test_single(ip, username, password, init, timeout, gen):
@@ -98,7 +99,8 @@ def print_device(device):
         print()
         return
 
-    print(f"** {device.model_name} - {device.hostname} @ {device.ip_address} **")
+    model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
+    print(f"** {model_name} - {device.hostname} @ {device.ip_address} **")
     print()
 
     if device.gen == 1:

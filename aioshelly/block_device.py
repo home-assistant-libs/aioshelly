@@ -8,7 +8,7 @@ import async_timeout
 
 from .coap import COAP
 from .common import ConnectionOptions, get_info
-from .const import DEVICE_TIMEOUT_SEC, MODEL_NAMES
+from .const import DEVICE_TIMEOUT_SEC
 from .exceptions import AuthRequired, NotInitialized
 
 BLOCK_VALUE_UNIT = "U"
@@ -209,7 +209,7 @@ class BlockDevice:
 
     async def http_request(self, method, path, params=None):
         """Device HTTP request."""
-        if self.read_only:
+        if self.options.auth is None and self.requires_auth:
             raise AuthRequired
 
         resp = await self.aiohttp_session.request(
@@ -245,11 +245,6 @@ class BlockDevice:
     def requires_auth(self):
         """Device check for authentication."""
         return self.shelly["auth"]
-
-    @property
-    def read_only(self):
-        """Device check if can only read data."""
-        return self.options.auth is None and self.requires_auth
 
     @property
     def settings(self):
@@ -293,11 +288,6 @@ class BlockDevice:
             raise NotInitialized
 
         return self.shelly["type"]
-
-    @property
-    def model_name(self):
-        """Device model name."""
-        return MODEL_NAMES.get(self.model) or f"Unknown ({self.model})"
 
     @property
     def hostname(self):

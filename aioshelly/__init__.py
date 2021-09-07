@@ -24,7 +24,7 @@ class Device:
         ip_or_options: Union[str, ConnectionOptions],
         initialize: bool = True,
         gen=1,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """Device creation."""
         if isinstance(ip_or_options, str):
             options = ConnectionOptions(ip_or_options)
