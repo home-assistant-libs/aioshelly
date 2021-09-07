@@ -39,15 +39,12 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     ) as resp:
         result = await resp.json()
 
-    if "fw" not in result:
-        # GEN2 device all versions supported
-        return result
-
-    if not gen1_supported_firmware(result["fw"]) or result["type"] in [
-        "SHSW-44",
-        "SHSEN-1",
-    ]:
-        raise FirmwareUnsupported
+    if "fw" in result:
+        if not gen1_supported_firmware(result["fw"]) or result["type"] in [
+            "SHSW-44",
+            "SHSEN-1",
+        ]:
+            raise FirmwareUnsupported
 
     return result
 
