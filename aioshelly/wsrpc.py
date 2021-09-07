@@ -25,9 +25,9 @@ _LOGGER = logging.getLogger(__name__)
 class RPCCall:
     """RPCCall class."""
 
-    id: int
+    call_id: int
     method: str
-    params: Any  # None or JSON-serializable
+    params: Dict[str, Any] | None
     src: str | None = None
     dst: str | None = None
     sent_at: datetime | None = None
@@ -37,7 +37,7 @@ class RPCCall:
     def request_frame(self):
         """Request frame."""
         msg = {
-            "id": self.id,
+            "id": self.call_id,
             "method": self.method,
             "src": self.src,
         }
@@ -68,7 +68,7 @@ class WsRPC:
 
     async def connect(self, aiohttp_session):
         """Connect to device."""
-        if self.websocket:
+        if self.connected:
             _LOGGER.debug("%s already connected", self.ip_address)
             return
 
@@ -83,7 +83,7 @@ class WsRPC:
         ) as err:
             raise CannotConnect(f"Error connecting to {self.ip_address}") from err
 
-        asyncio.create_task(self._rx_msgs())
+        self.rx_task = asyncio.create_task(self._rx_msgs())
 
         _LOGGER.info("Connected to %s", self.ip_address)
 
@@ -99,6 +99,7 @@ class WsRPC:
             call_item.future.cancel()
 
         self.calls = {}
+        self.rx_task = None
 
     async def _handle_call(self, frame_id):
         await self.websocket.send_json(
@@ -157,6 +158,10 @@ class WsRPC:
             else:
                 await self._handle_frame(frame)
 
+        error = str(self.websocket.exception())
+        _LOGGER.debug("Websocket error: %s", error)
+        await self.on_notification("WebSocketClosed", {"error": error})
+
     @property
     def connected(self) -> bool:
         """Return if we're currently connected."""
@@ -169,7 +174,7 @@ class WsRPC:
         call.src = self.src
         call.dst = self.dst
 
-        self.calls[call.id] = call
+        self.calls[call.call_id] = call
         await self.websocket.send_json(call.request_frame)
         call.sent_at = datetime.utcnow()
 

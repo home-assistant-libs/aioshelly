@@ -1,4 +1,8 @@
 """Shelly Gen2 RPC based device."""
+from __future__ import annotations
+
+from typing import Any, Dict
+
 import aiohttp
 
 from .common import ConnectionOptions, get_info
@@ -33,7 +37,8 @@ class RpcDevice:
         self.aiohttp_session = aiohttp_session
         self.options = options
         self.shelly = None
-        self._status = None
+        self._status: Dict[str, Any] | None = None
+        self._event: Dict[str, Any] | None = None
         self._device_info = None
         self._config = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
@@ -57,11 +62,13 @@ class RpcDevice:
         return instance
 
     async def _on_notification(self, method, params):
-        if method == "NotifyStatus":
+        if method == "NotifyStatus" and params is not None:
             self._status = dict(mergedicts(self._status, params))
+        elif method == "NotifyEvent" and params is not None:
+            self._event = params
 
-            if self._update_listener:
-                self._update_listener(self)
+        if self._update_listener:
+            self._update_listener(self)
 
     @property
     def ip_address(self):
@@ -140,6 +147,14 @@ class RpcDevice:
         return self._status
 
     @property
+    def event(self):
+        """Get device event."""
+        if not self._initialized:
+            raise NotInitialized
+
+        return self._event
+
+    @property
     def device_info(self):
         """Get device info."""
         if not self._initialized:
@@ -191,3 +206,8 @@ class RpcDevice:
     def hostname(self):
         """Device hostname."""
         return self.device_info["id"]
+
+    @property
+    def connected(self):
+        """Return true if device is connected."""
+        return self._wsrpc.connected

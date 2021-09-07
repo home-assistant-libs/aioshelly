@@ -128,7 +128,11 @@ def print_block_device(device):
 
 def print_rpc_device(device):
     """Print RPC (GEN2) device data."""
-    print(device.status)
+    if device.connected:
+        print(f"Status: {device.status}")
+        print(f"Event: {device.event}")
+    else:
+        print("Device disconnected")
 
 
 def get_arguments() -> argparse.Namespace:
