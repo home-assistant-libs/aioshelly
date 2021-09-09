@@ -1,27 +1,24 @@
 """Shelly Gen2 RPC based device."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict
 
 import aiohttp
 
-from .common import ConnectionOptions, get_info
-from .exceptions import AuthRequired, NotInitialized
+from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 from .wsrpc import WsRPC
 
 
 def mergedicts(dict1, dict2):
     """Deep dicts merge."""
-    for k in set(dict1.keys()).union(dict2.keys()):
-        if k in dict1 and k in dict2:
-            if isinstance(dict1[k], dict) and isinstance(dict2[k], dict):
-                yield (k, dict(mergedicts(dict1[k], dict2[k])))
-            else:
-                yield (k, dict2[k])
-        elif k in dict1:
-            yield (k, dict1[k])
-        else:
-            yield (k, dict2[k])
+    result = dict(dict1)
+    result.update(dict2)
+    for key, value in result.items():
+        if isinstance(value, dict) and isinstance(dict1.get(key), dict):
+            result[key] = mergedicts(dict1[key], value)
+    return result
 
 
 class RpcDevice:
@@ -42,17 +39,18 @@ class RpcDevice:
         self._config = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
         self._update_listener = None
-        self._initialized = False
+        self.initialized = False
         self._initializing = False
 
     @classmethod
     async def create(
         cls,
         aiohttp_session: aiohttp.ClientSession,
-        options: ConnectionOptions,
+        ip_or_options: IpOrOptionsType,
         initialize: bool = True,
     ):
         """Device creation."""
+        options = await process_ip_or_options(ip_or_options)
         instance = cls(aiohttp_session, options)
 
         if initialize:
@@ -60,11 +58,12 @@ class RpcDevice:
 
         return instance
 
-    async def _on_notification(self, method, params):
-        if method == "NotifyStatus" and params is not None:
-            self._status = dict(mergedicts(self._status, params))
-        elif method == "NotifyEvent" and params is not None:
-            self._event = params
+    def _on_notification(self, method, params=None):
+        if params is not None:
+            if method == "NotifyStatus":
+                self._status = dict(mergedicts(self._status, params))
+            elif method == "NotifyEvent":
+                self._event = params
 
         if self._update_listener:
             self._update_listener(self)
@@ -76,18 +75,22 @@ class RpcDevice:
 
     async def initialize(self):
         """Device initialization."""
+        if self._initializing:
+            raise RuntimeError("Already initializing")
+
         self._initializing = True
-        self._initialized = False
+        self.initialized = False
         try:
-            await self._wsrpc.connect(self.aiohttp_session)
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
-            if self.options.auth or not self.shelly["auth_en"]:
-                await self.update_device_info()
-                await self.update_config()
-                await self.update_status()
-
-            self._initialized = True
+            if self.options.auth or not self.requires_auth:
+                await self._wsrpc.connect(self.aiohttp_session)
+                await asyncio.gather(
+                    self.update_device_info(),
+                    self.update_config(),
+                    self.update_status(),
+                )
+            self.initialized = True
         finally:
             self._initializing = False
 
@@ -116,23 +119,21 @@ class RpcDevice:
         self._config = await self._wsrpc.call("Shelly.GetConfig")
 
     @property
-    def initialized(self):
-        """Device initialized."""
-        return self._initialized
-
-    @property
     def requires_auth(self):
         """Device check for authentication."""
+        if "auth_en" not in self.shelly:
+            raise WrongShellyGen
+
         return self.shelly["auth_en"]
 
-    async def set_state(self, method, params):
-        """Set state request (RPC Call)."""
+    async def call_rpc(self, method, params):
+        """Call RPC method."""
         return await self._wsrpc.call(method, params)
 
     @property
     def status(self):
         """Get device status."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         if self._status is None:
@@ -143,7 +144,7 @@ class RpcDevice:
     @property
     def event(self):
         """Get device event."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         return self._event
@@ -151,7 +152,7 @@ class RpcDevice:
     @property
     def device_info(self):
         """Get device info."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         if self._device_info is None:
@@ -162,7 +163,7 @@ class RpcDevice:
     @property
     def config(self):
         """Get device config."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         if self._config is None:
@@ -178,7 +179,7 @@ class RpcDevice:
     @property
     def firmware_version(self):
         """Device firmware version."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         return self.shelly["fw_id"]
@@ -186,7 +187,7 @@ class RpcDevice:
     @property
     def model(self):
         """Device model."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         return self.shelly["model"]

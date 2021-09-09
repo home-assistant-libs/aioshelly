@@ -48,9 +48,14 @@ MODEL_NAMES = {
     "SPSW-004PE16EU": "Shelly Pro 4PM",
 }
 
-DEVICE_TIMEOUT_SEC = 10
+# Timeout used for Block Device init
+BLOCK_DEVICE_INIT_TIMEOUT = 10
 
 # Firmware 1.8.0 release date (CoAP v2)
 GEN1_MIN_FIRMWARE_DATE = 20200812
 
-WS_HEARTBEAT_SEC = 50
+# WebScoket receive timeout - used for Heartbeat ping/pong
+WS_RECEIVE_TIMEOUT = 50
+
+# Notification sent by RPC device in case of WebSocket close
+NOTIFY_WS_CLOSED = "NotifiyWebSocketClosed"

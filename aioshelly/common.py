@@ -1,7 +1,10 @@
 """Common code for Shelly library."""
+import asyncio
+import ipaddress
 import re
 from dataclasses import dataclass
-from typing import Optional
+from socket import gethostbyname
+from typing import Optional, Union
 
 import aiohttp
 
@@ -30,6 +33,27 @@ class ConnectionOptions:
             object.__setattr__(
                 self, "auth", aiohttp.BasicAuth(self.username, self.password)
             )
+
+
+IpOrOptionsType = Union[str, ConnectionOptions]
+
+
+async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOptions:
+    """Return ConnectionOptions class from ip str or ConnectionOptions."""
+    if isinstance(ip_or_options, str):
+        options = ConnectionOptions(ip_or_options)
+    else:
+        options = ip_or_options
+
+    try:
+        ipaddress.ip_address(options.ip_address)
+    except ValueError:
+        loop = asyncio.get_running_loop()
+        options.ip_address = await loop.run_in_executor(
+            None, gethostbyname, options.ip_address
+        )
+
+    return options
 
 
 async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):

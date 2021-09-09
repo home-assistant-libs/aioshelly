@@ -7,9 +7,9 @@ import aiohttp
 import async_timeout
 
 from .coap import COAP
-from .common import ConnectionOptions, get_info
-from .const import DEVICE_TIMEOUT_SEC
-from .exceptions import AuthRequired, NotInitialized
+from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from .const import BLOCK_DEVICE_INIT_TIMEOUT
+from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"
@@ -56,7 +56,7 @@ class BlockDevice:
         )
         self._update_listener = None
         self._coap_response_events: dict = {}
-        self._initialized = False
+        self.initialized = False
         self._initializing = False
         self._request_s = True
 
@@ -65,10 +65,11 @@ class BlockDevice:
         cls,
         aiohttp_session: aiohttp.ClientSession,
         coap_context: COAP,
-        options: ConnectionOptions,
+        ip_or_options: IpOrOptionsType,
         initialize: bool = True,
     ):
         """Device creation."""
+        options = await process_ip_or_options(ip_or_options)
         instance = cls(coap_context, aiohttp_session, options)
 
         if initialize:
@@ -86,11 +87,11 @@ class BlockDevice:
     async def initialize(self):
         """Device initialization."""
         self._initializing = True
-        self._initialized = False
+        self.initialized = False
         try:
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
-            if self.options.auth or not self.shelly["auth"]:
+            if self.options.auth or not self.requires_auth:
                 await self.update_settings()
                 await self.update_status()
 
@@ -104,7 +105,7 @@ class BlockDevice:
                 event_s = await self.coap_request("s")
                 await event_s.wait()
 
-            self._initialized = True
+            self.initialized = True
         finally:
             self._initializing = False
             self._request_s = True
@@ -120,7 +121,7 @@ class BlockDevice:
     async def _async_init(self):
         """Async init upon CoAP message event."""
         try:
-            async with async_timeout.timeout(DEVICE_TIMEOUT_SEC):
+            async with async_timeout.timeout(BLOCK_DEVICE_INIT_TIMEOUT):
                 await self.initialize()
         except (asyncio.TimeoutError, OSError) as err:
             _LOGGER.warning(
@@ -129,7 +130,7 @@ class BlockDevice:
 
     def _coap_message_received(self, msg):
         """COAP message received."""
-        if not self._initializing and not self._initialized:
+        if not self._initializing and not self.initialized:
             self._request_s = False
             loop = asyncio.get_running_loop()
             loop.create_task(self._async_init())
@@ -182,7 +183,7 @@ class BlockDevice:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
-        if self._update_listener and self._initialized:
+        if self._update_listener and self.initialized:
             self._update_listener(self)
 
     def subscribe_updates(self, update_listener):
@@ -237,19 +238,17 @@ class BlockDevice:
         return await self.http_request("get", "ota", params=params)
 
     @property
-    def initialized(self):
-        """Device initialized."""
-        return self._initialized
-
-    @property
     def requires_auth(self):
         """Device check for authentication."""
+        if "auth" not in self.shelly:
+            raise WrongShellyGen
+
         return self.shelly["auth"]
 
     @property
     def settings(self):
         """Get device settings via HTTP."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         if self._settings is None:
@@ -260,7 +259,7 @@ class BlockDevice:
     @property
     def status(self):
         """Get device status via HTTP."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         if self._status is None:
@@ -276,7 +275,7 @@ class BlockDevice:
     @property
     def firmware_version(self):
         """Device firmware version."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         return self.shelly["fw"]
@@ -284,7 +283,7 @@ class BlockDevice:
     @property
     def model(self):
         """Device model."""
-        if not self._initialized:
+        if not self.initialized:
             raise NotInitialized
 
         return self.shelly["type"]

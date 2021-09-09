@@ -22,6 +22,14 @@ class CannotConnect(ShellyError):
     """Exception raised when failed to connect the client."""
 
 
+class ConnectionFailed(ShellyError):
+    """Exception raised when a connection failed."""
+
+
+class ConnectionClosed(ShellyError):
+    """Exception raised when the connection is closed."""
+
+
 class InvalidMessage(ShellyError):
     """Exception raised when an invalid message is received."""
 
@@ -42,3 +50,7 @@ class JSONRPCError(RPCError):
         self.code = code
         self.message = message
         super().__init__(code, message)
+
+
+class WrongShellyGen(ShellyError):
+    """Exception raised to indicate wrong Shelly generation."""
