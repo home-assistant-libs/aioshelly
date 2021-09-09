@@ -1,26 +1,59 @@
 # Run with python3 example.py <ip of shelly device>
+"""aioshelly usage example."""
 import argparse
 import asyncio
 import json
 import traceback
 from datetime import datetime
+from typing import Tuple
 
 import aiohttp
+import async_timeout
 
 import aioshelly
+from aioshelly.block_device import BlockDevice
+from aioshelly.common import ConnectionOptions
+from aioshelly.const import MODEL_NAMES
+from aioshelly.exceptions import ShellyError, WrongShellyGen
+from aioshelly.rpc_device import RpcDevice
 
 
-async def test_single(ip, username, password, init, timeout):
-    options = aioshelly.ConnectionOptions(ip, username, password)
+async def create_device(
+    aiohttp_session,
+    coap_context,
+    options,
+    init,
+    timeout,
+    gen,
+):  # pylint: disable=too-many-arguments
+    """Create a Gen1/Gen2 device"""
+    if gen is None:
+        async with async_timeout.timeout(timeout):
+            info = await aioshelly.common.get_info(aiohttp_session, options.ip_address)
+            gen = info.get("gen", 1)
 
-    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
+    if gen == 1:
+        return await BlockDevice.create(aiohttp_session, coap_context, options, init)
+
+    if gen == 2:
+        return await RpcDevice.create(aiohttp_session, options, init)
+
+    raise ShellyError("Unknown Gen")
+
+
+async def test_single(options, init, timeout, gen):
+    """Test single device."""
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.block_device.COAP() as coap_context:
         try:
-            device = await asyncio.wait_for(
-                aioshelly.Device.create(aiohttp_session, coap_context, options, init),
-                timeout,
-            )
+            async with async_timeout.timeout(timeout):
+                device = await create_device(
+                    aiohttp_session, coap_context, options, init, timeout, gen
+                )
         except asyncio.TimeoutError:
-            print("Timeout connecting to", ip)
+            print("Timeout connecting to", options.ip_address)
+            return
+        except WrongShellyGen:
+            print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
             return
 
         print_device(device)
@@ -31,18 +64,21 @@ async def test_single(ip, username, password, init, timeout):
             await asyncio.sleep(0.1)
 
 
-async def test_devices(init, timeout):
+async def test_devices(init, timeout, gen):
+    """Test multiple devices."""
     device_options = []
     with open("devices.json") as fp:
         for line in fp:
-            device_options.append(aioshelly.ConnectionOptions(**json.loads(line)))
+            device_options.append(
+                aioshelly.common.ConnectionOptions(**json.loads(line))
+            )
 
-    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.block_device.COAP() as coap_context:
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
                     connect_and_print_device(
-                        aiohttp_session, coap_context, options, init
+                        aiohttp_session, coap_context, options, init, timeout, gen
                     ),
                     timeout,
                 )
@@ -69,38 +105,49 @@ async def test_devices(init, timeout):
             await asyncio.sleep(0.1)
 
 
-async def connect_and_print_device(aiohttp_session, coap_context, options, init):
-    device = await aioshelly.Device.create(aiohttp_session, coap_context, options, init)
+async def connect_and_print_device(
+    aiohttp_session,
+    coap_context,
+    options,
+    init,
+    timeout,
+    gen,
+):  # pylint: disable=too-many-arguments
+    """Connect and print device data."""
+    device = await create_device(
+        aiohttp_session, coap_context, options, init, timeout, gen
+    )
     print_device(device)
     device.subscribe_updates(device_updated)
 
 
 def device_updated(cb_device):
-    print()
+    """Device updated callback."""
     print()
     print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
-    print()
     print_device(cb_device)
 
 
 def print_device(device):
+    """Print device data."""
     if not device.initialized:
         print()
         print(f"** Device @ {device.ip_address} not initialized **")
         print()
         return
 
-    model = (
-        aioshelly.MODEL_NAMES.get(device.settings["device"]["type"])
-        or f'Unknown model {device.settings["device"]["type"]}'
-    )
-
-    print()
-    print(f"** {model} @ {device.ip_address} **")
+    model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
+    print(f"** {model_name} - {device.hostname} @ {device.ip_address} **")
     print()
 
-    light_relay_block = None
+    if device.gen == 1:
+        print_block_device(device)
+    elif device.gen == 2:
+        print_rpc_device(device)
 
+
+def print_block_device(device):
+    """Print block (GEN1) device data."""
     for block in device.blocks:
         print(block)
         for attr, value in block.current_values().items():
@@ -109,26 +156,25 @@ def print_device(device):
             if value is None:
                 value = "-"
 
-            if aioshelly.BLOCK_VALUE_UNIT in info:
-                unit = " " + info[aioshelly.BLOCK_VALUE_UNIT]
+            if aioshelly.block_device.BLOCK_VALUE_UNIT in info:
+                unit = " " + info[aioshelly.block_device.BLOCK_VALUE_UNIT]
             else:
                 unit = ""
 
             print(f"{attr.ljust(16)}{value}{unit}")
         print()
 
-        if light_relay_block is None and block.type in ("relay", "light"):
-            light_relay_block = block
 
-    # if light_relay_block:
-    #     print(
-    #         await light_relay_block.set_state(
-    #             turn="off" if light_relay_block.output else "on"
-    #         )
-    #     )
+def print_rpc_device(device):
+    """Print RPC (GEN2) device data."""
+    if device.connected:
+        print(f"Status: {device.status}")
+        print(f"Event: {device.event}")
+    else:
+        print("Device disconnected")
 
 
-def get_arguments() -> argparse.Namespace:
+def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     """Get parsed passed in arguments."""
     parser = argparse.ArgumentParser(description="aioshelly example")
     parser.add_argument(
@@ -153,6 +199,13 @@ def get_arguments() -> argparse.Namespace:
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
 
+    parser.add_argument(
+        "--gen1", "-g1", action="store_true", help="Force Gen1 (CoAP) device"
+    )
+    parser.add_argument(
+        "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
+    )
+
     arguments = parser.parse_args()
 
     return parser, arguments
@@ -161,14 +214,24 @@ def get_arguments() -> argparse.Namespace:
 async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
+
+    if args.gen1 and args.gen2:
+        parser.error("--gen1 and --gen2 can't be used together")
+        gen = 1
+
+    gen = None
+    if args.gen1:
+        gen = 1
+    elif args.gen2:
+        gen = 2
+
     if args.devices:
-        await test_devices(args.init, args.timeout)
+        await test_devices(args.init, args.timeout, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
-        await test_single(
-            args.ip_address, args.username, args.password, args.init, args.timeout
-        )
+        options = ConnectionOptions(args.ip_address, args.username, args.password)
+        await test_single(options, args.init, args.timeout, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
