@@ -113,7 +113,7 @@ class BlockDevice:
         if self._update_listener:
             self._update_listener(self)
 
-    async def shutdown(self):
+    def shutdown(self):
         """Shutdown device."""
         self._update_listener = None
         self._unsub_listening()
