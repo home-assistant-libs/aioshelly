@@ -4,9 +4,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import pprint
+from asyncio import tasks
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
+import aiohttp
 import async_timeout
 from aiohttp import ClientWebSocketResponse, WSMsgType, client_exceptions
 
@@ -47,7 +49,7 @@ class RPCCall:
         self.resolve: asyncio.Future = asyncio.Future()
 
     @property
-    def request_frame(self):
+    def request_frame(self) -> dict[str, Any]:
         """Request frame."""
         msg = {
             "id": self.call_id,
@@ -63,22 +65,22 @@ class RPCCall:
 class WsRPC:
     """WsRPC class."""
 
-    def __init__(self, ip_address: str, on_notification):
+    def __init__(self, ip_address: str, on_notification: Callable) -> None:
         """Initialize WsRPC class."""
         self._ip_address = ip_address
         self._on_notification = on_notification
-        self._rx_task = None
+        self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
         self._calls: Dict[str, RPCCall] = {}
         self._call_id = 1
         self._route = RouteData(f"aios-{id(self)}", None)
 
     @property
-    def _next_id(self):
+    def _next_id(self) -> int:
         self._call_id += 1
         return self._call_id
 
-    async def connect(self, aiohttp_session):
+    async def connect(self, aiohttp_session: aiohttp.ClientSession) -> None:
         """Connect to device."""
         if self.connected:
             raise RuntimeError("Already connected")
@@ -98,7 +100,7 @@ class WsRPC:
 
         _LOGGER.info("Connected to %s", self._ip_address)
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """Disconnect all sessions."""
         if self._client is None:
             raise RuntimeError("Not connected")
@@ -108,7 +110,10 @@ class WsRPC:
 
         self._rx_task = None
 
-    async def _handle_call(self, frame_id):
+    async def _handle_call(self, frame_id: str) -> None:
+        if not self._client:
+            return
+
         await self._client.send_json(
             {
                 "id": frame_id,
@@ -117,7 +122,7 @@ class WsRPC:
             }
         )
 
-    def _handle_frame(self, frame):
+    def _handle_frame(self, frame: dict[str, Any]) -> None:
         if peer_src := frame.get("src"):
             if self._route.dst is not None and peer_src != self._route.dst:
                 _LOGGER.warning(
@@ -151,7 +156,10 @@ class WsRPC:
         else:
             _LOGGER.warning("Invalid frame: %s", frame)
 
-    async def _rx_msgs(self):
+    async def _rx_msgs(self) -> None:
+        if not self._client:
+            return
+
         while not self._client.closed:
             try:
                 frame = await self._receive_json_or_raise()
@@ -174,7 +182,7 @@ class WsRPC:
 
         self._on_notification(NOTIFY_WS_CLOSED)
 
-    async def _receive_json_or_raise(self) -> dict:
+    async def _receive_json_or_raise(self) -> dict[str, Any]:
         """Receive json or raise."""
         assert self._client
         msg = await self._client.receive(WS_RECEIVE_TIMEOUT)
@@ -189,7 +197,7 @@ class WsRPC:
             raise InvalidMessage(f"Received non-Text message: {msg.type}")
 
         try:
-            data = msg.json()
+            data: dict[str, Any] = msg.json()
         except ValueError as err:
             raise InvalidMessage("Received invalid JSON.") from err
 
@@ -202,10 +210,16 @@ class WsRPC:
         """Return if we're currently connected."""
         return self._client is not None and not self._client.closed
 
-    async def call(self, method, params=None, timeout=10):
+    async def call(
+        self, method: str, params: dict[str, Any] | None = None, timeout: int = 10
+    ) -> Any:
         """Websocket RPC call."""
         call = RPCCall(self._next_id, method, params, self._route)
-        self._calls[call.call_id] = call
+        self._calls[str(call.call_id)] = call
+
+        if not self._client:
+            return
+
         await self._client.send_json(call.request_frame)
 
         try:
