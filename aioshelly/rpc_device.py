@@ -66,9 +66,8 @@ class RpcDevice:
     ) -> None:
         if params is not None:
             if method == "NotifyStatus":
-                self._status = (
-                    dict(mergedicts(self._status, params)) if self._status else None
-                )
+                assert self._status
+                self._status = dict(mergedicts(self._status, params))
             elif method == "NotifyEvent":
                 self._event = params
 
