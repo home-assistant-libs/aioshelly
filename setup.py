@@ -13,6 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=["aioshelly"],
+    package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
     platforms="any",
     install_requires=list(val.strip() for val in open("requirements.txt")),
