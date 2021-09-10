@@ -71,7 +71,7 @@ class WsRPC:
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
-        self._calls: Dict[str, RPCCall] = {}
+        self._calls: Dict[int, RPCCall] = {}
         self._call_id = 1
         self._route = RouteData(f"aios-{id(self)}", None)
 
