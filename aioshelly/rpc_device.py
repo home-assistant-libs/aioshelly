@@ -2,18 +2,21 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict
+from typing import Any, Callable
 
 import aiohttp
+from aiohttp.client import ClientSession
 
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
+from .exceptions import AuthRequired, NotInitialized, ShellyError, WrongShellyGen
 from .wsrpc import WsRPC
 
 
-def mergedicts(dict1, dict2):
+def mergedicts(dict1: dict, dict2: dict | None) -> dict:
     """Deep dicts merge."""
     result = dict(dict1)
+    if dict2 is None:
+        return result
     result.update(dict2)
     for key, value in result.items():
         if isinstance(value, dict) and isinstance(dict1.get(key), dict):
@@ -30,17 +33,17 @@ class RpcDevice:
         options: ConnectionOptions,
     ):
         """Device init."""
-        self.aiohttp_session = aiohttp_session
-        self.options = options
-        self.shelly = None
-        self._status: Dict[str, Any] | None = None
-        self._event: Dict[str, Any] | None = None
-        self._device_info = None
-        self._config = None
+        self.aiohttp_session: ClientSession = aiohttp_session
+        self.options: ConnectionOptions = options
+        self.shelly: dict[str, Any] | None = None
+        self._status: dict[str, Any] | None = None
+        self._event: dict[str, Any] | None = None
+        self._device_info: dict[str, Any] | None = None
+        self._config: dict[str, Any] | None = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
-        self._update_listener = None
-        self.initialized = False
-        self._initializing = False
+        self._update_listener: Callable | None = None
+        self.initialized: bool = False
+        self._initializing: bool = False
 
     @classmethod
     async def create(
@@ -48,7 +51,7 @@ class RpcDevice:
         aiohttp_session: aiohttp.ClientSession,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,
-    ):
+    ) -> RpcDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
         instance = cls(aiohttp_session, options)
@@ -58,10 +61,14 @@ class RpcDevice:
 
         return instance
 
-    def _on_notification(self, method, params=None):
+    def _on_notification(
+        self, method: str, params: dict[str, Any] | None = None
+    ) -> None:
         if params is not None:
             if method == "NotifyStatus":
-                self._status = dict(mergedicts(self._status, params))
+                self._status = (
+                    dict(mergedicts(self._status, params)) if self._status else None
+                )
             elif method == "NotifyEvent":
                 self._event = params
 
@@ -69,11 +76,11 @@ class RpcDevice:
             self._update_listener(self)
 
     @property
-    def ip_address(self):
+    def ip_address(self) -> str:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Device initialization."""
         if self._initializing:
             raise RuntimeError("Already initializing")
@@ -97,41 +104,41 @@ class RpcDevice:
         if self._update_listener:
             self._update_listener(self)
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown device."""
         self._update_listener = None
         await self._wsrpc.disconnect()
 
-    def subscribe_updates(self, update_listener):
+    def subscribe_updates(self, update_listener: Callable) -> None:
         """Subscribe to device status updates."""
         self._update_listener = update_listener
 
-    async def update_status(self):
+    async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
         self._status = await self._wsrpc.call("Shelly.GetStatus")
 
-    async def update_device_info(self):
+    async def update_device_info(self) -> None:
         """Get device info from 'Shelly.GetDeviceInfo'."""
         self._device_info = await self._wsrpc.call("Shelly.GetDeviceInfo")
 
-    async def update_config(self):
+    async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self._wsrpc.call("Shelly.GetConfig")
 
     @property
-    def requires_auth(self):
+    def requires_auth(self) -> bool:
         """Device check for authentication."""
-        if "auth_en" not in self.shelly:
+        if not self.shelly or "auth_en" not in self.shelly:
             raise WrongShellyGen
 
-        return self.shelly["auth_en"]
+        return bool(self.shelly["auth_en"])
 
-    async def call_rpc(self, method, params):
+    async def call_rpc(self, method: str, params: Any) -> dict[str, Any]:
         """Call RPC method."""
         return await self._wsrpc.call(method, params)
 
     @property
-    def status(self):
+    def status(self) -> dict[str, Any]:
         """Get device status."""
         if not self.initialized:
             raise NotInitialized
@@ -142,7 +149,7 @@ class RpcDevice:
         return self._status
 
     @property
-    def event(self):
+    def event(self) -> dict[str, Any] | None:
         """Get device event."""
         if not self.initialized:
             raise NotInitialized
@@ -150,7 +157,7 @@ class RpcDevice:
         return self._event
 
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         """Get device info."""
         if not self.initialized:
             raise NotInitialized
@@ -161,7 +168,7 @@ class RpcDevice:
         return self._device_info
 
     @property
-    def config(self):
+    def config(self) -> dict[str, Any]:
         """Get device config."""
         if not self.initialized:
             raise NotInitialized
@@ -172,32 +179,38 @@ class RpcDevice:
         return self._config
 
     @property
-    def gen(self):
+    def gen(self) -> int:
         """Device generation: GEN2 - RPC."""
         return 2
 
     @property
-    def firmware_version(self):
+    def firmware_version(self) -> str:
         """Device firmware version."""
+        if self.shelly is None:
+            raise ShellyError
+
         if not self.initialized:
             raise NotInitialized
 
-        return self.shelly["fw_id"]
+        return str(self.shelly["fw_id"])
 
     @property
-    def model(self):
+    def model(self) -> str:
         """Device model."""
+        if self.shelly is None:
+            raise ShellyError
+
         if not self.initialized:
             raise NotInitialized
 
-        return self.shelly["model"]
+        return str(self.shelly["model"])
 
     @property
-    def hostname(self):
+    def hostname(self) -> str:
         """Device hostname."""
-        return self.device_info["id"]
+        return str(self.device_info["id"])
 
     @property
-    def connected(self):
+    def connected(self) -> bool:
         """Return true if device is connected."""
         return self._wsrpc.connected
