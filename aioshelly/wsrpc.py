@@ -111,8 +111,7 @@ class WsRPC:
         self._rx_task = None
 
     async def _handle_call(self, frame_id: str) -> None:
-        if not self._client:
-            return
+        assert self._client
 
         await self._client.send_json(
             {
