@@ -1,10 +1,13 @@
 """COAP for Shelly."""
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 import socket
 import struct
-from typing import Optional, cast
+from types import TracebackType
+from typing import Callable, Dict, Tuple, cast
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,7 +23,7 @@ class InvalidMessage(CoapError):
 class CoapMessage:
     """Represents a received coap message."""
 
-    def __init__(self, sender_addr, payload: bytes):
+    def __init__(self, sender_addr: Tuple[str, int], payload: bytes) -> None:
         """Initialize a coap message."""
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
@@ -53,7 +56,7 @@ class CoapMessage:
         )
 
 
-def socket_init(socket_port):
+def socket_init(socket_port: int) -> socket.socket:
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -68,21 +71,21 @@ def socket_init(socket_port):
 class COAP(asyncio.DatagramProtocol):
     """COAP manager."""
 
-    def __init__(self, message_received=None):
+    def __init__(self, message_received: Callable | None = None) -> None:
         """Initialize COAP manager."""
-        self.sock = None
+        self.sock: socket.socket | None = None
         # Will receive all updates
         self._message_received = message_received
-        self.subscriptions = {}
-        self.transport: Optional[asyncio.DatagramTransport] = None
+        self.subscriptions: Dict[str, Callable] = {}
+        self.transport: asyncio.DatagramTransport | None = None
 
-    async def initialize(self, socket_port: int = 5683):
+    async def initialize(self, socket_port: int = 5683) -> None:
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
         self.sock = socket_init(socket_port)
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
 
-    async def request(self, ip: str, path: str):
+    async def request(self, ip: str, path: str) -> None:
         """Request a CoAP message.
 
         Subscribe with `subscribe_updates` to receive answer.
@@ -92,15 +95,16 @@ class COAP(asyncio.DatagramProtocol):
         _LOGGER.debug("Sending request 'cit/%s' to device %s", path, ip)
         self.transport.sendto(msg, (ip, 5683))
 
-    def close(self):
+    def close(self) -> None:
         """Close."""
-        self.transport.close()
+        if self.transport is not None:
+            self.transport.close()
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """When the socket is set up."""
         self.transport = cast(asyncio.DatagramTransport, transport)
 
-    def datagram_received(self, data, addr):
+    def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         """Handle incoming datagram messages."""
         host_ip = addr[0]
         try:
@@ -119,23 +123,25 @@ class COAP(asyncio.DatagramProtocol):
             _LOGGER.debug("Calling CoAP message update for device %s", msg.ip)
             self.subscriptions[msg.ip](msg)
 
-    def subscribe_updates(self, ip, message_received):
+    def subscribe_updates(self, ip: str, message_received: Callable) -> Callable:
         """Subscribe to received updates."""
         _LOGGER.debug("Adding device %s to CoAP message subscriptions", ip)
         self.subscriptions[ip] = message_received
         return lambda: self.subscriptions.pop(ip)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "COAP":
         """Entering async context manager."""
         await self.initialize()
         return self
 
-    async def __aexit__(self, _type, _value, _traceback):
+    async def __aexit__(
+        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+    ) -> None:
         """Leaving async context manager."""
         self.close()
 
 
-async def discovery_dump():
+async def discovery_dump() -> None:
     """Dump all discovery data as it comes in."""
     async with COAP(lambda msg: print(msg.ip, msg.payload)):
         while True:
