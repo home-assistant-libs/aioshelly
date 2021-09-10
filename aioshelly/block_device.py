@@ -282,7 +282,7 @@ class BlockDevice:
         return 1
 
     @property
-    def firmware_version(self) -> str | None:
+    def firmware_version(self) -> str:
         """Device firmware version."""
         if not self.initialized:
             raise NotInitialized
@@ -292,7 +292,7 @@ class BlockDevice:
         return cast(str, self.shelly["fw"])
 
     @property
-    def model(self) -> str | None:
+    def model(self) -> str:
         """Device model."""
         if not self.initialized:
             raise NotInitialized
