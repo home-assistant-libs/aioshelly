@@ -192,7 +192,7 @@ class RpcDevice:
         if not self.initialized:
             raise NotInitialized
 
-        return str(self.shelly["fw_id"])
+        return cast(str, self.shelly["fw_id"])
 
     @property
     def model(self) -> str:
@@ -202,7 +202,7 @@ class RpcDevice:
         if not self.initialized:
             raise NotInitialized
 
-        return str(self.shelly["model"])
+        return cast(str, self.shelly["model"])
 
     @property
     def hostname(self) -> str:
