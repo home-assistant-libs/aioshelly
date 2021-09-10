@@ -1,8 +1,9 @@
-flake8==3.9.2
 black==21.8b0
+flake8==3.9.2
 isort==5.9.3
+mypy==0.910
 pylint==2.10.2
 pylint-strict-informational==0.1
 pre-commit==2.15.0
 requests
-mypy==0.910
+types-requests
