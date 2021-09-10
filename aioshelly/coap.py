@@ -7,7 +7,7 @@ import logging
 import socket
 import struct
 from types import TracebackType
-from typing import Callable, Dict, Tuple, cast
+from typing import Callable, Tuple, cast
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class COAP(asyncio.DatagramProtocol):
         self.sock: socket.socket | None = None
         # Will receive all updates
         self._message_received = message_received
-        self.subscriptions: Dict[str, Callable] = {}
+        self.subscriptions: dict[str, Callable] = {}
         self.transport: asyncio.DatagramTransport | None = None
 
     async def initialize(self, socket_port: int = 5683) -> None:
