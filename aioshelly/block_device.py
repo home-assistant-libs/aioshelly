@@ -12,7 +12,7 @@ from aiohttp.client_reqrep import ClientResponse
 from .coap import COAP, CoapMessage
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from .const import BLOCK_DEVICE_INIT_TIMEOUT
-from .exceptions import AuthRequired, NotInitialized, ShellyError, WrongShellyGen
+from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"
@@ -247,8 +247,7 @@ class BlockDevice:
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
-        if self.shelly is None:
-            raise ShellyError
+        assert self.shelly
 
         if "auth" not in self.shelly:
             raise WrongShellyGen
@@ -288,8 +287,8 @@ class BlockDevice:
         if not self.initialized:
             raise NotInitialized
 
-        if self.shelly is None:
-            return None
+        assert self.shelly
+
         return cast(str, self.shelly["fw"])
 
     @property
@@ -298,8 +297,8 @@ class BlockDevice:
         if not self.initialized:
             raise NotInitialized
 
-        if self.shelly is None:
-            return None
+        assert self.shelly
+
         return cast(str, self.shelly["type"])
 
     @property
