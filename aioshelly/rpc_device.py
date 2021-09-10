@@ -15,8 +15,6 @@ from .wsrpc import WsRPC
 def mergedicts(dict1: dict, dict2: dict | None) -> dict:
     """Deep dicts merge."""
     result = dict(dict1)
-    if dict2 is None:
-        return result
     result.update(dict2)
     for key, value in result.items():
         if isinstance(value, dict) and isinstance(dict1.get(key), dict):
