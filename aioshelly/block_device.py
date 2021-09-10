@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, cast
 
 import aiohttp
 import async_timeout
@@ -290,7 +290,7 @@ class BlockDevice:
 
         if self.shelly is None:
             return None
-        return str(self.shelly["fw"])
+        return cast(str, self.shelly["fw"])
 
     @property
     def model(self) -> str | None:
@@ -300,12 +300,12 @@ class BlockDevice:
 
         if self.shelly is None:
             return None
-        return str(self.shelly["type"])
+        return cast(str, self.shelly["type"])
 
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        return str(self.settings["device"]["hostname"])
+        return cast(str, self.settings["device"]["hostname"])
 
 
 class Block:
@@ -368,12 +368,12 @@ class Block:
     @property
     def index(self) -> str:
         """Block index."""
-        return str(self.blk["I"])
+        return cast(str, self.blk["I"])
 
     @property
     def description(self) -> str:
         """Block description."""
-        return str(self.blk["D"])
+        return cast(str, self.blk["D"])
 
     @property
     def channel(self) -> str | None:
