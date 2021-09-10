@@ -1,10 +1,12 @@
 """Common code for Shelly library."""
+from __future__ import annotations
+
 import asyncio
 import ipaddress
 import re
 from dataclasses import dataclass
 from socket import gethostbyname
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import aiohttp
 
@@ -24,7 +26,7 @@ class ConnectionOptions:
     temperature_unit: str = "C"
     auth: Optional[aiohttp.BasicAuth] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Call after initialization."""
         if self.username is not None:
             if self.password is None:
@@ -56,12 +58,14 @@ async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOpt
     return options
 
 
-async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
+async def get_info(
+    aiohttp_session: aiohttp.ClientSession, ip_address: str
+) -> dict[str, Any] | None:
     """Get info from device through REST call."""
     async with aiohttp_session.get(
         f"http://{ip_address}/shelly", raise_for_status=True
     ) as resp:
-        result = await resp.json()
+        result: dict[str, Any] = await resp.json()
 
     if "fw" in result:
         if not gen1_supported_firmware(result["fw"]) or result["type"] in [
@@ -73,7 +77,7 @@ async def get_info(aiohttp_session: aiohttp.ClientSession, ip_address):
     return result
 
 
-def gen1_supported_firmware(ver_str: str):
+def gen1_supported_firmware(ver_str: str) -> bool:
     """Return True if device firmware version is supported."""
     match = FIRMWARE_PATTERN.search(ver_str)
 
