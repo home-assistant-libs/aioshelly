@@ -215,7 +215,7 @@ class WsRPC:
     ) -> Any:
         """Websocket RPC call."""
         call = RPCCall(self._next_id, method, params, self._route)
-        self._calls[str(call.call_id)] = call
+        self._calls[call.call_id] = call
 
         if not self._client:
             return
