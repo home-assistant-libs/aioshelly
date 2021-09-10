@@ -156,8 +156,7 @@ class WsRPC:
             _LOGGER.warning("Invalid frame: %s", frame)
 
     async def _rx_msgs(self) -> None:
-        if not self._client:
-            return
+        assert self._client
 
         while not self._client.closed:
             try:
