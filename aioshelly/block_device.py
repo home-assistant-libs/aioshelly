@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, cast
+from typing import Any, Callable, cast
 
 import aiohttp
 import async_timeout
@@ -320,14 +320,14 @@ class Block:
         Block.TYPES[blk_type] = cls
 
     @staticmethod
-    def create(device: BlockDevice, blk: dict, sensors: Dict[str, dict]) -> Any:
+    def create(device: BlockDevice, blk: dict, sensors: dict[str, dict]) -> Any:
         """Block create."""
         blk_type = blk["D"].split("_")[0]
         cls = Block.TYPES.get(blk_type, Block)
         return cls(device, blk_type, blk, sensors)
 
     def __init__(
-        self, device: BlockDevice, blk_type: str, blk: dict, sensors: Dict[str, dict]
+        self, device: BlockDevice, blk_type: str, blk: dict, sensors: dict[str, dict]
     ):
         """Block initialize."""
         self.type = blk_type
