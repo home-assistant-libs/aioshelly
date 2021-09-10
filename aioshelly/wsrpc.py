@@ -6,7 +6,7 @@ import logging
 import pprint
 from asyncio import tasks
 from dataclasses import dataclass
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import aiohttp
 import async_timeout
@@ -38,7 +38,7 @@ class RPCCall:
     """RPCCall class."""
 
     def __init__(
-        self, call_id: int, method: str, params: Dict[str, Any] | None, route: RouteData
+        self, call_id: int, method: str, params: dict[str, Any] | None, route: RouteData
     ):
         """Initialize RPC class."""
         self.call_id = call_id
@@ -71,7 +71,7 @@ class WsRPC:
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
-        self._calls: Dict[int, RPCCall] = {}
+        self._calls: dict[int, RPCCall] = {}
         self._call_id = 1
         self._route = RouteData(f"aios-{id(self)}", None)
 
