@@ -12,7 +12,7 @@ from .exceptions import AuthRequired, NotInitialized, ShellyError, WrongShellyGe
 from .wsrpc import WsRPC
 
 
-def mergedicts(dict1: dict, dict2: dict | None) -> dict:
+def mergedicts(dict1: dict, dict2: dict) -> dict:
     """Deep dicts merge."""
     result = dict(dict1)
     result.update(dict2)
