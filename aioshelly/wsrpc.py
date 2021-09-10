@@ -210,7 +210,7 @@ class WsRPC:
 
     async def call(
         self, method: str, params: dict[str, Any] | None = None, timeout: int = 10
-    ) -> Any:
+    ) -> dict[str, Any]:
         """Websocket RPC call."""
         call = RPCCall(self._next_id, method, params, self._route)
         self._calls[call.call_id] = call
