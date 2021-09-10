@@ -214,10 +214,6 @@ class WsRPC:
         """Websocket RPC call."""
         call = RPCCall(self._next_id, method, params, self._route)
         self._calls[call.call_id] = call
-
-        if not self._client:
-            return
-
         await self._client.send_json(call.request_frame)
 
         try:
