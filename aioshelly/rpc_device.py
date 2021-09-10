@@ -207,7 +207,7 @@ class RpcDevice:
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        return str(self.device_info["id"])
+        return cast(str, self.device_info["id"])
 
     @property
     def connected(self) -> bool:
