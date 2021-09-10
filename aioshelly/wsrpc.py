@@ -231,7 +231,7 @@ class WsRPC:
 
         if "result" in resp:
             _LOGGER.debug("%s(%s) -> %s", call.method, call.params, resp["result"])
-            return resp["result"]
+            return dict(resp["result"])
 
         try:
             code, msg = resp["error"]["code"], resp["error"]["message"]
