@@ -212,6 +212,9 @@ class WsRPC:
         self, method: str, params: dict[str, Any] | None = None, timeout: int = 10
     ) -> dict[str, Any]:
         """Websocket RPC call."""
+        if self._client is None:
+            raise RuntimeError("Not connected")
+
         call = RPCCall(self._next_id, method, params, self._route)
         self._calls[call.call_id] = call
         await self._client.send_json(call.request_frame)
