@@ -130,7 +130,7 @@ class RpcDevice:
 
         return bool(self.shelly["auth_en"])
 
-    async def call_rpc(self, method: str, params: Any) -> dict[str, Any]:
+    async def call_rpc(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
         """Call RPC method."""
         return await self._wsrpc.call(method, params)
 
