@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import aiohttp
 from aiohttp.client import ClientSession
 
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .exceptions import AuthRequired, NotInitialized, ShellyError, WrongShellyGen
+from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 from .wsrpc import WsRPC
 
 
@@ -125,12 +125,16 @@ class RpcDevice:
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
-        if not self.shelly or "auth_en" not in self.shelly:
+        assert self.shelly
+
+        if "auth_en" not in self.shelly:
             raise WrongShellyGen
 
         return bool(self.shelly["auth_en"])
 
-    async def call_rpc(self, method: str, params: dict[str, Any] | None) -> dict[str, Any]:
+    async def call_rpc(
+        self, method: str, params: dict[str, Any] | None
+    ) -> dict[str, Any]:
         """Call RPC method."""
         return await self._wsrpc.call(method, params)
 
@@ -183,8 +187,7 @@ class RpcDevice:
     @property
     def firmware_version(self) -> str:
         """Device firmware version."""
-        if self.shelly is None:
-            raise ShellyError
+        assert self.shelly
 
         if not self.initialized:
             raise NotInitialized
@@ -194,8 +197,7 @@ class RpcDevice:
     @property
     def model(self) -> str:
         """Device model."""
-        if self.shelly is None:
-            raise ShellyError
+        assert self.shelly
 
         if not self.initialized:
             raise NotInitialized
