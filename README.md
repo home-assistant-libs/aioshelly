@@ -1,27 +1,38 @@
 # Aioshelly
 
-## Asynchronous library to control Shelly
+## Asynchronous library to control Shelly devices
 
-## This library is under development.
+## This library is under development
 
 Requires Python 3 and uses asyncio, aiohttp and socket.
+
+### *From release 1.0.0 and up library has breaking changes to support Shelly Gen2 devices* Gen1 `Device` class moved under `block_device`
+
+Gen1 Device (Block/CoAP) example:
 
 ```python
 import asyncio
 from pprint import pprint
+
 import aiohttp
-import aioshelly
+import async_timeout
 
-async def main():
-    options = aioshelly.ConnectionOptions("192.168.1.165", "username", "password")
+from aioshelly.block_device import COAP, BlockDevice
+from aioshelly.common import ConnectionOptions
 
-    async with aiohttp.ClientSession() as aiohttp_session, aioshelly.COAP() as coap_context:
+
+async def test_block_device():
+    """Test Gen1 Block (CoAP) based device."""
+    options = ConnectionOptions("192.168.1.165", "username", "password")
+
+    async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
         try:
-            device = await asyncio.wait_for(
-                aioshelly.Device.create(aiohttp_session, coap_context, options), 5
-            )
+            async with async_timeout.timeout(10):
+                device = await BlockDevice.create(
+                    aiohttp_session, coap_context, options
+                )
         except asyncio.TimeoutError:
-            print("Timeout connecting to", ip)
+            print("Timeout connecting to", ConnectionOptions.ip_address)
             return
 
         for block in device.blocks:
@@ -31,7 +42,39 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(test_block_device())
+```
+
+Gen2 (RPC/WebSocket) device example:
+
+```python
+import asyncio
+from pprint import pprint
+
+import aiohttp
+import async_timeout
+
+from aioshelly.common import ConnectionOptions
+from aioshelly.rpc_device import RpcDevice
+
+
+async def test_rpc_device():
+    """Test Gen2 RPC (WebSocket) based device."""
+    options = ConnectionOptions("192.168.1.188", "username", "password")
+
+    async with aiohttp.ClientSession() as aiohttp_session:
+        try:
+            async with async_timeout.timeout(10):
+                device = await RpcDevice.create(aiohttp_session, options)
+        except asyncio.TimeoutError:
+            print("Timeout connecting to", ConnectionOptions.ip_address)
+            return
+
+        pprint(device.status)
+
+
+if __name__ == "__main__":
+    asyncio.run(test_rpc_device())
 ```
 
 ## Included examples
