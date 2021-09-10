@@ -225,7 +225,7 @@ class BlockDevice:
             auth=self.options.auth,
             raise_for_status=True,
         )
-        return dict(await resp.json())
+        return cast(dict, await resp.json())
 
     async def switch_light_mode(self, mode: str) -> dict[str, Any]:
         """Change device mode color/white."""
