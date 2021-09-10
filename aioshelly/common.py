@@ -6,7 +6,7 @@ import ipaddress
 import re
 from dataclasses import dataclass
 from socket import gethostbyname
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 import aiohttp
 
@@ -21,10 +21,10 @@ class ConnectionOptions:
     """Shelly options for connection."""
 
     ip_address: str
-    username: Optional[str] = None
-    password: Optional[str] = None
+    username: str | None = None
+    password: str | None = None
     temperature_unit: str = "C"
-    auth: Optional[aiohttp.BasicAuth] = None
+    auth: aiohttp.BasicAuth | None = None
 
     def __post_init__(self) -> None:
         """Call after initialization."""
