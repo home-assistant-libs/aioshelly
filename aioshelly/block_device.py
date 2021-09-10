@@ -1,15 +1,18 @@
 """Shelly Gen1 CoAP block based device."""
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Dict
+from typing import Any, Callable, Dict
 
 import aiohttp
 import async_timeout
+from aiohttp.client_reqrep import ClientResponse
 
-from .coap import COAP
+from .coap import COAP, CoapMessage
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from .const import BLOCK_DEVICE_INIT_TIMEOUT
-from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
+from .exceptions import AuthRequired, NotInitialized, ShellyError, WrongShellyGen
 
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"
@@ -42,19 +45,19 @@ class BlockDevice:
         options: ConnectionOptions,
     ):
         """Device init."""
-        self.coap_context = coap_context
-        self.aiohttp_session = aiohttp_session
-        self.options = options
-        self.coap_d = None
-        self.blocks = None
-        self.coap_s = None
-        self._settings = None
-        self.shelly = None
-        self._status = None
+        self.coap_context: COAP = coap_context
+        self.aiohttp_session: aiohttp.ClientSession = aiohttp_session
+        self.options: ConnectionOptions = options
+        self.coap_d: dict[str, Any] | None = None
+        self.blocks: list | None = None
+        self.coap_s: dict[str, Any] | None = None
+        self._settings: dict[str, Any] | None = None
+        self.shelly: dict[str, Any] | None = None
+        self._status: dict[str, Any] | None = None
         self._unsub_listening = coap_context.subscribe_updates(
             options.ip_address, self._coap_message_received
         )
-        self._update_listener = None
+        self._update_listener: Callable | None = None
         self._coap_response_events: dict = {}
         self.initialized = False
         self._initializing = False
@@ -67,7 +70,7 @@ class BlockDevice:
         coap_context: COAP,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,
-    ):
+    ) -> BlockDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
         instance = cls(coap_context, aiohttp_session, options)
@@ -80,11 +83,11 @@ class BlockDevice:
         return instance
 
     @property
-    def ip_address(self):
+    def ip_address(self) -> str:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Device initialization."""
         self._initializing = True
         self.initialized = False
@@ -95,7 +98,7 @@ class BlockDevice:
                 await self.update_settings()
                 await self.update_status()
 
-            event_d = await self.coap_request("d")
+            event_d: asyncio.Event = await self.coap_request("d")
 
             # We need to wait for D to come in before we request S
             # Or else we might miss the answer to D
@@ -113,12 +116,12 @@ class BlockDevice:
         if self._update_listener:
             self._update_listener(self)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown device."""
         self._update_listener = None
         self._unsub_listening()
 
-    async def _async_init(self):
+    async def _async_init(self) -> None:
         """Async init upon CoAP message event."""
         try:
             async with async_timeout.timeout(BLOCK_DEVICE_INIT_TIMEOUT):
@@ -128,7 +131,7 @@ class BlockDevice:
                 "device %s initialize error - %s", self.options.ip_address, repr(err)
             )
 
-    def _coap_message_received(self, msg):
+    def _coap_message_received(self, msg: CoapMessage) -> None:
         """COAP message received."""
         if not self._initializing and not self.initialized:
             self._request_s = False
@@ -151,12 +154,12 @@ class BlockDevice:
         if event is not None:
             event.set()
 
-    async def update(self):
+    async def update(self) -> None:
         """Device update."""
         event = await self.coap_request("s")
         await event.wait()
 
-    def _update_d(self, data):
+    def _update_d(self, data: dict[str, Any]) -> None:
         """Device update from cit/d call."""
         self.coap_d = data
         blocks = []
@@ -179,54 +182,58 @@ class BlockDevice:
 
         self.blocks = blocks
 
-    def _update_s(self, data):
+    def _update_s(self, data: dict[str, Any]) -> None:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
         if self._update_listener and self.initialized:
             self._update_listener(self)
 
-    def subscribe_updates(self, update_listener):
+    def subscribe_updates(self, update_listener: Callable) -> None:
         """Subscribe to device status updates."""
         self._update_listener = update_listener
 
-    async def update_status(self):
+    async def update_status(self) -> None:
         """Device update from /status (HTTP)."""
         self._status = await self.http_request("get", "status")
 
-    async def update_settings(self):
+    async def update_settings(self) -> None:
         """Device update from /settings (HTTP)."""
         self._settings = await self.http_request("get", "settings")
 
-    async def coap_request(self, path):
+    async def coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
         if path not in self._coap_response_events:
             self._coap_response_events[path] = asyncio.Event()
 
-        event = self._coap_response_events[path]
+        event: asyncio.Event = self._coap_response_events[path]
 
         await self.coap_context.request(self.ip_address, path)
         return event
 
-    async def http_request(self, method, path, params=None):
+    async def http_request(
+        self, method: str, path: str, params: Any | None = None
+    ) -> dict[str, Any]:
         """Device HTTP request."""
         if self.options.auth is None and self.requires_auth:
             raise AuthRequired
 
-        resp = await self.aiohttp_session.request(
+        resp: ClientResponse = await self.aiohttp_session.request(
             method,
             f"http://{self.options.ip_address}/{path}",
             params=params,
             auth=self.options.auth,
             raise_for_status=True,
         )
-        return await resp.json()
+        return dict(await resp.json())
 
-    async def switch_light_mode(self, mode):
+    async def switch_light_mode(self, mode: str) -> dict[str, Any]:
         """Change device mode color/white."""
         return await self.http_request("get", "settings", {"mode": mode})
 
-    async def trigger_ota_update(self, beta=False, url=None):
+    async def trigger_ota_update(
+        self, beta: bool = False, url: str | None = None
+    ) -> dict[str, Any]:
         """Trigger an ota update."""
         params = {"update": "true"}
 
@@ -238,15 +245,18 @@ class BlockDevice:
         return await self.http_request("get", "ota", params=params)
 
     @property
-    def requires_auth(self):
+    def requires_auth(self) -> bool:
         """Device check for authentication."""
+        if self.shelly is None:
+            raise ShellyError
+
         if "auth" not in self.shelly:
             raise WrongShellyGen
 
-        return self.shelly["auth"]
+        return bool(self.shelly["auth"])
 
     @property
-    def settings(self):
+    def settings(self) -> dict[str, Any]:
         """Get device settings via HTTP."""
         if not self.initialized:
             raise NotInitialized
@@ -257,7 +267,7 @@ class BlockDevice:
         return self._settings
 
     @property
-    def status(self):
+    def status(self) -> dict[str, Any]:
         """Get device status via HTTP."""
         if not self.initialized:
             raise NotInitialized
@@ -268,30 +278,34 @@ class BlockDevice:
         return self._status
 
     @property
-    def gen(self):
+    def gen(self) -> int:
         """Device generation: GEN1 - CoAP."""
         return 1
 
     @property
-    def firmware_version(self):
+    def firmware_version(self) -> str | None:
         """Device firmware version."""
         if not self.initialized:
             raise NotInitialized
 
-        return self.shelly["fw"]
+        if self.shelly is None:
+            return None
+        return str(self.shelly["fw"])
 
     @property
-    def model(self):
+    def model(self) -> str | None:
         """Device model."""
         if not self.initialized:
             raise NotInitialized
 
-        return self.shelly["type"]
+        if self.shelly is None:
+            return None
+        return str(self.shelly["type"])
 
     @property
-    def hostname(self):
+    def hostname(self) -> str:
         """Device hostname."""
-        return self.settings["device"]["hostname"]
+        return str(self.settings["device"]["hostname"])
 
 
 class Block:
@@ -300,13 +314,13 @@ class Block:
     TYPES: dict = {}
     type = None
 
-    def __init_subclass__(cls, blk_type, **kwargs):
+    def __init_subclass__(cls, blk_type: str, **kwargs: Any) -> None:
         """Initialize a subclass, register if possible."""
         super().__init_subclass__(**kwargs)  # type: ignore
         Block.TYPES[blk_type] = cls
 
     @staticmethod
-    def create(device: BlockDevice, blk: dict, sensors: Dict[str, dict]):
+    def create(device: BlockDevice, blk: dict, sensors: Dict[str, dict]) -> Any:
         """Block create."""
         blk_type = blk["D"].split("_")[0]
         cls = Block.TYPES.get(blk_type, Block)
@@ -352,49 +366,55 @@ class Block:
         self.sensor_ids = sensor_ids
 
     @property
-    def index(self):
+    def index(self) -> str:
         """Block index."""
-        return self.blk["I"]
+        return str(self.blk["I"])
 
     @property
-    def description(self):
+    def description(self) -> str:
         """Block description."""
-        return self.blk["D"]
+        return str(self.blk["D"])
 
     @property
-    def channel(self):
+    def channel(self) -> str | None:
         """Block description for channel."""
         return self.description.split("_")[1] if "_" in self.description else None
 
-    def info(self, attr):
+    def info(self, attr: str) -> dict[str, Any]:
         """Return info over attribute."""
         return self.sensors[self.sensor_ids[attr]]
 
-    def current_values(self):
+    def current_values(self) -> dict[str, Any]:
         """Block values."""
+        if self.device.coap_s is None:
+            return {}
+
         return {
             desc: self.device.coap_s.get(index)
             for desc, index in self.sensor_ids.items()
         }
 
-    async def set_state(self, **kwargs):
+    async def set_state(self, **kwargs: Any) -> dict[str, Any]:
         """Set state request (HTTP)."""
         return await self.device.http_request(
             "get", f"{self.type}/{self.channel}", kwargs
         )
 
-    async def toggle(self):
+    async def toggle(self) -> dict[str, Any]:
         """Toggle status."""
         return await self.set_state(turn="off" if self.output else "on")
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> str | None:
         """Get attribute."""
         if attr not in self.sensor_ids:
             raise AttributeError(f"{self.type} block has no attribute '{attr}'")
 
+        if self.device.coap_s is None:
+            return None
+
         return self.device.coap_s.get(self.sensor_ids[attr])
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Format string."""
         return f"<{self.type} {self.blk}>"
 
@@ -402,7 +422,7 @@ class Block:
 class LightBlock(Block, blk_type="light"):
     """Get light status."""
 
-    async def set_state(self, **kwargs):
+    async def set_state(self, **kwargs: Any) -> dict[str, Any]:
         """Set light state."""
         if self.device.settings["device"]["type"] == "SHRGBW2":
             path = f"{self.device.settings['mode']}/{self.channel}"
