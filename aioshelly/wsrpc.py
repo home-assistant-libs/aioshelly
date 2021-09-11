@@ -105,9 +105,7 @@ class WsRPC:
         if self._client is None:
             raise RuntimeError("Not connected")
 
-        websocket, self._client = self._client, None
-        await websocket.close()
-
+        await self._client.close()
         self._rx_task = None
 
     async def _handle_call(self, frame_id: str) -> None:
@@ -178,6 +176,7 @@ class WsRPC:
         if not self._client.closed:
             await self._client.close()
 
+        self._client = None
         self._on_notification(NOTIFY_WS_CLOSED)
 
     async def _receive_json_or_raise(self) -> dict[str, Any]:
