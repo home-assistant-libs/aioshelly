@@ -60,7 +60,7 @@ async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOpt
 
 async def get_info(
     aiohttp_session: aiohttp.ClientSession, ip_address: str
-) -> dict[str, Any] | None:
+) -> dict[str, Any]:
     """Get info from device through REST call."""
     async with aiohttp_session.get(
         f"http://{ip_address}/shelly", raise_for_status=True
