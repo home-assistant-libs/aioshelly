@@ -54,8 +54,7 @@ BLOCK_DEVICE_INIT_TIMEOUT = 10
 # Firmware 1.8.0 release date (CoAP v2)
 GEN1_MIN_FIRMWARE_DATE = 20200812
 
-# WebScoket receive timeout - used for Heartbeat ping/pong
-WS_RECEIVE_TIMEOUT = 50
-
 # Notification sent by RPC device in case of WebSocket close
 NOTIFY_WS_CLOSED = "NotifiyWebSocketClosed"
+
+WS_HEARTBEAT = 55

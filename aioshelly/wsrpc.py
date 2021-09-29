@@ -12,7 +12,7 @@ import aiohttp
 import async_timeout
 from aiohttp import ClientWebSocketResponse, WSMsgType, client_exceptions
 
-from .const import NOTIFY_WS_CLOSED, WS_RECEIVE_TIMEOUT
+from .const import NOTIFY_WS_CLOSED, WS_HEARTBEAT
 from .exceptions import (
     CannotConnect,
     ConnectionClosed,
@@ -88,7 +88,7 @@ class WsRPC:
         _LOGGER.debug("Trying to connect to device at %s", self._ip_address)
         try:
             self._client = await aiohttp_session.ws_connect(
-                f"http://{self._ip_address}/rpc"
+                f"http://{self._ip_address}/rpc", heartbeat=WS_HEARTBEAT
             )
         except (
             client_exceptions.WSServerHandshakeError,
@@ -102,11 +102,11 @@ class WsRPC:
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
+        self._rx_task = None
         if self._client is None:
-            raise RuntimeError("Not connected")
+            return
 
         await self._client.close()
-        self._rx_task = None
 
     async def _handle_call(self, frame_id: str) -> None:
         assert self._client
@@ -159,9 +159,6 @@ class WsRPC:
         while not self._client.closed:
             try:
                 frame = await self._receive_json_or_raise()
-            except asyncio.TimeoutError:
-                await self._client.ping()
-                continue
             except ConnectionClosed:
                 break
 
@@ -182,7 +179,7 @@ class WsRPC:
     async def _receive_json_or_raise(self) -> dict[str, Any]:
         """Receive json or raise."""
         assert self._client
-        msg = await self._client.receive(WS_RECEIVE_TIMEOUT)
+        msg = await self._client.receive()
 
         if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
             raise ConnectionClosed("Connection was closed.")
