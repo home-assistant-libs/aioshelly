@@ -102,11 +102,11 @@ class WsRPC:
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
+        self._rx_task = None
         if self._client is None:
-            raise RuntimeError("Not connected")
+            return
 
         await self._client.close()
-        self._rx_task = None
 
     async def _handle_call(self, frame_id: str) -> None:
         assert self._client
