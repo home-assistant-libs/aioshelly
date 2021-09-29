@@ -12,7 +12,7 @@ import aiohttp
 import async_timeout
 from aiohttp import ClientWebSocketResponse, WSMsgType, client_exceptions
 
-from .const import NOTIFY_WS_CLOSED, WS_RECEIVE_TIMEOUT
+from .const import NOTIFY_WS_CLOSED, WS_HEARTBEAT, WS_RECEIVE_TIMEOUT
 from .exceptions import (
     CannotConnect,
     ConnectionClosed,
@@ -88,7 +88,7 @@ class WsRPC:
         _LOGGER.debug("Trying to connect to device at %s", self._ip_address)
         try:
             self._client = await aiohttp_session.ws_connect(
-                f"http://{self._ip_address}/rpc"
+                f"http://{self._ip_address}/rpc", heartbeat=WS_HEARTBEAT
             )
         except (
             client_exceptions.WSServerHandshakeError,

@@ -59,3 +59,5 @@ WS_RECEIVE_TIMEOUT = 50
 
 # Notification sent by RPC device in case of WebSocket close
 NOTIFY_WS_CLOSED = "NotifiyWebSocketClosed"
+
+WS_HEARTBEAT = 55
