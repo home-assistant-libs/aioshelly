@@ -10,7 +10,7 @@ from typing import Any, Union
 
 import aiohttp
 
-from .const import GEN1_MIN_FIRMWARE_DATE
+from .const import GEN1_MIN_FIRMWARE_DATE, GEN2_MIN_FIRMWARE_DATE
 from .exceptions import FirmwareUnsupported
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
@@ -67,23 +67,35 @@ async def get_info(
     ) as resp:
         result: dict[str, Any] = await resp.json()
 
-    if "fw" in result:
-        if not gen1_supported_firmware(result["fw"]) or result["type"] in [
-            "SHSW-44",
-            "SHSEN-1",
-        ]:
-            raise FirmwareUnsupported
+    if not shelly_supported_firmware(result):
+        raise FirmwareUnsupported
 
     return result
 
 
-def gen1_supported_firmware(ver_str: str) -> bool:
+def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     """Return True if device firmware version is supported."""
-    match = FIRMWARE_PATTERN.search(ver_str)
+
+    fw_str: str
+    fw_ver: int
+
+    if "fw" in result:
+        if result["type"] in [
+            "SHSW-44",
+            "SHSEN-1",
+        ]:
+            return False
+        fw_str = result["fw"]
+        fw_ver = GEN1_MIN_FIRMWARE_DATE
+    else:
+        fw_str = result["fw_id"]
+        fw_ver = GEN2_MIN_FIRMWARE_DATE
+
+    match = FIRMWARE_PATTERN.search(fw_str)
 
     if match is None:
         return False
 
     # We compare firmware release dates because Shelly version numbering is
     # inconsistent, sometimes the word is used as the version number.
-    return int(match[0]) >= GEN1_MIN_FIRMWARE_DATE
+    return int(match[0]) >= fw_ver
