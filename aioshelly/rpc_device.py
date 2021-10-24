@@ -114,7 +114,6 @@ class RpcDevice:
         """Trigger an ota update."""
         params = {"stage": "beta"} if beta else {"stage": "stable"}
         await self._wsrpc.call("Shelly.Update", params)
-        return None
 
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
