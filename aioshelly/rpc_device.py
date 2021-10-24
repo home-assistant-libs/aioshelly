@@ -110,10 +110,10 @@ class RpcDevice:
         """Subscribe to device status updates."""
         self._update_listener = update_listener
 
-    async def trigger_ota_update(self, beta: bool = False) -> None:
+    async def trigger_ota_update(self, beta: bool = False) -> dict[str, Any]:
         """Trigger an ota update."""
         params = {"stage": "beta"} if beta else {"stage": "stable"}
-        await self._wsrpc.call("Shelly.Update", params)
+        return await self._wsrpc.call("Shelly.Update", params)
 
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
