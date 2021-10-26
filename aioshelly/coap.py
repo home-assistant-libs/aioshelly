@@ -38,7 +38,7 @@ class CoapMessage:
 
         try:
             self.payload = json.loads(payload.rsplit(b"\xff", 1)[1].decode())
-        except (json.decoder.JSONDecodeError, IndexError) as err:
+        except (json.decoder.JSONDecodeError, UnicodeDecodeError, IndexError) as err:
             raise InvalidMessage(
                 f"Message type {self.code} is not a valid JSON format: {str(payload)}"
             ) from err
