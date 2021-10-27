@@ -39,12 +39,16 @@ MODEL_NAMES = {
     "SHSW-44": "Shelly 4Pro",  # CoAP v1, unsupported
     "SHSW-L": "Shelly 1L",
     "SHSW-PM": "Shelly 1PM",
+    "SHTRV-01": "Shelly Valve",
     "SHUNI-1": "Shelly UNI",
     "SHVIN-1": "Shelly Vintage",
     "SHWT-1": "Shelly Flood",
     # Gen2 RPC based models
     "SNSW-001P16EU": "Shelly Plus 1PM",
     "SNSW-001X16EU": "Shelly Plus 1",
+    "SPSW-001PE16EU": "Shelly Pro 1PM",
+    "SPSW-002PE16EU": "Shelly Pro 2PM",
+    "SPSW-002XE16EU": "Shelly Pro 2",
     "SPSW-004PE16EU": "Shelly Pro 4PM",
 }
 
