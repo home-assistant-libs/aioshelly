@@ -32,7 +32,7 @@ async def test_block_device():
                     aiohttp_session, coap_context, options
                 )
         except asyncio.TimeoutError:
-            print("Timeout connecting to", ConnectionOptions.ip_address)
+            print("Timeout connecting to", options.ip_address)
             return
 
         for block in device.blocks:
