@@ -224,6 +224,7 @@ class BlockDevice:
             params=params,
             auth=self.options.auth,
             raise_for_status=True,
+            timeout=BLOCK_DEVICE_INIT_TIMEOUT,
         )
         return cast(dict, await resp.json())
 
