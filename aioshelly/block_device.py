@@ -11,7 +11,7 @@ from aiohttp.client_reqrep import ClientResponse
 
 from .coap import COAP, CoapMessage
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import BLOCK_DEVICE_INIT_TIMEOUT
+from .const import BLOCK_DEVICE_INIT_TIMEOUT, HTTP_CALL_TIMEOUT
 from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 
 BLOCK_VALUE_UNIT = "U"
@@ -224,6 +224,7 @@ class BlockDevice:
             params=params,
             auth=self.options.auth,
             raise_for_status=True,
+            timeout=HTTP_CALL_TIMEOUT,
         )
         return cast(dict, await resp.json())
 
