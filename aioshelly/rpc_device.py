@@ -116,6 +116,10 @@ class RpcDevice:
         params = {"stage": "beta"} if beta else {"stage": "stable"}
         await self._wsrpc.call("Shelly.Update", params)
 
+    async def trigger_reboot(self) -> None:
+        """Trigger a device reboot."""
+        await self._wsrpc.call("Shelly.Reboot")
+
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
         self._status = await self._wsrpc.call("Shelly.GetStatus")

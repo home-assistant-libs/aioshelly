@@ -245,6 +245,10 @@ class BlockDevice:
 
         return await self.http_request("get", "ota", params=params)
 
+    async def trigger_reboot(self) -> None:
+        """Trigger a device reboot."""
+        await self.http_request("get", "reboot")
+
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
