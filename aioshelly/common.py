@@ -63,7 +63,7 @@ async def get_info(
     aiohttp_session: aiohttp.ClientSession, ip_address: str
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
-    with async_timeout.timeout(HTTP_CALL_TIMEOUT):
+    async with async_timeout.timeout(HTTP_CALL_TIMEOUT):
         async with aiohttp_session.get(
             f"http://{ip_address}/shelly", raise_for_status=True
         ) as resp:
