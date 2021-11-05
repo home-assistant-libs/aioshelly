@@ -51,6 +51,9 @@ MODEL_NAMES = {
 # Timeout used for Block Device init
 BLOCK_DEVICE_INIT_TIMEOUT = 10
 
+# Timeout used for HTTP calls
+HTTP_CALL_TIMEOUT = 10
+
 # Firmware 1.8.0 release date (CoAP v2)
 GEN1_MIN_FIRMWARE_DATE = 20200812
 

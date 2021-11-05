@@ -9,8 +9,9 @@ from socket import gethostbyname
 from typing import Any, Union
 
 import aiohttp
+import async_timeout
 
-from .const import GEN1_MIN_FIRMWARE_DATE, GEN2_MIN_FIRMWARE_DATE
+from .const import GEN1_MIN_FIRMWARE_DATE, GEN2_MIN_FIRMWARE_DATE, HTTP_CALL_TIMEOUT
 from .exceptions import FirmwareUnsupported
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
@@ -62,10 +63,11 @@ async def get_info(
     aiohttp_session: aiohttp.ClientSession, ip_address: str
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
-    async with aiohttp_session.get(
-        f"http://{ip_address}/shelly", raise_for_status=True
-    ) as resp:
-        result: dict[str, Any] = await resp.json()
+    with async_timeout.timeout(HTTP_CALL_TIMEOUT):
+        async with aiohttp_session.get(
+            f"http://{ip_address}/shelly", raise_for_status=True
+        ) as resp:
+            result: dict[str, Any] = await resp.json()
 
     if not shelly_supported_firmware(result):
         raise FirmwareUnsupported
