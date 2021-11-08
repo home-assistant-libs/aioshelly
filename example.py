@@ -226,7 +226,7 @@ def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
     )
     parser.add_argument(
-        "--debugger", "-deb", action="store_true", help="Enable debug level for logging"
+        "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
 
     arguments = parser.parse_args()
