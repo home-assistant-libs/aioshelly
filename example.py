@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import logging
 import traceback
 from datetime import datetime
 from typing import Any, Tuple, cast
@@ -51,10 +52,13 @@ async def test_single(
     options: ConnectionOptions,
     init: bool,
     timeout: float,
+    port: int,
     gen: int | None,
 ) -> None:
     """Test single device."""
-    async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session, COAP(
+        port=port
+    ) as coap_context:
         try:
             async with async_timeout.timeout(timeout):
                 device = await create_device(
@@ -75,14 +79,16 @@ async def test_single(
             await asyncio.sleep(0.1)
 
 
-async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
+async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -> None:
     """Test multiple devices."""
     device_options = []
     with open("devices.json") as fp:
         for line in fp:
             device_options.append(ConnectionOptions(**json.loads(line)))
 
-    async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session, COAP(
+        port=port
+    ) as coap_context:
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
@@ -192,6 +198,9 @@ def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--ip_address", "-ip", type=str, help="Test single device by IP address"
     )
     parser.add_argument(
+        "--socket_port", "-sp", type=int, help="Specify socket UDP port"
+    )
+    parser.add_argument(
         "--devices",
         "-d",
         action="store_true",
@@ -216,6 +225,9 @@ def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument(
         "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
     )
+    parser.add_argument(
+        "--debugger", "-deb", action="store_true", help="Enable debug level for logging"
+    )
 
     arguments = parser.parse_args()
 
@@ -235,13 +247,16 @@ async def main() -> None:
     elif args.gen2:
         gen = 2
 
+    if args.debugger:
+        logging.basicConfig(level="DEBUG", force=True)
+
     if args.devices:
-        await test_devices(args.init, args.timeout, gen)
+        await test_devices(args.init, args.timeout, args.socket_port, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         options = ConnectionOptions(args.ip_address, args.username, args.password)
-        await test_single(options, args.init, args.timeout, gen)
+        await test_single(options, args.init, args.timeout, args.socket_port, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
