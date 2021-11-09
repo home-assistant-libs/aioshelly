@@ -103,7 +103,7 @@ async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -
                 asyncio.wait_for(
                     connect_and_print_device(
                         aiohttp_session,
-                        await get_coap_context(port),
+                        coap_context,
                         options,
                         init,
                         timeout,
