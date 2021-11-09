@@ -97,6 +97,7 @@ async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -
             device_options.append(ConnectionOptions(**json.loads(line)))
 
     async with aiohttp.ClientSession() as aiohttp_session:
+        coap_context = await get_coap_context(port)
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
