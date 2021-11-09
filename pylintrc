@@ -10,6 +10,7 @@ extension-pkg-whitelist=ciso8601,cv2
 
 [BASIC]
 good-names=id,i,j,k,ex,Run,_,fp,T,ev,ip
+max-public-methods=25
 
 [MESSAGES CONTROL]
 # Reasons disabled:
