@@ -71,14 +71,11 @@ def socket_init(socket_port: int) -> socket.socket:
 class COAP(asyncio.DatagramProtocol):
     """COAP manager."""
 
-    def __init__(
-        self, message_received: Callable | None = None, port: int | None = None
-    ) -> None:
+    def __init__(self, message_received: Callable | None = None) -> None:
         """Initialize COAP manager."""
         self.sock: socket.socket | None = None
         # Will receive all updates
         self._message_received = message_received
-        self._port = port
         self.subscriptions: dict[str, Callable] = {}
         self.transport: asyncio.DatagramTransport | None = None
 
@@ -134,10 +131,7 @@ class COAP(asyncio.DatagramProtocol):
 
     async def __aenter__(self) -> "COAP":
         """Entering async context manager."""
-        if self._port:
-            await self.initialize(self._port)
-        else:
-            await self.initialize()
+        await self.initialize()
         return self
 
     async def __aexit__(

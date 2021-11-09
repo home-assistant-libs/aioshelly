@@ -21,6 +21,15 @@ from aioshelly.exceptions import ShellyError, WrongShellyGen
 from aioshelly.rpc_device import RpcDevice
 
 
+async def get_coap_context(port: int | None = None) -> COAP:
+    """Create CoAP context"""
+    context = COAP()
+    if not port:
+        port = 5683
+    await context.initialize(port)
+    return context
+
+
 async def create_device(  # pylint: disable=too-many-arguments
     aiohttp_session: aiohttp.ClientSession,
     coap_context: COAP,
@@ -56,13 +65,16 @@ async def test_single(
     gen: int | None,
 ) -> None:
     """Test single device."""
-    async with aiohttp.ClientSession() as aiohttp_session, COAP(
-        port=port
-    ) as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session:
         try:
             async with async_timeout.timeout(timeout):
                 device = await create_device(
-                    aiohttp_session, coap_context, options, init, timeout, gen
+                    aiohttp_session,
+                    await get_coap_context(port),
+                    options,
+                    init,
+                    timeout,
+                    gen,
                 )
         except asyncio.TimeoutError:
             print("Timeout connecting to", options.ip_address)
@@ -86,14 +98,17 @@ async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -
         for line in fp:
             device_options.append(ConnectionOptions(**json.loads(line)))
 
-    async with aiohttp.ClientSession() as aiohttp_session, COAP(
-        port=port
-    ) as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session:
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
                     connect_and_print_device(
-                        aiohttp_session, coap_context, options, init, timeout, gen
+                        aiohttp_session,
+                        await get_coap_context(port),
+                        options,
+                        init,
+                        timeout,
+                        gen,
                     ),
                     timeout,
                 )
@@ -247,7 +262,7 @@ async def main() -> None:
     elif args.gen2:
         gen = 2
 
-    if args.debugger:
+    if args.debug:
         logging.basicConfig(level="DEBUG", force=True)
 
     if args.devices:
