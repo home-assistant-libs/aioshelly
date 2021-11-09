@@ -24,7 +24,7 @@ from aioshelly.rpc_device import RpcDevice
 async def get_coap_context(port: int | None = None) -> COAP:
     """Create CoAP context"""
     context = COAP()
-    await context.initialize(port or 5683)
+    await context.initialize(port)
     return context
 
 
@@ -211,7 +211,11 @@ def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--ip_address", "-ip", type=str, help="Test single device by IP address"
     )
     parser.add_argument(
-        "--socket_port", "-sp", type=int, help="Specify socket UDP port"
+        "--socket_port",
+        "-sp",
+        type=int,
+        default=5683,
+        help="Specify socket UDP port (default=5683)",
     )
     parser.add_argument(
         "--devices",
