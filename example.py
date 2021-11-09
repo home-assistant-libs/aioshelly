@@ -24,9 +24,7 @@ from aioshelly.rpc_device import RpcDevice
 async def get_coap_context(port: int | None = None) -> COAP:
     """Create CoAP context"""
     context = COAP()
-    if not port:
-        port = 5683
-    await context.initialize(port)
+    await context.initialize(port or 5683)
     return context
 
 
