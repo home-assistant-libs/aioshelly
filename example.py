@@ -21,7 +21,7 @@ from aioshelly.exceptions import ShellyError, WrongShellyGen
 from aioshelly.rpc_device import RpcDevice
 
 
-async def get_coap_context(port: int | None = None) -> COAP:
+async def get_coap_context(port: int) -> COAP:
     """Create CoAP context"""
     context = COAP()
     await context.initialize(port)
