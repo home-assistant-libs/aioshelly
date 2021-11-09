@@ -65,14 +65,10 @@ async def test_single(
     """Test single device."""
     async with aiohttp.ClientSession() as aiohttp_session:
         try:
+            coap_context = await get_coap_context(port)
             async with async_timeout.timeout(timeout):
                 device = await create_device(
-                    aiohttp_session,
-                    await get_coap_context(port),
-                    options,
-                    init,
-                    timeout,
-                    gen,
+                    aiohttp_session, coap_context, options, init, timeout, gen
                 )
         except asyncio.TimeoutError:
             print("Timeout connecting to", options.ip_address)
@@ -102,12 +98,7 @@ async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -
             *[
                 asyncio.wait_for(
                     connect_and_print_device(
-                        aiohttp_session,
-                        coap_context,
-                        options,
-                        init,
-                        timeout,
-                        gen,
+                        aiohttp_session, coap_context, options, init, timeout, gen
                     ),
                     timeout,
                 )
