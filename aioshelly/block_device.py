@@ -218,6 +218,7 @@ class BlockDevice:
         if self.options.auth is None and self.requires_auth:
             raise AuthRequired
 
+        _LOGGER.debug("aiohttp request: /%s", path)
         resp: ClientResponse = await self.aiohttp_session.request(
             method,
             f"http://{self.options.ip_address}/{path}",
@@ -226,7 +227,9 @@ class BlockDevice:
             raise_for_status=True,
             timeout=HTTP_CALL_TIMEOUT,
         )
-        return cast(dict, await resp.json())
+        resp_json = await resp.json()
+        _LOGGER.debug("aiohttp response: %s", resp_json)
+        return cast(dict, resp_json)
 
     async def switch_light_mode(self, mode: str) -> dict[str, Any]:
         """Change device mode color/white."""
