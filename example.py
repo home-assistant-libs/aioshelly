@@ -5,8 +5,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import logging
+import signal
+import sys
 import traceback
 from datetime import datetime
+from types import FrameType
 from typing import Any, Tuple, cast
 
 import aiohttp
@@ -18,6 +22,21 @@ from aioshelly.common import ConnectionOptions
 from aioshelly.const import MODEL_NAMES
 from aioshelly.exceptions import ShellyError, WrongShellyGen
 from aioshelly.rpc_device import RpcDevice
+
+
+async def get_coap_context(port: int) -> COAP:
+    """Create CoAP context"""
+    context = COAP()
+
+    def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
+        """Handle Keyboard signal interrupt (ctrl-c)."""
+        context.close()
+        sys.exit()
+
+    signal.signal(signal.SIGINT, handle_sigint)
+
+    await context.initialize(port)
+    return context
 
 
 async def create_device(  # pylint: disable=too-many-arguments
@@ -51,11 +70,13 @@ async def test_single(
     options: ConnectionOptions,
     init: bool,
     timeout: float,
+    port: int,
     gen: int | None,
 ) -> None:
     """Test single device."""
-    async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session:
         try:
+            coap_context = await get_coap_context(port)
             async with async_timeout.timeout(timeout):
                 device = await create_device(
                     aiohttp_session, coap_context, options, init, timeout, gen
@@ -75,14 +96,15 @@ async def test_single(
             await asyncio.sleep(0.1)
 
 
-async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
+async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -> None:
     """Test multiple devices."""
     device_options = []
     with open("devices.json") as fp:
         for line in fp:
             device_options.append(ConnectionOptions(**json.loads(line)))
 
-    async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
+    async with aiohttp.ClientSession() as aiohttp_session:
+        coap_context = await get_coap_context(port)
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
@@ -192,6 +214,13 @@ def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--ip_address", "-ip", type=str, help="Test single device by IP address"
     )
     parser.add_argument(
+        "--socket_port",
+        "-sp",
+        type=int,
+        default=5683,
+        help="Specify socket UDP port (default=5683)",
+    )
+    parser.add_argument(
         "--devices",
         "-d",
         action="store_true",
@@ -216,6 +245,9 @@ def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument(
         "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
     )
+    parser.add_argument(
+        "--debug", "-deb", action="store_true", help="Enable debug level for logging"
+    )
 
     arguments = parser.parse_args()
 
@@ -235,19 +267,19 @@ async def main() -> None:
     elif args.gen2:
         gen = 2
 
+    if args.debug:
+        logging.basicConfig(level="DEBUG", force=True)
+
     if args.devices:
-        await test_devices(args.init, args.timeout, gen)
+        await test_devices(args.init, args.timeout, args.socket_port, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         options = ConnectionOptions(args.ip_address, args.username, args.password)
-        await test_single(options, args.init, args.timeout, gen)
+        await test_single(options, args.init, args.timeout, args.socket_port, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
+    asyncio.run(main())
