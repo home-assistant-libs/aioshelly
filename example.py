@@ -6,8 +6,11 @@ import argparse
 import asyncio
 import json
 import logging
+import signal
+import sys
 import traceback
 from datetime import datetime
+from types import FrameType
 from typing import Any, Tuple, cast
 
 import aiohttp
@@ -24,6 +27,14 @@ from aioshelly.rpc_device import RpcDevice
 async def get_coap_context(port: int) -> COAP:
     """Create CoAP context"""
     context = COAP()
+
+    def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
+        """Handle Keyboard signal interrupt (ctrl-c)."""
+        context.close()
+        sys.exit()
+
+    signal.signal(signal.SIGINT, handle_sigint)
+
     await context.initialize(port)
     return context
 
@@ -271,7 +282,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
+    asyncio.run(main())
