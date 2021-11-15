@@ -407,6 +407,10 @@ class Block:
             "get", f"{self.type}/{self.channel}", kwargs
         )
 
+    async def set_state_full_path(self, path: str, **kwargs: Any) -> dict[str, Any]:
+        """Set state request (HTTP)."""
+        return await self.device.http_request("get", f"{path}", kwargs)
+
     async def toggle(self) -> dict[str, Any]:
         """Toggle status."""
         return await self.set_state(turn="off" if self.output else "on")
