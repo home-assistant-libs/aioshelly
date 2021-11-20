@@ -218,7 +218,7 @@ class BlockDevice:
         if self.options.auth is None and self.requires_auth:
             raise AuthRequired
 
-        _LOGGER.debug("aiohttp request: /%s", path)
+        _LOGGER.debug("aiohttp request: /%s (params=%s)", path, params)
         resp: ClientResponse = await self.aiohttp_session.request(
             method,
             f"http://{self.options.ip_address}/{path}",
