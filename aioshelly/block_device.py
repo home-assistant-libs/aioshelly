@@ -323,7 +323,7 @@ class Block:
 
     def __init_subclass__(cls, blk_type: str, **kwargs: Any) -> None:
         """Initialize a subclass, register if possible."""
-        super().__init_subclass__(**kwargs)  # type: ignore
+        super().__init_subclass__(**kwargs)
         Block.TYPES[blk_type] = cls
 
     @staticmethod
