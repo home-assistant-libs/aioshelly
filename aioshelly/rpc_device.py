@@ -126,7 +126,9 @@ class RpcDevice:
 
     async def update_device_info(self) -> None:
         """Get device info from 'Shelly.GetDeviceInfo'."""
-        self._device_info = await self._wsrpc.call("Shelly.GetDeviceInfo")
+        self._device_info = await self._wsrpc.call(
+            "Shelly.GetDeviceInfo", {"ident": True}
+        )
 
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
