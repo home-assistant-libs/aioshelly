@@ -92,7 +92,7 @@ class BlockDevice:
         self._initializing = True
         self.initialized = False
         try:
-            self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+            await self.update_shelly()
 
             if self.options.auth or not self.requires_auth:
                 await self.update_settings()
@@ -200,6 +200,10 @@ class BlockDevice:
     async def update_settings(self) -> None:
         """Device update from /settings (HTTP)."""
         self._settings = await self.http_request("get", "settings")
+
+    async def update_shelly(self) -> None:
+        """Device update for /shelly (HTTP)."""
+        self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
     async def coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
