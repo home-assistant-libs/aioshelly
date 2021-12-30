@@ -256,7 +256,7 @@ class BlockDevice:
         """Trigger a device reboot."""
         await self.http_request("get", "reboot")
 
-    async def trigger_self_test(self) -> None:
+    async def trigger_shelly_gas_self_test(self) -> None:
         """Trigger a Shelly Gas self test."""
         await self.http_request("get", "self_test")
 
