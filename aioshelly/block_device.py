@@ -256,6 +256,10 @@ class BlockDevice:
         """Trigger a device reboot."""
         await self.http_request("get", "reboot")
 
+    async def trigger_self_test(self) -> None:
+        """Trigger a Shelly Gas self test."""
+        await self.http_request("get", "self_test")
+
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
