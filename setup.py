@@ -4,7 +4,7 @@ long_description = open("README.md").read()
 
 setup(
     name="aioshelly",
-    version="1.0.7",
+    version="1.0.8",
     license="Apache License 2.0",
     url="https://github.com/home-assistant-libs/aioshelly",
     author="Paulus Schoutsen",
