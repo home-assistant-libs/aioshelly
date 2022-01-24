@@ -148,7 +148,8 @@ class WsRPC:
                 return
 
             call = self._calls.pop(frame_id)
-            call.resolve.set_result(frame)
+            if not call.resolve.cancelled():
+                call.resolve.set_result(frame)
 
         else:
             _LOGGER.warning("Invalid frame: %s", frame)
@@ -162,7 +163,8 @@ class WsRPC:
             except ConnectionClosed:
                 break
 
-            self._handle_frame(frame)
+            if not self._client.closed:
+                self._handle_frame(frame)
 
         _LOGGER.debug("Websocket connection closed")
 
