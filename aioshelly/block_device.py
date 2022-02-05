@@ -430,7 +430,9 @@ class Block:
     def __getattr__(self, attr: str) -> str | None:
         """Get attribute."""
         if attr not in self.sensor_ids:
-            raise AttributeError(f"{self.type} block has no attribute '{attr}'")
+            raise AttributeError(
+                f"Device {self.device.model} with firmware {self.device.firmware_version} has no attribute '{attr}' in block {self.type}"
+            )
 
         if self.device.coap_s is None:
             return None
