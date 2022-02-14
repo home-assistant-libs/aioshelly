@@ -22,7 +22,6 @@ def mergedicts(dict1: dict, dict2: dict) -> dict:
     return result
 
 
-
 class RpcDevice:
     """Shelly RPC device reppresentation."""
 
@@ -89,20 +88,12 @@ class RpcDevice:
         try:
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
-            if self.options.auth or not self.requires_auth:
-                await self._wsrpc.connect(self.aiohttp_session, self.options)
-                await asyncio.gather(
-                    self.update_device_info(),
-                    self.update_config(),
-                    self.update_status(),
-                )
-            elif self.requires_auth:
-                await self._wsrpc.connect(self.aiohttp_session, self.options.password)
-                await asyncio.gather(
-                    self.update_device_info(),
-                    self.update_config(),
-                    self.update_status(),
-                )
+            await self._wsrpc.connect(self.aiohttp_session, self.options)
+            await asyncio.gather(
+                self.update_device_info(),
+                self.update_config(),
+                self.update_status(),
+            )
             self.initialized = True
         finally:
             self._initializing = False

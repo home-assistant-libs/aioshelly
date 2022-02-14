@@ -91,7 +91,7 @@ class WsRPC:
         self._call_id += 1
         return self._call_id
 
-    async def connect(self, aiohttp_session: aiohttp.ClientSession, password: str = "") -> None:
+    async def connect(self, aiohttp_session: aiohttp.ClientSession, options: ConnectionOptions | None = None) -> None:
         """Connect to device."""
         if self.connected:
             raise RuntimeError("Already connected")
@@ -112,7 +112,7 @@ class WsRPC:
         _LOGGER.info("Connected to %s", self._ip_address)
 
         # https://shelly-api-docs.shelly.cloud/gen2/Overview/CommonDeviceTraits/#authentication-over-websocket
-        if password:
+        if options and options.password:
             try:
                 result = await self.call("Sys.GetStatus", {})
             except JSONRPCError as err:
