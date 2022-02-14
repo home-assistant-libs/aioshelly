@@ -4,15 +4,11 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable, cast
 
-import hashlib
-import json
-import secrets
-
 import aiohttp
 from aiohttp.client import ClientSession
 
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .exceptions import AuthRequired, NotInitialized, WrongShellyGen, JSONRPCError
+from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 from .wsrpc import WsRPC
 
 
@@ -25,9 +21,6 @@ def mergedicts(dict1: dict, dict2: dict) -> dict:
             result[key] = mergedicts(dict1[key], value)
     return result
 
-
-def sha256(message):
-    return hashlib.sha256(message.encode('utf-8')).hexdigest()
 
 
 class RpcDevice:
@@ -97,46 +90,19 @@ class RpcDevice:
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
             if self.options.auth or not self.requires_auth:
-                await self._wsrpc.connect(self.aiohttp_session)
+                await self._wsrpc.connect(self.aiohttp_session, self.options)
                 await asyncio.gather(
                     self.update_device_info(),
                     self.update_config(),
                     self.update_status(),
                 )
             elif self.requires_auth:
-                try:
-                    await self._wsrpc.connect(self.aiohttp_session)
-                    result = await self._wsrpc.call("Sys.GetStatus", {})
-                except JSONRPCError as err:
-                    if err.code == 401:
-                        response_message = json.loads(err.message)
-
-                        username = "admin" #always
-                        password = "super-secret"
-                        ha1 = sha256(f"{username}:{response_message['realm']}:{password}")
-                        # Static noise
-                        ha2 = sha256("dummy_method:dummy_uri")
-                        cnonce = secrets.randbelow(10**8)
-                        if "nc" not in response_message:
-                            response_message['nc'] = 1
-                        hashed = sha256(f"{ha1}:{response_message['nonce']}:{response_message['nc']}:{cnonce}:auth:{ha2}")
-                        auth = {
-                                "realm": response_message["realm"],
-                                "username": "admin",
-                                "nonce": response_message["nonce"],
-                                "cnonce": cnonce,
-                                "response": hashed,
-                                "algorithm": "SHA-256"
-                        }
-                        self._wsrpc.set_auth(auth)
-                        # Verify auth
-                        try:
-                            new_result = await self._wsrpc.call("Sys.GetStatus")
-                        except JSONRPCError as err:
-                            print("Auth still failed, password may be incorrect")
-                            raise err
-                    else:
-                        raise err
+                await self._wsrpc.connect(self.aiohttp_session, self.options.password)
+                await asyncio.gather(
+                    self.update_device_info(),
+                    self.update_config(),
+                    self.update_status(),
+                )
             self.initialized = True
         finally:
             self._initializing = False
