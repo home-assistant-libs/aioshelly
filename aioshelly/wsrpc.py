@@ -138,7 +138,7 @@ class WsRPC:
                     self.set_auth(auth)
                     # Verify auth
                     try:
-                        new_result = await self.call("Sys.GetStatus")
+                        await self.call("Sys.GetStatus")
                     except JSONRPCError as err:
                         _LOGGER.info("Auth failed, password may be incorrect")
                         raise err
