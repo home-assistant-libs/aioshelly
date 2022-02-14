@@ -38,11 +38,12 @@ class RPCCall:
     """RPCCall class."""
 
     def __init__(
-        self, call_id: int, method: str, params: dict[str, Any] | None, route: RouteData
+        self, call_id: int, method: str, params: dict[str, Any], auth: dict[str, Any] | None, route: RouteData
     ):
         """Initialize RPC class."""
         self.call_id = call_id
         self.params = params
+        self.auth = auth
         self.method = method
         self.src = route.src
         self.dst = route.dst
@@ -56,6 +57,8 @@ class RPCCall:
             "method": self.method,
             "src": self.src,
         }
+        if self.auth:
+            msg["auth"] = self.auth
         for obj in ("params", "dst"):
             if getattr(self, obj) is not None:
                 msg[obj] = getattr(self, obj)
@@ -68,6 +71,7 @@ class WsRPC:
     def __init__(self, ip_address: str, on_notification: Callable) -> None:
         """Initialize WsRPC class."""
         self._ip_address = ip_address
+        self._auth = {}
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
@@ -206,6 +210,9 @@ class WsRPC:
         """Return if we're currently connected."""
         return self._client is not None and not self._client.closed
 
+    def set_auth(self, auth):
+        self._auth = auth
+
     async def call(
         self, method: str, params: dict[str, Any] | None = None, timeout: int = 10
     ) -> dict[str, Any]:
@@ -213,7 +220,7 @@ class WsRPC:
         if self._client is None:
             raise RuntimeError("Not connected")
 
-        call = RPCCall(self._next_id, method, params, self._route)
+        call = RPCCall(self._next_id, method, params, self._auth, self._route)
         self._calls[call.call_id] = call
         await self._client.send_json(call.request_frame)
 
