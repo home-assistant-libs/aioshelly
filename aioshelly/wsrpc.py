@@ -120,7 +120,7 @@ class WsRPC:
                     response_message = json.loads(err.message)
 
                     username = "admin" #always
-                    ha1 = hex_hash(f"{username}:{response_message['realm']}:{password}")
+                    ha1 = hex_hash(f"{username}:{response_message['realm']}:{options.password}")
                     # Static noise
                     ha2 = hex_hash("dummy_method:dummy_uri")
                     cnonce = secrets.randbelow(10**8)
