@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import pprint
 from asyncio import tasks
 from dataclasses import dataclass
 from typing import Any, Callable, cast
@@ -72,7 +71,7 @@ class WsRPC:
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
         self._calls: dict[int, RPCCall] = {}
-        self._call_id = 1
+        self._call_id = 0
         self._route = RouteData(f"aios-{id(self)}", None)
 
     @property
@@ -111,7 +110,7 @@ class WsRPC:
     async def _handle_call(self, frame_id: str) -> None:
         assert self._client
 
-        await self._client.send_json(
+        await self._send_json(
             {
                 "id": frame_id,
                 "src": self._route.src,
@@ -192,12 +191,11 @@ class WsRPC:
         if msg.type != WSMsgType.TEXT:
             raise InvalidMessage(f"Received non-Text message: {msg.type}")
 
+        _LOGGER.debug("recv(%s): %s", self._ip_address, msg.data)
         try:
             data: dict[str, Any] = msg.json()
         except ValueError as err:
             raise InvalidMessage("Received invalid JSON.") from err
-
-        _LOGGER.debug("Received message:\n%s\n", pprint.pformat(msg))
 
         return data
 
@@ -215,7 +213,7 @@ class WsRPC:
 
         call = RPCCall(self._next_id, method, params, self._route)
         self._calls[call.call_id] = call
-        await self._client.send_json(call.request_frame)
+        await self._send_json(call.request_frame)
 
         try:
             async with async_timeout.timeout(timeout):
@@ -236,3 +234,9 @@ class WsRPC:
             raise JSONRPCError(code, msg)
         except KeyError as err:
             raise RPCError(f"bad response: {resp}") from err
+
+    async def _send_json(self, data: dict[str, Any]) -> None:
+        """Send json frame to device."""
+        _LOGGER.debug("send(%s): %s", self._ip_address, data)
+        assert self._client
+        await self._client.send_json(data)
