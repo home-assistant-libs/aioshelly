@@ -268,6 +268,12 @@ class BlockDevice:
         """Trigger a Shelly Gas unmute action."""
         await self.http_request("get", "unmute")
 
+    async def set_shelly_motion_detection(self, enable: bool) -> None:
+        """Enable or disable Shelly Motion motion detection."""
+        params = {"motion_enable": "true"} if enable else {"motion_enable": "false"}
+
+        await self.http_request("get", "settings", params)
+
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
