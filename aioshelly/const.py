@@ -47,7 +47,7 @@ MODEL_NAMES = {
     # Gen2 RPC based models
     "SNSW-001P16EU": "Shelly Plus 1PM",
     "SNSW-001X16EU": "Shelly Plus 1",
-    "SNSW-0024X": "Shelly Plus i4",
+    "SNSW-0024X": "Shelly Plus I4",
     "SNSW-002P16EU": "Shelly Plus 2PM",
     "SPSW-001PE16EU": "Shelly Pro 1PM",
     "SPSW-001XE16EU": "Shelly Pro 1",
