@@ -22,6 +22,7 @@ MODEL_NAMES = {
     "SHHT-1": "Shelly H&T",
     "SHIX3-1": "Shelly i3",
     "SHMOS-01": "Shelly Motion",
+    "SHMOS-02": "Shelly Motion 2",
     "SHPLG-1": "Shelly Plug",
     "SHPLG-S": "Shelly Plug S",
     "SHPLG-U1": "Shelly Plug US",
@@ -46,7 +47,10 @@ MODEL_NAMES = {
     # Gen2 RPC based models
     "SNSW-001P16EU": "Shelly Plus 1PM",
     "SNSW-001X16EU": "Shelly Plus 1",
+    "SNSW-0024X": "Shelly Plus i4",
+    "SNSW-002P16EU": "Shelly Plus 2PM",
     "SPSW-001PE16EU": "Shelly Pro 1PM",
+    "SPSW-001XE16EU": "Shelly Pro 1",
     "SPSW-002PE16EU": "Shelly Pro 2PM",
     "SPSW-002XE16EU": "Shelly Pro 2",
     "SPSW-004PE16EU": "Shelly Pro 4PM",
