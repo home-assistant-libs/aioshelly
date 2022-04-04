@@ -26,25 +26,31 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class RouteData:
-    """RouteData (src/dst) class."""
+class SessionData:
+    """SessionData (src/dst/auth) class."""
 
     src: str | None
     dst: str | None
+    auth: dict[str, Any] | None
 
 
 class RPCCall:
     """RPCCall class."""
 
     def __init__(
-        self, call_id: int, method: str, params: dict[str, Any] | None, route: RouteData
+        self,
+        call_id: int,
+        method: str,
+        params: dict[str, Any] | None,
+        session: SessionData,
     ):
         """Initialize RPC class."""
+        self.auth = session.auth
         self.call_id = call_id
         self.params = params
         self.method = method
-        self.src = route.src
-        self.dst = route.dst
+        self.src = session.src
+        self.dst = session.dst
         self.resolve: asyncio.Future = asyncio.Future()
 
     @property
@@ -55,7 +61,7 @@ class RPCCall:
             "method": self.method,
             "src": self.src,
         }
-        for obj in ("params", "dst"):
+        for obj in ("params", "dst", "auth"):
             if getattr(self, obj) is not None:
                 msg[obj] = getattr(self, obj)
         return msg
@@ -72,18 +78,23 @@ class WsRPC:
         self._client: ClientWebSocketResponse | None = None
         self._calls: dict[int, RPCCall] = {}
         self._call_id = 0
-        self._route = RouteData(f"aios-{id(self)}", None)
+        self._session = SessionData(f"aios-{id(self)}", None, None)
 
     @property
     def _next_id(self) -> int:
         self._call_id += 1
         return self._call_id
 
-    async def connect(self, aiohttp_session: aiohttp.ClientSession) -> None:
+    async def connect(
+        self,
+        aiohttp_session: aiohttp.ClientSession,
+        auth: dict[str, Any] | None,
+    ) -> None:
         """Connect to device."""
         if self.connected:
             raise RuntimeError("Already connected")
 
+        self._session.auth = auth
         _LOGGER.debug("Trying to connect to device at %s", self._ip_address)
         try:
             self._client = await aiohttp_session.ws_connect(
@@ -113,18 +124,18 @@ class WsRPC:
         await self._send_json(
             {
                 "id": frame_id,
-                "src": self._route.src,
+                "src": self._session.src,
                 "error": {"code": 500, "message": "Not Implemented"},
             }
         )
 
     def _handle_frame(self, frame: dict[str, Any]) -> None:
         if peer_src := frame.get("src"):
-            if self._route.dst is not None and peer_src != self._route.dst:
+            if self._session.dst is not None and peer_src != self._session.dst:
                 _LOGGER.warning(
-                    "Remote src changed: %s -> %s", self._route.dst, peer_src
+                    "Remote src changed: %s -> %s", self._session.dst, peer_src
                 )
-            self._route.dst = peer_src
+            self._session.dst = peer_src
 
         frame_id = frame.get("id")
 
@@ -211,7 +222,7 @@ class WsRPC:
         if self._client is None:
             raise RuntimeError("Not connected")
 
-        call = RPCCall(self._next_id, method, params, self._route)
+        call = RPCCall(self._next_id, method, params, self._session)
         self._calls[call.call_id] = call
         await self._send_json(call.request_frame)
 

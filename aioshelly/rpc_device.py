@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import time
 from typing import Any, Callable, cast
 
 import aiohttp
@@ -10,6 +12,11 @@ from aiohttp.client import ClientSession
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 from .wsrpc import WsRPC
+
+
+def hex_hash(message: str) -> str:
+    """Get hex representation of sha256 hash of string."""
+    return hashlib.sha256(message.encode("utf-8")).hexdigest()
 
 
 def mergedicts(dict1: dict, dict2: dict) -> dict:
@@ -89,7 +96,7 @@ class RpcDevice:
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
             if self.options.auth or not self.requires_auth:
-                await self._wsrpc.connect(self.aiohttp_session)
+                await self._wsrpc.connect(self.aiohttp_session, self._get_auth())
                 await asyncio.gather(
                     self.update_device_info(),
                     self.update_config(),
@@ -106,6 +113,30 @@ class RpcDevice:
         """Shutdown device."""
         self._update_listener = None
         await self._wsrpc.disconnect()
+
+    def _get_auth(self) -> dict[str, Any] | None:
+        """Get auth info, return None if not required."""
+        if not self.requires_auth:
+            return None
+
+        if not self.options.auth or not self.shelly:
+            raise AuthRequired
+
+        realm = self.shelly["auth_domain"]
+        ha1 = hex_hash(f"{self.options.username}:{realm}:{self.options.password}")
+        ha2 = hex_hash("dummy_method:dummy_uri")
+        nonce = cnonce = time.time()
+        hashed = hex_hash(f"{ha1}:{nonce}:1:{cnonce}:auth:{ha2}")
+        auth = {
+            "realm": realm,
+            "username": "admin",
+            "nonce": nonce,
+            "cnonce": cnonce,
+            "response": hashed,
+            "algorithm": "SHA-256",
+        }
+
+        return auth
 
     def subscribe_updates(self, update_listener: Callable) -> None:
         """Subscribe to device status updates."""
