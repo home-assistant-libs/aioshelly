@@ -343,7 +343,7 @@ class Block:
     TYPES: dict = {}
     type = None
 
-    def __init_subclass__(cls, blk_type: str, **kwargs: Any) -> None:
+    def __init_subclass__(cls, blk_type: str = "", **kwargs: Any) -> None:
         """Initialize a subclass, register if possible."""
         super().__init_subclass__(**kwargs)
         Block.TYPES[blk_type] = cls
