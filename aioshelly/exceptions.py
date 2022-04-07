@@ -52,5 +52,9 @@ class JSONRPCError(RPCError):
         super().__init__(code, message)
 
 
+class InvalidAuthError(JSONRPCError):
+    """Raised to indicate invalid authentication error."""
+
+
 class WrongShellyGen(ShellyError):
     """Exception raised to indicate wrong Shelly generation."""
