@@ -1,3 +1,4 @@
+"""Verify script that downloads all Coiot examples from the Shelly website and checks to make sure that we can parse them."""
 import json
 import logging
 import re
@@ -19,24 +20,30 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class CoiotExample:
+    """CoiotExample class."""
+
     filename: str
 
     _cache: dict = field(default_factory=dict)
 
     @reify
     def name(self):
+        """Get filename."""
         return urllib.parse.unquote(self.filename)
 
     @reify
     def url(self):
+        """Get file URL."""
         return BASE_URL + self.filename
 
     @reify
     def content(self):
+        """Get file content."""
         return requests.get(self.url, verify=False).text
 
     @reify
     def content_parsed(self):
+        """Parse file."""
         lines = self.content.split("\n")
         parsed = []
 
@@ -66,14 +73,17 @@ class CoiotExample:
 
     @reify
     def cit_s(self):
+        """Return parsed cit/s."""
         return self.content_parsed[0]
 
     @reify
     def cit_d(self):
+        """Return parsed cit/d."""
         return self.content_parsed[1]
 
     @reify
     def device(self):
+        """Create mocked device."""
         device = aioshelly.Device(Mock(), None, aioshelly.ConnectionOptions("mock-ip"))
         device._update_d(self.cit_d)
         device._update_s(self.cit_s)
@@ -81,6 +91,7 @@ class CoiotExample:
 
 
 def coiot_examples():
+    """Get coiot examples."""
     index = requests.get(
         BASE_URL,
         # Not sure, local machine barfs on their cert
@@ -94,6 +105,7 @@ def coiot_examples():
 
 
 def print_example(example):
+    """Print example."""
     print(example.name)
     print()
 
@@ -118,6 +130,7 @@ def print_example(example):
 
 
 def run():
+    """Run coiot_examples and print errors."""
     errors = []
     for example in coiot_examples():
         try:

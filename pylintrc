@@ -4,7 +4,6 @@ ignore=tests
 # any too bad. Override on command line as appropriate.
 # Disabled for now: https://github.com/PyCQA/pylint/issues/3584
 #jobs=2
-load-plugins=pylint_strict_informational
 persistent=no
 extension-pkg-whitelist=ciso8601,cv2
 

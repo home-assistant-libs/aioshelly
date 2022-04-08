@@ -7,7 +7,7 @@ import logging
 import socket
 import struct
 from types import TracebackType
-from typing import Callable, Tuple, cast
+from typing import Callable, cast
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class InvalidMessage(CoapError):
 class CoapMessage:
     """Represents a received coap message."""
 
-    def __init__(self, sender_addr: Tuple[str, int], payload: bytes) -> None:
+    def __init__(self, sender_addr: tuple[str, int], payload: bytes) -> None:
         """Initialize a coap message."""
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
@@ -104,7 +104,7 @@ class COAP(asyncio.DatagramProtocol):
         """When the socket is set up."""
         self.transport = cast(asyncio.DatagramTransport, transport)
 
-    def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         """Handle incoming datagram messages."""
         host_ip = addr[0]
         try:
