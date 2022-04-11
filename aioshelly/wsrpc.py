@@ -34,6 +34,9 @@ def hex_hash(message: str) -> str:
     return hashlib.sha256(message.encode("utf-8")).hexdigest()
 
 
+HA2 = hex_hash("dummy_method:dummy_uri")
+
+
 @dataclass
 class AuthData:
     """RPC Auth data class."""
@@ -45,7 +48,6 @@ class AuthData:
     def __post_init__(self) -> None:
         """Call after initialization."""
         self.ha1 = hex_hash(f"{self.username}:{self.realm}:{self.password}")
-        self.ha2 = hex_hash("dummy_method:dummy_uri")
 
     def get_auth(self, nonce: int | None = None, n_c: int = 1) -> dict[str, Any]:
         """Get auth for RPC calls."""
@@ -53,7 +55,8 @@ class AuthData:
         if nonce is None:
             nonce = cnonce - 1800
 
-        hashed = hex_hash(f"{self.ha1}:{nonce}:{n_c}:{cnonce}:auth:{self.ha2}")
+        # https://shelly-api-docs.shelly.cloud/gen2/Overview/CommonDeviceTraits/#authentication-over-websocket
+        hashed = hex_hash(f"{self.ha1}:{nonce}:{n_c}:{cnonce}:auth:{HA2}")
 
         return {
             "realm": self.realm,
@@ -257,7 +260,11 @@ class WsRPC:
         return self._client is not None and not self._client.closed
 
     async def call(
-        self, method: str, params: dict[str, Any] | None = None, timeout: int = 10
+        self,
+        method: str,
+        params: dict[str, Any] | None = None,
+        timeout: int = 10,
+        handle_auth: bool = True,
     ) -> dict[str, Any]:
         """Websocket RPC call."""
         # Try request with initial/last call auth data
@@ -272,24 +279,13 @@ class WsRPC:
 
         if code != 401:
             raise JSONRPCError(code, msg)
-        if self._auth_data is None:
+        if not handle_auth or self._auth_data is None:
             raise InvalidAuthError(code, msg)
 
         # Update auth from response and try with new auth data
         auth = json.loads(msg)
         self._session.auth = self._auth_data.get_auth(auth["nonce"], auth.get("nc", 1))
-        resp = await self._rpc_call(method, params, timeout)
-        if "result" in resp:
-            return cast(dict, resp["result"])
-
-        try:
-            code, msg = resp["error"]["code"], resp["error"]["message"]
-        except KeyError as err:
-            raise RPCError(f"bad response: {resp}") from err
-        if code == 401:
-            raise InvalidAuthError(code, msg)
-
-        raise JSONRPCError(code, msg)
+        return await self.call(method, params, timeout, handle_auth=False)
 
     async def _rpc_call(
         self, method: str, params: dict[str, Any] | None, timeout: int
