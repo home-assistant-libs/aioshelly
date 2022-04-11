@@ -89,13 +89,13 @@ class RpcDevice:
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
             if self.requires_auth:
-                if not self.options.auth:
+                if self.options.username is None or self.options.password is None:
                     raise AuthRequired
 
                 self._wsrpc.set_auth_data(
                     self.shelly["auth_domain"],
-                    cast(str, self.options.username),
-                    cast(str, self.options.password),
+                    self.options.username,
+                    self.options.password,
                 )
 
             await self._wsrpc.connect(self.aiohttp_session)
