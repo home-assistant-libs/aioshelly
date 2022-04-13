@@ -77,7 +77,6 @@ async def get_info(
 
 def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     """Return True if device firmware version is supported."""
-
     fw_str: str
     fw_ver: int
 

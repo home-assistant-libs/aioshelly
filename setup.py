@@ -1,18 +1,25 @@
+"""Setup module for aioshelly."""
+from pathlib import Path
+
 from setuptools import setup
 
-long_description = open("README.md").read()
+PROJECT_DIR = Path(__file__).parent.resolve()
+README_FILE = PROJECT_DIR / "README.md"
+VERSION = "1.0.11"
+
 
 setup(
     name="aioshelly",
-    version="1.0.11",
+    version=VERSION,
     license="Apache License 2.0",
     url="https://github.com/home-assistant-libs/aioshelly",
     author="Paulus Schoutsen",
     author_email="paulus@home-assistant.io",
     description="Asynchronous library to control Shelly devices.",
-    long_description=long_description,
+    long_description=README_FILE.read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     packages=["aioshelly"],
+    python_requires=">=3.9",
     package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
     platforms="any",
@@ -22,6 +29,8 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )

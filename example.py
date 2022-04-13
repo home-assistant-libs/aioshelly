@@ -11,7 +11,7 @@ import sys
 import traceback
 from datetime import datetime
 from types import FrameType
-from typing import Any, Tuple, cast
+from typing import Any, cast
 
 import aiohttp
 import async_timeout
@@ -25,7 +25,7 @@ from aioshelly.rpc_device import RpcDevice
 
 
 async def get_coap_context(port: int) -> COAP:
-    """Create CoAP context"""
+    """Create CoAP context."""
     context = COAP()
 
     def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
@@ -47,7 +47,7 @@ async def create_device(  # pylint: disable=too-many-arguments
     timeout: float,
     gen: int | None,
 ) -> Any:
-    """Create a Gen1/Gen2 device"""
+    """Create a Gen1/Gen2 device."""
     if gen is None:
         async with async_timeout.timeout(timeout):
             if info := await aioshelly.common.get_info(
@@ -99,7 +99,7 @@ async def test_single(
 async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -> None:
     """Test multiple devices."""
     device_options = []
-    with open("devices.json") as fp:
+    with open("devices.json", encoding="utf8") as fp:
         for line in fp:
             device_options.append(ConnectionOptions(**json.loads(line)))
 
@@ -207,7 +207,7 @@ def print_rpc_device(device: RpcDevice) -> None:
         print("Device disconnected")
 
 
-def get_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
+def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     """Get parsed passed in arguments."""
     parser = argparse.ArgumentParser(description="aioshelly example")
     parser.add_argument(

@@ -4,7 +4,7 @@
 
 ## This library is under development
 
-Requires Python 3 and uses asyncio, aiohttp and socket.
+Requires Python >= 3.9 and uses asyncio, aiohttp and socket.
 
 ### *From release 1.0.0 and up library has breaking changes to support Shelly Gen2 devices* Gen1 `Device` class moved under `block_device`
 
