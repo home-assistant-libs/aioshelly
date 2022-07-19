@@ -46,7 +46,11 @@ MODEL_NAMES = {
     "SHWT-1": "Shelly Flood",
     # Gen2 RPC based models
     "SNPL-00116US": "Shelly Plus Plug US",
+    "SNSN-0013A": "Shelly Plus H&T",
+    "SNSN-0D24X": "Shelly Plus I4DC",
+    "SNSW-001P15UL": "Shelly Plus 1PM UL",
     "SNSW-001P16EU": "Shelly Plus 1PM",
+    "SNSW-001X15UL": "Shelly Plus 1 UL",
     "SNSW-001X16EU": "Shelly Plus 1",
     "SNSW-0024X": "Shelly Plus I4",
     "SNSW-002P16EU": "Shelly Plus 2PM",
@@ -54,7 +58,17 @@ MODEL_NAMES = {
     "SPSW-001XE16EU": "Shelly Pro 1",
     "SPSW-002PE16EU": "Shelly Pro 2PM",
     "SPSW-002XE16EU": "Shelly Pro 2",
+    "SPSW-003XE16EU": "Shelly Pro 3",
     "SPSW-004PE16EU": "Shelly Pro 4PM",
+    "SPSW-101PE16EU": "Shelly Pro 1PM",
+    "SPSW-101XE16EU": "Shelly Pro 1",
+    "SPSW-102PE16EU": "Shelly Pro 2PM",
+    "SPSW-102XE16EU": "Shelly Pro 2",
+    "SPSW-104PE16EU": "Shelly Pro 4PM",
+    "SPSW-201PE16EU": "Shelly Pro 1PM",
+    "SPSW-201XE16EU": "Shelly Pro 1",
+    "SPSW-202PE16EU": "Shelly Pro 2PM",
+    "SPSW-202XE16EU": "Shelly Pro 2",
 }
 
 # Timeout used for Block Device init
