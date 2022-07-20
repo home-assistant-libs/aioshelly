@@ -91,7 +91,7 @@ class COAP(asyncio.DatagramProtocol):
         Subscribe with `subscribe_updates` to receive answer.
         """
         assert self.transport is not None
-        msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF"
+        msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF\x00"
         _LOGGER.debug("Sending request 'cit/%s' to device %s", path, ip)
         self.transport.sendto(msg, (ip, 5683))
 
