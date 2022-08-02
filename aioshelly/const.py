@@ -71,8 +71,8 @@ MODEL_NAMES = {
     "SPSW-202XE16EU": "Shelly Pro 2",
 }
 
-# Timeout used for Block Device init
-BLOCK_DEVICE_INIT_TIMEOUT = 10
+# Timeout used for Device init
+DEVICE_INIT_TIMEOUT = 10
 
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10

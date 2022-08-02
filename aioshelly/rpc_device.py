@@ -2,14 +2,19 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any, Callable, cast
 
 import aiohttp
+import async_timeout
 from aiohttp.client import ClientSession
 
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from .const import DEVICE_INIT_TIMEOUT
 from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
-from .wsrpc import WsRPC
+from .wsrpc import WsRPC, WsServer
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def mergedicts(dict1: dict, dict2: dict) -> dict:
@@ -23,10 +28,11 @@ def mergedicts(dict1: dict, dict2: dict) -> dict:
 
 
 class RpcDevice:
-    """Shelly RPC device reppresentation."""
+    """Shelly RPC device representation."""
 
     def __init__(
         self,
+        ws_context: WsServer,
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
     ):
@@ -39,6 +45,9 @@ class RpcDevice:
         self._device_info: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
+        self._unsub_listening = ws_context.subscribe_updates(
+            options.ip_address, self._wsrpc.handle_frame
+        )
         self._update_listener: Callable | None = None
         self.initialized: bool = False
         self._initializing: bool = False
@@ -47,30 +56,50 @@ class RpcDevice:
     async def create(
         cls,
         aiohttp_session: aiohttp.ClientSession,
+        ws_context: WsServer,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,
     ) -> RpcDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
-        instance = cls(aiohttp_session, options)
+        instance = cls(ws_context, aiohttp_session, options)
 
         if initialize:
             await instance.initialize()
 
         return instance
 
+    async def _async_init(self) -> None:
+        """Async init upon WsRPC message event."""
+        try:
+            async with async_timeout.timeout(DEVICE_INIT_TIMEOUT):
+                await self.initialize()
+                await self._wsrpc.disconnect()
+        except (asyncio.TimeoutError, OSError) as err:
+            _LOGGER.warning(
+                "device %s initialize error - %s", self.options.ip_address, repr(err)
+            )
+
     def _on_notification(
         self, method: str, params: dict[str, Any] | None = None
     ) -> None:
+        """Received status notification from device."""
+        if not self._initializing and not self.initialized:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._async_init())
+            return
+
         if params is not None:
-            if method == "NotifyStatus":
+            if method == "NotifyFullStatus":
+                self._status = params
+            elif method == "NotifyStatus":
                 if self._status is None:
                     return
                 self._status = dict(mergedicts(self._status, params))
             elif method == "NotifyEvent":
                 self._event = params
 
-        if self._update_listener:
+        if self._update_listener and self.initialized:
             self._update_listener(self)
 
     @property
@@ -114,6 +143,7 @@ class RpcDevice:
     async def shutdown(self) -> None:
         """Shutdown device."""
         self._update_listener = None
+        self._unsub_listening()
         await self._wsrpc.disconnect()
 
     def subscribe_updates(self, update_listener: Callable) -> None:

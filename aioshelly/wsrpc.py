@@ -12,7 +12,15 @@ from typing import Any, Callable, cast
 
 import aiohttp
 import async_timeout
-from aiohttp import ClientWebSocketResponse, WSMsgType, client_exceptions
+from aiohttp import ClientWebSocketResponse, WSMessage, WSMsgType, client_exceptions
+from aiohttp.web import (
+    Application,
+    AppRunner,
+    BaseRequest,
+    TCPSite,
+    WebSocketResponse,
+    get,
+)
 
 from .const import NOTIFY_WS_CLOSED, WS_HEARTBEAT
 from .exceptions import (
@@ -27,6 +35,25 @@ from .exceptions import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
+    """Receive json or raise."""
+    if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
+        raise ConnectionClosed("Connection was closed.")
+
+    if msg.type == WSMsgType.ERROR:
+        raise ConnectionFailed()
+
+    if msg.type != WSMsgType.TEXT:
+        raise InvalidMessage(f"Received non-Text message: {msg.type}")
+
+    try:
+        data: dict[str, Any] = msg.json()
+    except ValueError as err:
+        raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
+
+    return data
 
 
 def hex_hash(message: str) -> str:
@@ -173,7 +200,8 @@ class WsRPC:
             }
         )
 
-    def _handle_frame(self, frame: dict[str, Any]) -> None:
+    def handle_frame(self, frame: dict[str, Any]) -> None:
+        """Handle RPC frame."""
         if peer_src := frame.get("src"):
             if self._session.dst is not None and peer_src != self._session.dst:
                 _LOGGER.warning(
@@ -213,14 +241,16 @@ class WsRPC:
 
         while not self._client.closed:
             try:
-                frame = await self._receive_json_or_raise()
+                msg = await self._client.receive()
+                frame = await receive_json_or_raise(msg)
+                _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
             except ConnectionClosed:
                 break
 
             if not self._client.closed:
-                self._handle_frame(frame)
+                self.handle_frame(frame)
 
-        _LOGGER.debug("Websocket connection closed")
+        _LOGGER.debug("Websocket client connection from %s closed", self._ip_address)
 
         for call_item in self._calls.values():
             call_item.resolve.cancel()
@@ -231,28 +261,6 @@ class WsRPC:
 
         self._client = None
         self._on_notification(NOTIFY_WS_CLOSED)
-
-    async def _receive_json_or_raise(self) -> dict[str, Any]:
-        """Receive json or raise."""
-        assert self._client
-        msg = await self._client.receive()
-
-        if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
-            raise ConnectionClosed("Connection was closed.")
-
-        if msg.type == WSMsgType.ERROR:
-            raise ConnectionFailed()
-
-        if msg.type != WSMsgType.TEXT:
-            raise InvalidMessage(f"Received non-Text message: {msg.type}")
-
-        _LOGGER.debug("recv(%s): %s", self._ip_address, msg.data)
-        try:
-            data: dict[str, Any] = msg.json()
-        except ValueError as err:
-            raise InvalidMessage("Received invalid JSON.") from err
-
-        return data
 
     @property
     def connected(self) -> bool:
@@ -316,3 +324,55 @@ class WsRPC:
         _LOGGER.debug("send(%s): %s", self._ip_address, data)
         assert self._client
         await self._client.send_json(data)
+
+
+class WsServer:
+    """WsServer class."""
+
+    def __init__(self) -> None:
+        """Initialize WsServer class."""
+        self._runner: AppRunner | None = None
+        self.subscriptions: dict[str, Callable] = {}
+
+    async def initialize(self, port: int = 5765) -> None:
+        """Initialize the websocket server."""
+        app = Application()
+        app.add_routes([get("/", self.websocket_handler)])
+        self._runner = AppRunner(app)
+        await self._runner.setup()
+        site = TCPSite(self._runner, port=port)
+        await site.start()
+
+    def close(self) -> None:
+        """Stop the websocket server."""
+        if self._runner is not None:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._runner.cleanup())
+
+    async def websocket_handler(self, request: BaseRequest) -> WebSocketResponse:
+        """Handle connections from sleeping devices."""
+        ip = request.remote
+        _LOGGER.debug("Websocket server connection from %s starting", ip)
+        ws_res = WebSocketResponse(protocols=["json-rpc"])
+        await ws_res.prepare(request)
+        _LOGGER.debug("Websocket server connection from %s ready", ip)
+
+        async for msg in ws_res:
+            try:
+                frame = await receive_json_or_raise(msg)
+                _LOGGER.debug("recv(%s): %s", ip, frame)
+            except ConnectionClosed:
+                await ws_res.close()
+            else:
+                if ip in self.subscriptions:
+                    _LOGGER.debug("Calling WsRPC message update for device %s", ip)
+                    self.subscriptions[ip](frame)
+
+        _LOGGER.debug("Websocket server connection from %s closed", ip)
+        return ws_res
+
+    def subscribe_updates(self, ip: str, message_received: Callable) -> Callable:
+        """Subscribe to received updates."""
+        _LOGGER.debug("Adding device %s to WsServer message subscriptions", ip)
+        self.subscriptions[ip] = message_received
+        return lambda: self.subscriptions.pop(ip)
