@@ -7,11 +7,11 @@ from typing import Any, Callable, cast
 
 import aiohttp
 import async_timeout
-from aiohttp.client_reqrep import ClientResponse
+from aiohttp.client import ClientResponse
 
 from .coap import COAP, CoapMessage
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import BLOCK_DEVICE_INIT_TIMEOUT, HTTP_CALL_TIMEOUT
+from .const import DEVICE_INIT_TIMEOUT, HTTP_CALL_TIMEOUT
 from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
 
 BLOCK_VALUE_UNIT = "U"
@@ -36,7 +36,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class BlockDevice:
-    """Shelly block device reppresentation."""
+    """Shelly block device representation."""
 
     def __init__(
         self,
@@ -124,7 +124,7 @@ class BlockDevice:
     async def _async_init(self) -> None:
         """Async init upon CoAP message event."""
         try:
-            async with async_timeout.timeout(BLOCK_DEVICE_INIT_TIMEOUT):
+            async with async_timeout.timeout(DEVICE_INIT_TIMEOUT):
                 await self.initialize()
         except (asyncio.TimeoutError, OSError) as err:
             _LOGGER.warning(

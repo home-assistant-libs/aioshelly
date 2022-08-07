@@ -21,27 +21,14 @@ from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import MODEL_NAMES
 from aioshelly.exceptions import ShellyError, WrongShellyGen
-from aioshelly.rpc_device import RpcDevice
+from aioshelly.rpc_device import RpcDevice, WsServer
+
+coap_context = COAP()
+ws_context = WsServer()
 
 
-async def get_coap_context(port: int) -> COAP:
-    """Create CoAP context."""
-    context = COAP()
-
-    def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
-        """Handle Keyboard signal interrupt (ctrl-c)."""
-        context.close()
-        sys.exit()
-
-    signal.signal(signal.SIGINT, handle_sigint)
-
-    await context.initialize(port)
-    return context
-
-
-async def create_device(  # pylint: disable=too-many-arguments
+async def create_device(
     aiohttp_session: aiohttp.ClientSession,
-    coap_context: COAP,
     options: ConnectionOptions,
     init: bool,
     timeout: float,
@@ -61,7 +48,7 @@ async def create_device(  # pylint: disable=too-many-arguments
         return await BlockDevice.create(aiohttp_session, coap_context, options, init)
 
     if gen == 2:
-        return await RpcDevice.create(aiohttp_session, options, init)
+        return await RpcDevice.create(aiohttp_session, ws_context, options, init)
 
     raise ShellyError("Unknown Gen")
 
@@ -70,16 +57,14 @@ async def test_single(
     options: ConnectionOptions,
     init: bool,
     timeout: float,
-    port: int,
     gen: int | None,
 ) -> None:
     """Test single device."""
     async with aiohttp.ClientSession() as aiohttp_session:
         try:
-            coap_context = await get_coap_context(port)
             async with async_timeout.timeout(timeout):
                 device = await create_device(
-                    aiohttp_session, coap_context, options, init, timeout, gen
+                    aiohttp_session, options, init, timeout, gen
                 )
         except asyncio.TimeoutError:
             print("Timeout connecting to", options.ip_address)
@@ -96,7 +81,7 @@ async def test_single(
             await asyncio.sleep(0.1)
 
 
-async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -> None:
+async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
     """Test multiple devices."""
     device_options = []
     with open("devices.json", encoding="utf8") as fp:
@@ -104,12 +89,11 @@ async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -
             device_options.append(ConnectionOptions(**json.loads(line)))
 
     async with aiohttp.ClientSession() as aiohttp_session:
-        coap_context = await get_coap_context(port)
         results = await asyncio.gather(
             *[
                 asyncio.wait_for(
                     connect_and_print_device(
-                        aiohttp_session, coap_context, options, init, timeout, gen
+                        aiohttp_session, options, init, timeout, gen
                     ),
                     timeout,
                 )
@@ -138,16 +122,13 @@ async def test_devices(init: bool, timeout: float, port: int, gen: int | None) -
 
 async def connect_and_print_device(  # pylint: disable=too-many-arguments
     aiohttp_session: aiohttp.ClientSession,
-    coap_context: COAP,
     options: ConnectionOptions,
     init: bool,
     timeout: float,
     gen: int | None,
 ) -> None:
     """Connect and print device data."""
-    device = await create_device(
-        aiohttp_session, coap_context, options, init, timeout, gen
-    )
+    device = await create_device(aiohttp_session, options, init, timeout, gen)
     print_device(device)
     device.subscribe_updates(device_updated)
 
@@ -200,11 +181,9 @@ def print_block_device(device: BlockDevice) -> None:
 
 def print_rpc_device(device: RpcDevice) -> None:
     """Print RPC (GEN2) device data."""
-    if device.connected:
-        print(f"Status: {device.status}")
-        print(f"Event: {device.event}")
-    else:
-        print("Device disconnected")
+    print(f"Status: {device.status}")
+    print(f"Event: {device.event}")
+    print(f"Connected: {device.connected}")
 
 
 def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -214,11 +193,18 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--ip_address", "-ip", type=str, help="Test single device by IP address"
     )
     parser.add_argument(
-        "--socket_port",
-        "-sp",
+        "--coap_port",
+        "-cp",
         type=int,
         default=5683,
-        help="Specify socket UDP port (default=5683)",
+        help="Specify CoAP UDP port (default=5683)",
+    )
+    parser.add_argument(
+        "--ws_port",
+        "-wp",
+        type=int,
+        default=5683,
+        help="Specify WebSocket TCP port (default=5683)",
     )
     parser.add_argument(
         "--devices",
@@ -258,6 +244,9 @@ async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
 
+    await coap_context.initialize(args.coap_port)
+    await ws_context.initialize(args.ws_port)
+
     if args.gen1 and args.gen2:
         parser.error("--gen1 and --gen2 can't be used together")
 
@@ -270,13 +259,21 @@ async def main() -> None:
     if args.debug:
         logging.basicConfig(level="DEBUG", force=True)
 
+    def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
+        """Handle Keyboard signal interrupt (ctrl-c)."""
+        coap_context.close()
+        ws_context.close()
+        sys.exit()
+
+    signal.signal(signal.SIGINT, handle_sigint)
+
     if args.devices:
-        await test_devices(args.init, args.timeout, args.socket_port, gen)
+        await test_devices(args.init, args.timeout, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         options = ConnectionOptions(args.ip_address, args.username, args.password)
-        await test_single(options, args.init, args.timeout, args.socket_port, gen)
+        await test_single(options, args.init, args.timeout, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
