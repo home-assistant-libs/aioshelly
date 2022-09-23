@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from typing import Any, Callable, cast
 
 import aiohttp
 import async_timeout
+from aiohttp import ClientResponseError
 from aiohttp.client_reqrep import ClientResponse
 
 from .coap import COAP, CoapMessage
@@ -195,11 +197,13 @@ class BlockDevice:
 
     async def update_status(self) -> None:
         """Device update from /status (HTTP)."""
-        self._status = await self.http_request("get", "status")
+        with contextlib.suppress(ClientResponseError):
+            self._status = await self.http_request("get", "status")
 
     async def update_settings(self) -> None:
         """Device update from /settings (HTTP)."""
-        self._settings = await self.http_request("get", "settings")
+        with contextlib.suppress(ClientResponseError):
+            self._settings = await self.http_request("get", "settings")
 
     async def update_shelly(self) -> None:
         """Device update for /shelly (HTTP)."""
