@@ -334,10 +334,10 @@ class WsServer:
         self._runner: AppRunner | None = None
         self.subscriptions: dict[str, Callable] = {}
 
-    async def initialize(self, port: int = 5765) -> None:
+    async def initialize(self, port: int = 5765, api_url: str = "/") -> None:
         """Initialize the websocket server."""
         app = Application()
-        app.add_routes([get("/", self.websocket_handler)])
+        app.add_routes([get(api_url, self.websocket_handler)])
         self._runner = AppRunner(app)
         await self._runner.setup()
         site = TCPSite(self._runner, port=port)

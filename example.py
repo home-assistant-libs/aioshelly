@@ -26,6 +26,8 @@ from aioshelly.rpc_device import RpcDevice, WsServer
 coap_context = COAP()
 ws_context = WsServer()
 
+WS_API_URL = "/api/shelly/ws"
+
 
 async def create_device(
     aiohttp_session: aiohttp.ClientSession,
@@ -207,6 +209,13 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         help="Specify WebSocket TCP port (default=5683)",
     )
     parser.add_argument(
+        "--ws_api_url",
+        "-au",
+        type=str,
+        default=WS_API_URL,
+        help=f"Specify WebSocket API URL (default={WS_API_URL})",
+    )
+    parser.add_argument(
         "--devices",
         "-d",
         action="store_true",
@@ -245,7 +254,7 @@ async def main() -> None:
     parser, args = get_arguments()
 
     await coap_context.initialize(args.coap_port)
-    await ws_context.initialize(args.ws_port)
+    await ws_context.initialize(args.ws_port, args.ws_api_url)
 
     if args.gen1 and args.gen2:
         parser.error("--gen1 and --gen2 can't be used together")
