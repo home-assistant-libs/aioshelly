@@ -1,29 +1,13 @@
 """Shelly exceptions."""
 from __future__ import annotations
 
+# Internal or run time errors:
+#    Errors not needed to be handled by the caller
+#    'NotInitialized' & 'WrongShellyGen' indicate runtime errors
+
 
 class ShellyError(Exception):
     """Base class for aioshelly errors."""
-
-
-class AuthRequired(ShellyError):
-    """Raised during initialization if auth is required but not given."""
-
-
-class NotInitialized(ShellyError):
-    """Raised if device is not initialized."""
-
-
-class FirmwareUnsupported(ShellyError):
-    """Raised if device firmware version is unsupported."""
-
-
-class CannotConnect(ShellyError):
-    """Exception raised when failed to connect the client."""
-
-
-class ConnectionFailed(ShellyError):
-    """Exception raised when a connection failed."""
 
 
 class ConnectionClosed(ShellyError):
@@ -52,9 +36,25 @@ class JSONRPCError(RPCError):
         super().__init__(code, message)
 
 
-class InvalidAuthError(JSONRPCError):
-    """Raised to indicate invalid authentication error."""
+class NotInitialized(ShellyError):
+    """Raised if device is not initialized."""
 
 
 class WrongShellyGen(ShellyError):
     """Exception raised to indicate wrong Shelly generation."""
+
+
+# Errors to be handled by the caller:
+#    Errors that are expected to happen and should be handled by the caller.
+
+
+class DeviceConnectionError(ShellyError):
+    """Exception indicates device connection errors."""
+
+
+class FirmwareUnsupported(ShellyError):
+    """Raised if device firmware version is unsupported."""
+
+
+class InvalidAuthError(ShellyError):
+    """Raised to indicate invalid or missing authentication error."""

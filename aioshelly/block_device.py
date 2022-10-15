@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
+from http import HTTPStatus
 from typing import Any, Callable, cast
 
 import aiohttp
@@ -13,8 +13,14 @@ from aiohttp.client import ClientResponse
 
 from .coap import COAP, CoapMessage
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import DEVICE_INIT_TIMEOUT, HTTP_CALL_TIMEOUT
-from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
+from .const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
+from .exceptions import (
+    DeviceConnectionError,
+    InvalidAuthError,
+    NotInitialized,
+    ShellyError,
+    WrongShellyGen,
+)
 
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"
@@ -56,14 +62,14 @@ class BlockDevice:
         self._settings: dict[str, Any] | None = None
         self.shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
-        self._unsub_listening = coap_context.subscribe_updates(
+        self._unsub_coap: Callable | None = coap_context.subscribe_updates(
             options.ip_address, self._coap_message_received
         )
         self._update_listener: Callable | None = None
         self._coap_response_events: dict = {}
         self.initialized = False
         self._initializing = False
-        self._request_s = True
+        self._last_error: ShellyError | None = None
 
     @classmethod
     async def create(
@@ -80,7 +86,7 @@ class BlockDevice:
         if initialize:
             await instance.initialize()
         else:
-            await instance.coap_request("s")
+            await instance._coap_request("s")
 
         return instance
 
@@ -89,31 +95,53 @@ class BlockDevice:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self) -> None:
+    async def initialize(self, async_init: bool = False) -> None:
         """Device initialization."""
+        if self._initializing:
+            raise RuntimeError("Already initializing")
+
         self._initializing = True
         self.initialized = False
+        ip = self.options.ip_address
         try:
             await self.update_shelly()
 
-            if self.options.auth or not self.requires_auth:
+            if self.requires_auth and not self.options.auth:
+                raise InvalidAuthError("auth missing and required")
+
+            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
                 await self.update_settings()
                 await self.update_status()
 
-            event_d: asyncio.Event = await self.coap_request("d")
+                event_d: asyncio.Event = await self._coap_request("d")
+                # We need to wait for D to come in before we request S
+                # Or else we might miss the answer to D
+                await event_d.wait()
 
-            # We need to wait for D to come in before we request S
-            # Or else we might miss the answer to D
-            await event_d.wait()
-
-            if self._request_s:
-                event_s = await self.coap_request("s")
-                await event_s.wait()
+                if not async_init:
+                    event_s = await self._coap_request("s")
+                    await event_s.wait()
 
             self.initialized = True
+        except ClientResponseError as err:
+            if err.status == HTTPStatus.UNAUTHORIZED:
+                self._last_error = InvalidAuthError(err)
+                _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+                # Auth error during async init, used by sleeping devices
+                # Will raise 'invalidAuthError; on next property read
+                if not async_init:
+                    self.shutdown()
+                    raise InvalidAuthError(err) from err
+                self.initialized = True
+            else:
+                raise DeviceConnectionError from err
+        except CONNECT_ERRORS as err:
+            self._last_error = DeviceConnectionError(err)
+            _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+            self.shutdown()
+            raise DeviceConnectionError from err
         finally:
             self._initializing = False
-            self._request_s = True
 
         if self._update_listener:
             self._update_listener(self)
@@ -121,22 +149,18 @@ class BlockDevice:
     def shutdown(self) -> None:
         """Shutdown device."""
         self._update_listener = None
-        self._unsub_listening()
+
+        if self._unsub_coap:
+            self._unsub_coap()
+            self._unsub_coap = None
 
     async def _async_init(self) -> None:
         """Async init upon CoAP message event."""
-        try:
-            async with async_timeout.timeout(DEVICE_INIT_TIMEOUT):
-                await self.initialize()
-        except (asyncio.TimeoutError, OSError) as err:
-            _LOGGER.warning(
-                "device %s initialize error - %s", self.options.ip_address, repr(err)
-            )
+        await self.initialize(True)
 
     def _coap_message_received(self, msg: CoapMessage) -> None:
         """COAP message received."""
         if not self._initializing and not self.initialized:
-            self._request_s = False
             loop = asyncio.get_running_loop()
             loop.create_task(self._async_init())
 
@@ -158,8 +182,13 @@ class BlockDevice:
 
     async def update(self) -> None:
         """Device update."""
-        event = await self.coap_request("s")
-        await event.wait()
+        try:
+            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+                event = await self._coap_request("s")
+                await event.wait()
+        except CONNECT_ERRORS as err:
+            self._last_error = DeviceConnectionError(err)
+            raise DeviceConnectionError from err
 
     def _update_d(self, data: dict[str, Any]) -> None:
         """Device update from cit/d call."""
@@ -197,19 +226,17 @@ class BlockDevice:
 
     async def update_status(self) -> None:
         """Device update from /status (HTTP)."""
-        with contextlib.suppress(ClientResponseError):
-            self._status = await self.http_request("get", "status")
+        self._status = await self.http_request("get", "status")
 
     async def update_settings(self) -> None:
         """Device update from /settings (HTTP)."""
-        with contextlib.suppress(ClientResponseError):
-            self._settings = await self.http_request("get", "settings")
+        self._settings = await self.http_request("get", "settings")
 
     async def update_shelly(self) -> None:
         """Device update for /shelly (HTTP)."""
         self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
-    async def coap_request(self, path: str) -> asyncio.Event:
+    async def _coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
         if path not in self._coap_response_events:
             self._coap_response_events[path] = asyncio.Event()
@@ -224,17 +251,29 @@ class BlockDevice:
     ) -> dict[str, Any]:
         """Device HTTP request."""
         if self.options.auth is None and self.requires_auth:
-            raise AuthRequired
+            raise InvalidAuthError("auth missing and required")
 
         _LOGGER.debug("aiohttp request: /%s (params=%s)", path, params)
-        resp: ClientResponse = await self.aiohttp_session.request(
-            method,
-            f"http://{self.options.ip_address}/{path}",
-            params=params,
-            auth=self.options.auth,
-            raise_for_status=True,
-            timeout=HTTP_CALL_TIMEOUT,
-        )
+        try:
+            resp: ClientResponse = await self.aiohttp_session.request(
+                method,
+                f"http://{self.options.ip_address}/{path}",
+                params=params,
+                auth=self.options.auth,
+                raise_for_status=True,
+                timeout=HTTP_CALL_TIMEOUT,
+            )
+        except ClientResponseError as err:
+            if err.status == HTTPStatus.UNAUTHORIZED:
+                self._last_error = InvalidAuthError(err)
+                raise InvalidAuthError(err) from err
+
+            self._last_error = DeviceConnectionError(err)
+            raise DeviceConnectionError from err
+        except CONNECT_ERRORS as err:
+            self._last_error = DeviceConnectionError(err)
+            raise DeviceConnectionError from err
+
         resp_json = await resp.json()
         _LOGGER.debug("aiohttp response: %s", resp_json)
         return cast(dict, resp_json)
@@ -295,7 +334,7 @@ class BlockDevice:
             raise NotInitialized
 
         if self._settings is None:
-            raise AuthRequired
+            raise InvalidAuthError
 
         return self._settings
 
@@ -306,7 +345,7 @@ class BlockDevice:
             raise NotInitialized
 
         if self._status is None:
-            raise AuthRequired
+            raise InvalidAuthError
 
         return self._status
 
@@ -339,6 +378,11 @@ class BlockDevice:
     def hostname(self) -> str:
         """Device hostname."""
         return cast(str, self.settings["device"]["hostname"])
+
+    @property
+    def last_error(self) -> ShellyError | None:
+        """Return the last error during async device init."""
+        return self._last_error
 
 
 class Block:

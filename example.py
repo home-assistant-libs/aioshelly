@@ -14,37 +14,36 @@ from types import FrameType
 from typing import Any, cast
 
 import aiohttp
-import async_timeout
 
 import aioshelly
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import MODEL_NAMES
-from aioshelly.exceptions import ShellyError, WrongShellyGen
+from aioshelly.const import MODEL_NAMES, WS_API_URL
+from aioshelly.exceptions import (
+    DeviceConnectionError,
+    FirmwareUnsupported,
+    InvalidAuthError,
+    ShellyError,
+    WrongShellyGen,
+)
 from aioshelly.rpc_device import RpcDevice, WsServer
 
 coap_context = COAP()
 ws_context = WsServer()
-
-WS_API_URL = "/api/shelly/ws"
 
 
 async def create_device(
     aiohttp_session: aiohttp.ClientSession,
     options: ConnectionOptions,
     init: bool,
-    timeout: float,
     gen: int | None,
 ) -> Any:
     """Create a Gen1/Gen2 device."""
     if gen is None:
-        async with async_timeout.timeout(timeout):
-            if info := await aioshelly.common.get_info(
-                aiohttp_session, options.ip_address
-            ):
-                gen = info.get("gen", 1)
-            else:
-                raise ShellyError("Unknown Gen")
+        if info := await aioshelly.common.get_info(aiohttp_session, options.ip_address):
+            gen = info.get("gen", 1)
+        else:
+            raise ShellyError("Unknown Gen")
 
     if gen == 1:
         return await BlockDevice.create(aiohttp_session, coap_context, options, init)
@@ -55,21 +54,19 @@ async def create_device(
     raise ShellyError("Unknown Gen")
 
 
-async def test_single(
-    options: ConnectionOptions,
-    init: bool,
-    timeout: float,
-    gen: int | None,
-) -> None:
+async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -> None:
     """Test single device."""
     async with aiohttp.ClientSession() as aiohttp_session:
         try:
-            async with async_timeout.timeout(timeout):
-                device = await create_device(
-                    aiohttp_session, options, init, timeout, gen
-                )
-        except asyncio.TimeoutError:
-            print("Timeout connecting to", options.ip_address)
+            device = await create_device(aiohttp_session, options, init, gen)
+        except FirmwareUnsupported as err:
+            print(f"Device firmware not supported, error: {repr(err)}")
+            return
+        except InvalidAuthError as err:
+            print(f"Invalid or missing authorization, error: {repr(err)}")
+            return
+        except DeviceConnectionError as err:
+            print(f"Error connecting to {options.ip_address}, error: {repr(err)}")
             return
         except WrongShellyGen:
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
@@ -83,7 +80,7 @@ async def test_single(
             await asyncio.sleep(0.1)
 
 
-async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
+async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     device_options = []
     with open("devices.json", encoding="utf8") as fp:
@@ -93,11 +90,8 @@ async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
     async with aiohttp.ClientSession() as aiohttp_session:
         results = await asyncio.gather(
             *[
-                asyncio.wait_for(
-                    connect_and_print_device(
-                        aiohttp_session, options, init, timeout, gen
-                    ),
-                    timeout,
+                asyncio.gather(
+                    connect_and_print_device(aiohttp_session, options, init, gen),
                 )
                 for options in device_options
             ],
@@ -111,8 +105,14 @@ async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
             print()
             print(f"Error printing device @ {options.ip_address}")
 
-            if isinstance(result, asyncio.TimeoutError):
-                print("Timeout connecting to device")
+            if isinstance(result, FirmwareUnsupported):
+                print(f"Device firmware not supported")
+            elif isinstance(result, InvalidAuthError):
+                print(f"Invalid or missing authorization")
+            elif isinstance(result, DeviceConnectionError):
+                print(f"Error connecting to device")
+            elif isinstance(result, WrongShellyGen):
+                print(f"Wrong Shelly generation")
             else:
                 print()
                 traceback.print_tb(result.__traceback__)
@@ -122,15 +122,14 @@ async def test_devices(init: bool, timeout: float, gen: int | None) -> None:
             await asyncio.sleep(0.1)
 
 
-async def connect_and_print_device(  # pylint: disable=too-many-arguments
+async def connect_and_print_device(
     aiohttp_session: aiohttp.ClientSession,
     options: ConnectionOptions,
     init: bool,
-    timeout: float,
     gen: int | None,
 ) -> None:
     """Connect and print device data."""
-    device = await create_device(aiohttp_session, options, init, timeout, gen)
+    device = await create_device(aiohttp_session, options, init, gen)
     print_device(device)
     device.subscribe_updates(device_updated)
 
@@ -139,7 +138,10 @@ def device_updated(cb_device: BlockDevice | RpcDevice) -> None:
     """Device updated callback."""
     print()
     print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
-    print_device(cb_device)
+    try:
+        print_device(cb_device)
+    except InvalidAuthError:
+        print("Invalid or missing authorization (from async init)")
 
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
@@ -205,8 +207,8 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--ws_port",
         "-wp",
         type=int,
-        default=5683,
-        help="Specify WebSocket TCP port (default=5683)",
+        default=8123,
+        help="Specify WebSocket TCP port (default=8123)",
     )
     parser.add_argument(
         "--ws_api_url",
@@ -223,13 +225,6 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     )
     parser.add_argument(
         "--init", "-i", action="store_true", help="Init device(s) at startup"
-    )
-    parser.add_argument(
-        "--timeout",
-        "-t",
-        type=int,
-        default=5,
-        help="Device init timeout in seconds (default=5)",
     )
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
@@ -277,12 +272,12 @@ async def main() -> None:
     signal.signal(signal.SIGINT, handle_sigint)
 
     if args.devices:
-        await test_devices(args.init, args.timeout, gen)
+        await test_devices(args.init, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         options = ConnectionOptions(args.ip_address, args.username, args.password)
-        await test_single(options, args.init, args.timeout, gen)
+        await test_single(options, args.init, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
