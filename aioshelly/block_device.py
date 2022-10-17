@@ -126,20 +126,21 @@ class BlockDevice:
         except ClientResponseError as err:
             if err.status == HTTPStatus.UNAUTHORIZED:
                 self._last_error = InvalidAuthError(err)
-                _LOGGER.debug("host %s: error: %r", ip, self._last_error)
                 # Auth error during async init, used by sleeping devices
                 # Will raise 'invalidAuthError; on next property read
-                if not async_init:
-                    self.shutdown()
-                    raise InvalidAuthError(err) from err
                 self.initialized = True
             else:
-                raise DeviceConnectionError from err
+                self._last_error = DeviceConnectionError(err)
+            _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+            if not async_init:
+                self.shutdown()
+                raise self._last_error from err
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            self.shutdown()
-            raise DeviceConnectionError from err
+            if not async_init:
+                self.shutdown()
+                raise DeviceConnectionError from err
         finally:
             self._initializing = False
 
