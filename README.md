@@ -6,8 +6,6 @@
 
 Requires Python >= 3.9 and uses asyncio, aiohttp and socket.
 
-### *From release 1.0.0 and up library has breaking changes to support Shelly Gen2 devices* Gen1 `Device` class moved under `block_device`
-
 Gen1 Device (Block/CoAP) example:
 
 ```python
@@ -15,10 +13,14 @@ import asyncio
 from pprint import pprint
 
 import aiohttp
-import async_timeout
 
 from aioshelly.block_device import COAP, BlockDevice
 from aioshelly.common import ConnectionOptions
+from aioshelly.exceptions import (
+    DeviceConnectionError,
+    FirmwareUnsupported,
+    InvalidAuthError,
+)
 
 
 async def test_block_device():
@@ -27,12 +29,15 @@ async def test_block_device():
 
     async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
         try:
-            async with async_timeout.timeout(10):
-                device = await BlockDevice.create(
-                    aiohttp_session, coap_context, options
-                )
-        except asyncio.TimeoutError:
-            print("Timeout connecting to", options.ip_address)
+            device = await BlockDevice.create(aiohttp_session, coap_context, options)
+        except FirmwareUnsupported as err:
+            print(f"Device firmware not supported, error: {repr(err)}")
+            return
+        except InvalidAuthError as err:
+            print(f"Invalid or missing authorization, error: {repr(err)}")
+            return
+        except DeviceConnectionError as err:
+            print(f"Error connecting to {options.ip_address}, error: {repr(err)}")
             return
 
         for block in device.blocks:
@@ -52,22 +57,33 @@ import asyncio
 from pprint import pprint
 
 import aiohttp
-import async_timeout
 
 from aioshelly.common import ConnectionOptions
-from aioshelly.rpc_device import RpcDevice
+from aioshelly.exceptions import (
+    DeviceConnectionError,
+    FirmwareUnsupported,
+    InvalidAuthError,
+)
+from aioshelly.rpc_device import RpcDevice, WsServer
 
 
 async def test_rpc_device():
     """Test Gen2 RPC (WebSocket) based device."""
     options = ConnectionOptions("192.168.1.188", "username", "password")
+    ws_context = WsServer()
+    await ws_context.initialize(8123)
 
     async with aiohttp.ClientSession() as aiohttp_session:
         try:
-            async with async_timeout.timeout(10):
-                device = await RpcDevice.create(aiohttp_session, options)
-        except asyncio.TimeoutError:
-            print("Timeout connecting to", ConnectionOptions.ip_address)
+            device = await RpcDevice.create(aiohttp_session, ws_context, options)
+        except FirmwareUnsupported as err:
+            print(f"Device firmware not supported, error: {repr(err)}")
+            return
+        except InvalidAuthError as err:
+            print(f"Invalid or missing authorization, error: {repr(err)}")
+            return
+        except DeviceConnectionError as err:
+            print(f"Error connecting to {options.ip_address}, error: {repr(err)}")
             return
 
         pprint(device.status)
