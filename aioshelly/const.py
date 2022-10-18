@@ -1,4 +1,19 @@
 """Constants for aioshelly."""
+import asyncio
+
+import aiohttp
+
+from .exceptions import DeviceConnectionError, JSONRPCError, RPCError, RPCTimeout
+
+CONNECT_ERRORS = (
+    aiohttp.ClientError,
+    asyncio.TimeoutError,
+    DeviceConnectionError,
+    OSError,
+    RPCError,
+    RPCTimeout,
+    JSONRPCError,
+)
 
 MODEL_NAMES = {
     # Gen1 CoAP based models
@@ -71,8 +86,8 @@ MODEL_NAMES = {
     "SPSW-202XE16EU": "Shelly Pro 2",
 }
 
-# Timeout used for Device init
-DEVICE_INIT_TIMEOUT = 10
+# Timeout used for Device IO
+DEVICE_IO_TIMEOUT = 10
 
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10
@@ -83,7 +98,7 @@ GEN1_MIN_FIRMWARE_DATE = 20200812
 # Firmware 0.8.1 release date
 GEN2_MIN_FIRMWARE_DATE = 20210921
 
-# Notification sent by RPC device in case of WebSocket close
-NOTIFY_WS_CLOSED = "NotifiyWebSocketClosed"
-
 WS_HEARTBEAT = 55
+
+# Default Gen2 outbound websocket API URL
+WS_API_URL = "/api/shelly/ws"

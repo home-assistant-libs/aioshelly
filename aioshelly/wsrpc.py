@@ -22,11 +22,10 @@ from aiohttp.web import (
     get,
 )
 
-from .const import NOTIFY_WS_CLOSED, WS_HEARTBEAT
+from .const import WS_API_URL, WS_HEARTBEAT
 from .exceptions import (
-    CannotConnect,
     ConnectionClosed,
-    ConnectionFailed,
+    DeviceConnectionError,
     InvalidAuthError,
     InvalidMessage,
     JSONRPCError,
@@ -43,7 +42,7 @@ async def receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
         raise ConnectionClosed("Connection was closed.")
 
     if msg.type == WSMsgType.ERROR:
-        raise ConnectionFailed()
+        raise InvalidMessage("Received message error")
 
     if msg.type != WSMsgType.TEXT:
         raise InvalidMessage(f"Received non-Text message: {msg.type}")
@@ -170,7 +169,7 @@ class WsRPC:
             client_exceptions.WSServerHandshakeError,
             client_exceptions.ClientError,
         ) as err:
-            raise CannotConnect(f"Error connecting to {self._ip_address}") from err
+            raise DeviceConnectionError(err) from err
 
         self._rx_task = asyncio.create_task(self._rx_msgs())
 
@@ -244,6 +243,8 @@ class WsRPC:
                 msg = await self._client.receive()
                 frame = await receive_json_or_raise(msg)
                 _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
+            except InvalidMessage as err:
+                _LOGGER.error("Invalid Message from host %s: %s", self._ip_address, err)
             except ConnectionClosed:
                 break
 
@@ -260,7 +261,6 @@ class WsRPC:
             await self._client.close()
 
         self._client = None
-        self._on_notification(NOTIFY_WS_CLOSED)
 
     @property
     def connected(self) -> bool:
@@ -288,7 +288,7 @@ class WsRPC:
         if code != 401:
             raise JSONRPCError(code, msg)
         if not handle_auth or self._auth_data is None:
-            raise InvalidAuthError(code, msg)
+            raise InvalidAuthError(msg)
 
         # Update auth from response and try with new auth data
         auth = json.loads(msg)
@@ -334,8 +334,8 @@ class WsServer:
         self._runner: AppRunner | None = None
         self.subscriptions: dict[str, Callable] = {}
 
-    async def initialize(self, port: int = 5765, api_url: str = "/") -> None:
-        """Initialize the websocket server."""
+    async def initialize(self, port: int, api_url: str = WS_API_URL) -> None:
+        """Initialize the websocket server, used only in standalone mode."""
         app = Application()
         app.add_routes([get(api_url, self.websocket_handler)])
         self._runner = AppRunner(app)
@@ -363,6 +363,11 @@ class WsServer:
                 _LOGGER.debug("recv(%s): %s", ip, frame)
             except ConnectionClosed:
                 await ws_res.close()
+            except InvalidMessage as err:
+                if ip in self.subscriptions:
+                    _LOGGER.error("Invalid Message from known host %s: %s", ip, err)
+                else:
+                    _LOGGER.debug("Invalid Message from unknown host %s: %s", ip, err)
             else:
                 if ip in self.subscriptions:
                     _LOGGER.debug("Calling WsRPC message update for device %s", ip)

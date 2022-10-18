@@ -3,16 +3,23 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import logging
 import re
 from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any, Union
 
 import aiohttp
-import async_timeout
 
-from .const import GEN1_MIN_FIRMWARE_DATE, GEN2_MIN_FIRMWARE_DATE, HTTP_CALL_TIMEOUT
-from .exceptions import FirmwareUnsupported
+from .const import (
+    CONNECT_ERRORS,
+    DEVICE_IO_TIMEOUT,
+    GEN1_MIN_FIRMWARE_DATE,
+    GEN2_MIN_FIRMWARE_DATE,
+)
+from .exceptions import DeviceConnectionError, FirmwareUnsupported
+
+_LOGGER = logging.getLogger(__name__)
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
@@ -63,14 +70,22 @@ async def get_info(
     aiohttp_session: aiohttp.ClientSession, ip_address: str
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
-    async with async_timeout.timeout(HTTP_CALL_TIMEOUT):
+    try:
         async with aiohttp_session.get(
-            f"http://{ip_address}/shelly", raise_for_status=True
+            f"http://{ip_address}/shelly",
+            raise_for_status=True,
+            timeout=DEVICE_IO_TIMEOUT,
         ) as resp:
             result: dict[str, Any] = await resp.json()
+    except CONNECT_ERRORS as err:
+        error = DeviceConnectionError(err)
+        _LOGGER.debug("host %s: error: %r", ip_address, error)
+        raise error from err
 
     if not shelly_supported_firmware(result):
-        raise FirmwareUnsupported
+        fw_error = FirmwareUnsupported(result)
+        _LOGGER.debug("host %s: error: %r", ip_address, error)
+        raise fw_error
 
     return result
 

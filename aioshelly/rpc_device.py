@@ -10,8 +10,14 @@ import async_timeout
 from aiohttp.client import ClientSession
 
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import DEVICE_INIT_TIMEOUT
-from .exceptions import AuthRequired, NotInitialized, WrongShellyGen
+from .const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT
+from .exceptions import (
+    DeviceConnectionError,
+    InvalidAuthError,
+    NotInitialized,
+    ShellyError,
+    WrongShellyGen,
+)
 from .wsrpc import WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,15 +48,15 @@ class RpcDevice:
         self.shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
-        self._device_info: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
-        self._unsub_listening = ws_context.subscribe_updates(
+        self._unsub_ws: Callable | None = ws_context.subscribe_updates(
             options.ip_address, self._wsrpc.handle_frame
         )
         self._update_listener: Callable | None = None
         self.initialized: bool = False
         self._initializing: bool = False
+        self._last_error: ShellyError | None = None
 
     @classmethod
     async def create(
@@ -71,14 +77,8 @@ class RpcDevice:
 
     async def _async_init(self) -> None:
         """Async init upon WsRPC message event."""
-        try:
-            async with async_timeout.timeout(DEVICE_INIT_TIMEOUT):
-                await self.initialize()
-                await self._wsrpc.disconnect()
-        except (asyncio.TimeoutError, OSError) as err:
-            _LOGGER.warning(
-                "device %s initialize error - %s", self.options.ip_address, repr(err)
-            )
+        await self.initialize(True)
+        await self._wsrpc.disconnect()
 
     def _on_notification(
         self, method: str, params: dict[str, Any] | None = None
@@ -87,7 +87,6 @@ class RpcDevice:
         if not self._initializing and not self.initialized:
             loop = asyncio.get_running_loop()
             loop.create_task(self._async_init())
-            return
 
         if params is not None:
             if method == "NotifyFullStatus":
@@ -107,19 +106,20 @@ class RpcDevice:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self) -> None:
+    async def initialize(self, async_init: bool = False) -> None:
         """Device initialization."""
         if self._initializing:
             raise RuntimeError("Already initializing")
 
         self._initializing = True
         self.initialized = False
+        ip = self.options.ip_address
         try:
             self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
             if self.requires_auth:
                 if self.options.username is None or self.options.password is None:
-                    raise AuthRequired
+                    raise InvalidAuthError("auth missing and required")
 
                 self._wsrpc.set_auth_data(
                     self.shelly["auth_domain"],
@@ -127,13 +127,29 @@ class RpcDevice:
                     self.options.password,
                 )
 
-            await self._wsrpc.connect(self.aiohttp_session)
-            await asyncio.gather(
-                self.update_device_info(),
-                self.update_config(),
-                self.update_status(),
-            )
+            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+                await self._wsrpc.connect(self.aiohttp_session)
+                await self.update_config()
+
+                if not async_init:
+                    await self.update_status()
+
             self.initialized = True
+        except InvalidAuthError as err:
+            self._last_error = InvalidAuthError(err)
+            _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+            # Auth error during async init, used by sleeping devices
+            # Will raise 'invalidAuthError' on next property read
+            if not async_init:
+                await self.shutdown()
+                raise
+            self.initialized = True
+        except CONNECT_ERRORS as err:
+            self._last_error = DeviceConnectionError(err)
+            _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+            if not async_init:
+                await self.shutdown()
+                raise DeviceConnectionError(err) from err
         finally:
             self._initializing = False
 
@@ -143,7 +159,11 @@ class RpcDevice:
     async def shutdown(self) -> None:
         """Shutdown device."""
         self._update_listener = None
-        self._unsub_listening()
+
+        if self._unsub_ws:
+            self._unsub_ws()
+            self._unsub_ws = None
+
         await self._wsrpc.disconnect()
 
     def subscribe_updates(self, update_listener: Callable) -> None:
@@ -153,23 +173,19 @@ class RpcDevice:
     async def trigger_ota_update(self, beta: bool = False) -> None:
         """Trigger an ota update."""
         params = {"stage": "beta"} if beta else {"stage": "stable"}
-        await self._wsrpc.call("Shelly.Update", params)
+        await self.call_rpc("Shelly.Update", params)
 
     async def trigger_reboot(self) -> None:
         """Trigger a device reboot."""
-        await self._wsrpc.call("Shelly.Reboot")
+        await self.call_rpc("Shelly.Reboot")
 
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
-        self._status = await self._wsrpc.call("Shelly.GetStatus")
-
-    async def update_device_info(self) -> None:
-        """Get device info from 'Shelly.GetDeviceInfo'."""
-        self._device_info = await self._wsrpc.call("Shelly.GetDeviceInfo")
+        self._status = await self.call_rpc("Shelly.GetStatus")
 
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
-        self._config = await self._wsrpc.call("Shelly.GetConfig")
+        self._config = await self.call_rpc("Shelly.GetConfig")
 
     @property
     def requires_auth(self) -> bool:
@@ -182,10 +198,18 @@ class RpcDevice:
         return bool(self.shelly["auth_en"])
 
     async def call_rpc(
-        self, method: str, params: dict[str, Any] | None
+        self, method: str, params: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Call RPC method."""
-        return await self._wsrpc.call(method, params)
+        try:
+            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+                return await self._wsrpc.call(method, params)
+        except InvalidAuthError as err:
+            self._last_error = InvalidAuthError(err)
+            raise
+        except CONNECT_ERRORS as err:
+            self._last_error = DeviceConnectionError(err)
+            raise DeviceConnectionError from err
 
     @property
     def status(self) -> dict[str, Any]:
@@ -194,7 +218,7 @@ class RpcDevice:
             raise NotInitialized
 
         if self._status is None:
-            raise AuthRequired
+            raise InvalidAuthError
 
         return self._status
 
@@ -207,24 +231,13 @@ class RpcDevice:
         return self._event
 
     @property
-    def device_info(self) -> dict[str, Any]:
-        """Get device info."""
-        if not self.initialized:
-            raise NotInitialized
-
-        if self._device_info is None:
-            raise AuthRequired
-
-        return self._device_info
-
-    @property
     def config(self) -> dict[str, Any]:
         """Get device config."""
         if not self.initialized:
             raise NotInitialized
 
         if self._config is None:
-            raise AuthRequired
+            raise InvalidAuthError
 
         return self._config
 
@@ -256,9 +269,19 @@ class RpcDevice:
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        return cast(str, self.device_info["id"])
+        assert self.shelly
+
+        if not self.initialized:
+            raise NotInitialized
+
+        return cast(str, self.shelly["id"])
 
     @property
     def connected(self) -> bool:
         """Return true if device is connected."""
         return self._wsrpc.connected
+
+    @property
+    def last_error(self) -> ShellyError | None:
+        """Return the last error during async device init."""
+        return self._last_error
