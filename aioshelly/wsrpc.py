@@ -28,9 +28,7 @@ from .exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
     InvalidMessage,
-    JSONRPCError,
-    RPCError,
-    RPCTimeout,
+    RpcCallError,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -283,10 +281,10 @@ class WsRPC:
         try:
             code, msg = resp["error"]["code"], resp["error"]["message"]
         except KeyError as err:
-            raise RPCError(f"bad response: {resp}") from err
+            raise RpcCallError(0, f"bad response: {resp}") from err
 
         if code != 401:
-            raise JSONRPCError(code, msg)
+            raise RpcCallError(code, msg)
         if not handle_auth or self._auth_data is None:
             raise InvalidAuthError(msg)
 
@@ -304,17 +302,13 @@ class WsRPC:
 
         call = RPCCall(self._next_id, method, params, self._session)
         self._calls[call.call_id] = call
-        await self._send_json(call.request_frame)
 
         try:
             async with async_timeout.timeout(timeout):
+                await self._send_json(call.request_frame)
                 resp: dict[str, Any] = await call.resolve
         except asyncio.TimeoutError as exc:
-            _LOGGER.warning("%s timed out: %s", call, exc)
-            raise RPCTimeout(call) from exc
-        except Exception as exc:
-            _LOGGER.error("%s ???: %s", call, exc)
-            raise RPCError(call, exc) from exc
+            raise DeviceConnectionError(call) from exc
 
         _LOGGER.debug("%s(%s) -> %s", call.method, call.params, resp)
         return resp

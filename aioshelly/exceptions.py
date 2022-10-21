@@ -18,24 +18,6 @@ class InvalidMessage(ShellyError):
     """Exception raised when an invalid message is received."""
 
 
-class RPCError(ShellyError):
-    """Base class for RPC errors."""
-
-
-class RPCTimeout(RPCError):
-    """Raised upon RPC call timeout."""
-
-
-class JSONRPCError(RPCError):
-    """Raised during RPC JSON parsing errors."""
-
-    def __init__(self, code: int, message: str = ""):
-        """Initialize JSON RPC errors."""
-        self.code = code
-        self.message = message
-        super().__init__(code, message)
-
-
 class NotInitialized(ShellyError):
     """Raised if device is not initialized."""
 
@@ -58,3 +40,13 @@ class FirmwareUnsupported(ShellyError):
 
 class InvalidAuthError(ShellyError):
     """Raised to indicate invalid or missing authentication error."""
+
+
+class RpcCallError(ShellyError):
+    """Raised to indicate errors in RPC call."""
+
+    def __init__(self, code: int, message: str = ""):
+        """Initialize JSON RPC errors."""
+        self.code = code
+        self.message = message
+        super().__init__(code, message)
