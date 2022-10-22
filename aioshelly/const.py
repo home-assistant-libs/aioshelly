@@ -3,16 +3,13 @@ import asyncio
 
 import aiohttp
 
-from .exceptions import DeviceConnectionError, JSONRPCError, RPCError, RPCTimeout
+from .exceptions import DeviceConnectionError
 
 CONNECT_ERRORS = (
     aiohttp.ClientError,
     asyncio.TimeoutError,
     DeviceConnectionError,
     OSError,
-    RPCError,
-    RPCTimeout,
-    JSONRPCError,
 )
 
 MODEL_NAMES = {

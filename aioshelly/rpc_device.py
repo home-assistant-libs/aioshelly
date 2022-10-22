@@ -15,6 +15,7 @@ from .exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
     NotInitialized,
+    RpcCallError,
     ShellyError,
     WrongShellyGen,
 )
@@ -144,7 +145,7 @@ class RpcDevice:
                 await self.shutdown()
                 raise
             self.initialized = True
-        except CONNECT_ERRORS as err:
+        except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
             if not async_init:
@@ -204,8 +205,8 @@ class RpcDevice:
         try:
             async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
                 return await self._wsrpc.call(method, params)
-        except InvalidAuthError as err:
-            self._last_error = InvalidAuthError(err)
+        except (InvalidAuthError, RpcCallError) as err:
+            self._last_error = err
             raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
