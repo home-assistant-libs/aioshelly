@@ -318,6 +318,10 @@ class BlockDevice:
 
         await self.http_request("get", "settings", params)
 
+    async def set_thermostat_state(self, channel: int = 0, **kwargs: Any) -> None:
+        """Set thermostat state (Shelly TRV)."""
+        await self.http_request("get", f"thermostat/{channel}", kwargs)
+
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""

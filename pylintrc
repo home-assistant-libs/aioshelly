@@ -28,6 +28,7 @@ disable=
   duplicate-code,
   inconsistent-return-statements,
   too-many-instance-attributes,
+  too-many-public-methods,
   wrong-import-order,
   too-few-public-methods
 
