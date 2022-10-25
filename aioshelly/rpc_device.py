@@ -85,19 +85,18 @@ class RpcDevice:
         self, method: str, params: dict[str, Any] | None = None
     ) -> None:
         """Received status notification from device."""
-        if not self._initializing and not self.initialized:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._async_init())
-
         if params is not None:
             if method == "NotifyFullStatus":
                 self._status = params
-            elif method == "NotifyStatus":
-                if self._status is None:
-                    return
+            elif method == "NotifyStatus" and self._status is not None:
                 self._status = dict(mergedicts(self._status, params))
             elif method == "NotifyEvent":
                 self._event = params
+
+        if not self._initializing and not self.initialized:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._async_init())
+            return
 
         if self._update_listener and self.initialized:
             self._update_listener(self)
@@ -132,7 +131,7 @@ class RpcDevice:
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
 
-                if not async_init:
+                if not async_init or self._status is None:
                     await self.update_status()
 
             self.initialized = True
@@ -154,7 +153,7 @@ class RpcDevice:
         finally:
             self._initializing = False
 
-        if self._update_listener:
+        if self._update_listener and self.initialized:
             self._update_listener(self)
 
     async def shutdown(self) -> None:
