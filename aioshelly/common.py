@@ -84,7 +84,7 @@ async def get_info(
 
     if not shelly_supported_firmware(result):
         fw_error = FirmwareUnsupported(result)
-        _LOGGER.debug("host %s: error: %r", ip_address, error)
+        _LOGGER.debug("host %s: error: %r", ip_address, fw_error)
         raise fw_error
 
     return result
