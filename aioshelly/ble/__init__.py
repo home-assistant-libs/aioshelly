@@ -27,7 +27,7 @@ async def _async_get_scripts_by_name(device: RpcDevice) -> dict[str, int]:
     return {script["name"]: script["id"] for script in scripts}
 
 
-async def async_start_scanner(
+async def async_start_scanner(  # pylint: disable=too-many-arguments
     device: RpcDevice,
     active: bool,
     event_type: str,
