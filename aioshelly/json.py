@@ -16,7 +16,7 @@ def json_encoder_default(obj: Any) -> Any:
 
 def json_dumps(data: Any) -> str:
     """Dump json string."""
-    return orjson.dumps(  # type: ignore[no-any-return] # pylint: disable=no-member
+    return orjson.dumps(  # pylint: disable=no-member
         data,
         option=orjson.OPT_NON_STR_KEYS,  # pylint: disable=no-member
         default=json_encoder_default,
