@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import json
 import logging
 import time
 from asyncio import tasks
@@ -30,6 +29,7 @@ from .exceptions import (
     InvalidMessage,
     RpcCallError,
 )
+from .json import json_dumps, json_loads
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
         raise InvalidMessage(f"Received non-Text message: {msg.type}")
 
     try:
-        data: dict[str, Any] = msg.json()
+        data: dict[str, Any] = msg.json(loads=json_loads)
     except ValueError as err:
         raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
 
@@ -289,7 +289,7 @@ class WsRPC:
             raise InvalidAuthError(msg)
 
         # Update auth from response and try with new auth data
-        auth = json.loads(msg)
+        auth = json_loads(msg)
         self._session.auth = self._auth_data.get_auth(auth["nonce"], auth.get("nc", 1))
         return await self.call(method, params, timeout, handle_auth=False)
 
@@ -317,7 +317,7 @@ class WsRPC:
         """Send json frame to device."""
         _LOGGER.debug("send(%s): %s", self._ip_address, data)
         assert self._client
-        await self._client.send_json(data)
+        await self._client.send_json(data, dumps=json_dumps)
 
 
 class WsServer:

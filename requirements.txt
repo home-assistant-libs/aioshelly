@@ -1,1 +1,2 @@
 aiohttp
+orjson>=3.8.1
