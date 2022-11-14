@@ -228,7 +228,7 @@ class RpcDevice:
         await self.call_rpc("Script.Start", {"id": script_id})
 
     async def script_stop(self, script_id: int) -> None:
-        """Start a script using 'Script.Stop'."""
+        """Stop a script using 'Script.Stop'."""
         await self.call_rpc("Script.Stop", {"id": script_id})
 
     @property
