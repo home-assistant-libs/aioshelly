@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from enum import Enum, auto
 from typing import Any, Callable, TypedDict, cast
 
 import aiohttp
@@ -10,7 +11,7 @@ import async_timeout
 from aiohttp.client import ClientSession
 
 from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT
+from .const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
 from .exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
@@ -47,6 +48,15 @@ def mergedicts(dict1: dict, dict2: dict) -> dict:
         if isinstance(value, dict) and isinstance(dict1.get(key), dict):
             result[key] = mergedicts(dict1[key], value)
     return result
+
+
+class UpdateType(Enum):
+    """Update type."""
+
+    Event = auto()
+    Status = auto()
+    Disconnected = auto()
+    Unknown = auto()
 
 
 class RpcDevice:
@@ -100,13 +110,19 @@ class RpcDevice:
         self, method: str, params: dict[str, Any] | None = None
     ) -> None:
         """Received status notification from device."""
+        update_type = UpdateType.Unknown
         if params is not None:
             if method == "NotifyFullStatus":
                 self._status = params
+                update_type = UpdateType.Status
             elif method == "NotifyStatus" and self._status is not None:
                 self._status = dict(mergedicts(self._status, params))
+                update_type = UpdateType.Status
             elif method == "NotifyEvent":
                 self._event = params
+                update_type = UpdateType.Event
+        elif method == NOTIFY_WS_CLOSED:
+            update_type = UpdateType.Disconnected
 
         if not self._initializing and not self.initialized:
             loop = asyncio.get_running_loop()
@@ -114,7 +130,7 @@ class RpcDevice:
             return
 
         if self._update_listener and self.initialized:
-            self._update_listener(self)
+            self._update_listener(self, update_type)
 
     @property
     def ip_address(self) -> str:
