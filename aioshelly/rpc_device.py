@@ -53,11 +53,11 @@ def mergedicts(dict1: dict, dict2: dict) -> dict:
 class UpdateType(Enum):
     """Update type."""
 
-    Event = auto()
-    Status = auto()
-    Initialized = auto()
-    Disconnected = auto()
-    Unknown = auto()
+    EVENT = auto()
+    STATUS = auto()
+    INITIALIZED = auto()
+    DISCONNECTED = auto()
+    UNKNOWN = auto()
 
 
 class RpcDevice:
@@ -111,19 +111,19 @@ class RpcDevice:
         self, method: str, params: dict[str, Any] | None = None
     ) -> None:
         """Received status notification from device."""
-        update_type = UpdateType.Unknown
+        update_type = UpdateType.UNKNOWN
         if params is not None:
             if method == "NotifyFullStatus":
                 self._status = params
-                update_type = UpdateType.Status
+                update_type = UpdateType.STATUS
             elif method == "NotifyStatus" and self._status is not None:
                 self._status = dict(mergedicts(self._status, params))
-                update_type = UpdateType.Status
+                update_type = UpdateType.STATUS
             elif method == "NotifyEvent":
                 self._event = params
-                update_type = UpdateType.Event
+                update_type = UpdateType.EVENT
         elif method == NOTIFY_WS_CLOSED:
-            update_type = UpdateType.Disconnected
+            update_type = UpdateType.DISCONNECTED
 
         if not self._initializing and not self.initialized:
             loop = asyncio.get_running_loop()
@@ -186,7 +186,7 @@ class RpcDevice:
             self._initializing = False
 
         if self._update_listener and self.initialized:
-            self._update_listener(self, UpdateType.Initialized)
+            self._update_listener(self, UpdateType.INITIALIZED)
 
     async def shutdown(self) -> None:
         """Shutdown device."""
