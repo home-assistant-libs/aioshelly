@@ -62,7 +62,7 @@ async def async_start_scanner(
         # Script has no code yet
         needs_putcode = True
     else:
-        needs_putcode = code_response["code"] != code
+        needs_putcode = code_response["data"] != code
 
     if needs_putcode:
         # Avoid writing the flash unless we actually need to
