@@ -4,7 +4,7 @@ from typing import Any
 
 import orjson
 
-json_loads = orjson.loads
+json_loads = orjson.loads  # pylint: disable=no-member
 
 
 def json_encoder_default(obj: Any) -> Any:
@@ -16,6 +16,8 @@ def json_encoder_default(obj: Any) -> Any:
 
 def json_dumps(data: Any) -> str:
     """Dump json string."""
-    return orjson.dumps(
-        data, option=orjson.OPT_NON_STR_KEYS, default=json_encoder_default
+    return orjson.dumps(  # type: ignore[no-any-return] # pylint: disable=no-member
+        data,
+        option=orjson.OPT_NON_STR_KEYS,  # pylint: disable=no-member
+        default=json_encoder_default,
     ).decode("utf-8")
