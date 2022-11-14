@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Callable, cast
+from typing import Any, Callable, TypedDict, cast
 
 import aiohttp
 import async_timeout
@@ -22,6 +22,21 @@ from .exceptions import (
 from .wsrpc import WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class ShellyScript(TypedDict, total=False):
+    """Shelly Script."""
+
+    id: int
+    name: str
+    enable: bool
+    running: bool
+
+
+class ShellyScriptCode(TypedDict, total=False):
+    """Shelly Script Code."""
+
+    data: str
 
 
 def mergedicts(dict1: dict, dict2: dict) -> dict:
@@ -187,6 +202,35 @@ class RpcDevice:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
 
+    async def script_list(self) -> list[ShellyScript]:
+        """Get a list of scripts from 'Script.List'."""
+        data = await self.call_rpc("Script.List")
+        scripts: list[ShellyScript] = data["scripts"]
+        return scripts
+
+    async def script_getcode(self, script_id: int) -> ShellyScriptCode:
+        """Get script code from 'Script.GetCode'."""
+        code_response = cast(
+            ShellyScriptCode, await self.call_rpc("Script.GetCode", {"id": script_id})
+        )
+        return code_response
+
+    async def script_putcode(self, script_id: int, code: str) -> None:
+        """Set script code from 'Script.PutCode'."""
+        await self.call_rpc("Script.PutCode", {"id": script_id, code: str})
+
+    async def script_create(self, name: str) -> None:
+        """Create a script using 'Script.Create'."""
+        await self.call_rpc("Script.Create", {"name": name})
+
+    async def script_start(self, script_id: int) -> None:
+        """Start a script using 'Script.Start'."""
+        await self.call_rpc("Script.Start", {"id": script_id})
+
+    async def script_stop(self, script_id: int) -> None:
+        """Start a script using 'Script.Stop'."""
+        await self.call_rpc("Script.Stop", {"id": script_id})
+
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
@@ -255,6 +299,16 @@ class RpcDevice:
             raise NotInitialized
 
         return cast(str, self.shelly["fw_id"])
+
+    @property
+    def version(self) -> str:
+        """Device version."""
+        assert self.shelly
+
+        if not self.initialized:
+            raise NotInitialized
+
+        return cast(str, self.shelly["ver"])
 
     @property
     def model(self) -> str:
