@@ -18,7 +18,7 @@ setup(
     description="Asynchronous library to control Shelly devices.",
     long_description=README_FILE.read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
-    packages=["aioshelly"],
+    packages=["aioshelly", "aioshelly.ble"],
     python_requires=">=3.9",
     package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
