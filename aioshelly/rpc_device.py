@@ -217,7 +217,7 @@ class RpcDevice:
 
     async def script_putcode(self, script_id: int, code: str) -> None:
         """Set script code from 'Script.PutCode'."""
-        await self.call_rpc("Script.PutCode", {"id": script_id, code: str})
+        await self.call_rpc("Script.PutCode", {"id": script_id, "code": code})
 
     async def script_create(self, name: str) -> None:
         """Create a script using 'Script.Create'."""
