@@ -99,3 +99,6 @@ WS_HEARTBEAT = 55
 
 # Default Gen2 outbound websocket API URL
 WS_API_URL = "/api/shelly/ws"
+
+# Notification sent by RPC device in case of WebSocket close
+NOTIFY_WS_CLOSED = "NotifyWebSocketClosed"

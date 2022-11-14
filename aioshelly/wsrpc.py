@@ -21,7 +21,7 @@ from aiohttp.web import (
     get,
 )
 
-from .const import WS_API_URL, WS_HEARTBEAT
+from .const import NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
 from .exceptions import (
     ConnectionClosed,
     DeviceConnectionError,
@@ -259,6 +259,7 @@ class WsRPC:
             await self._client.close()
 
         self._client = None
+        self._on_notification(NOTIFY_WS_CLOSED)
 
     @property
     def connected(self) -> bool:

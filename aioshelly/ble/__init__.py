@@ -6,8 +6,8 @@ from typing import Any
 
 from bluetooth_data_tools import BLEGAPAdvertisement, parse_advertisement_data
 
-from ..rpc_device import RpcDevice
 from ..exceptions import RpcCallError
+from ..rpc_device import RpcDevice
 from .const import (
     BLE_CODE,
     BLE_SCAN_RESULT_VERSION,
