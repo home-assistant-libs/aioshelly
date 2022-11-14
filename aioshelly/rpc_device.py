@@ -55,6 +55,7 @@ class UpdateType(Enum):
 
     Event = auto()
     Status = auto()
+    Initialized = auto()
     Disconnected = auto()
     Unknown = auto()
 
@@ -185,7 +186,7 @@ class RpcDevice:
             self._initializing = False
 
         if self._update_listener and self.initialized:
-            self._update_listener(self)
+            self._update_listener(self, UpdateType.Initialized)
 
     async def shutdown(self) -> None:
         """Shutdown device."""
