@@ -7,6 +7,7 @@ from typing import Any
 from bluetooth_data_tools import BLEGAPAdvertisement, parse_advertisement_data
 
 from ..rpc_device import RpcDevice
+from ..exceptions import RpcCallError
 from .const import (
     BLE_CODE,
     BLE_SCAN_RESULT_VERSION,
@@ -54,8 +55,16 @@ async def async_start_scanner(
         .replace(VAR_DURATION_MS, str(duration_ms))
     )
 
-    code_response = await device.script_getcode(ble_script_id)
-    if code_response["data"] != code:
+    needs_putcode = False
+    try:
+        code_response = await device.script_getcode(ble_script_id)
+    except RpcCallError:
+        # Script has no code yet
+        needs_putcode = True
+    else:
+        needs_putcode = code_response["code"] != code
+
+    if needs_putcode:
         # Avoid writing the flash unless we actually need to
         # update the script
         await device.script_stop(ble_script_id)
