@@ -272,7 +272,8 @@ class RpcDevice:
         return cast(
             ShellyBLESetConfig,
             await self.call_rpc(
-                "BLE.SetConfig", {"enable": enable, "rpc": {"enable": enable_rpc}}
+                "BLE.SetConfig",
+                {"config": {"enable": enable, "rpc": {"enable": enable_rpc}}},
             ),
         )
 
