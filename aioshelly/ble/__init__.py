@@ -1,6 +1,7 @@
 """Shelly Gen2 BLE support."""
 from __future__ import annotations
 
+import logging
 from base64 import b64decode
 from typing import Any
 
@@ -19,6 +20,8 @@ from .const import (
     VAR_VERSION,
     VAR_WINDOW_MS,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 async def _async_get_scripts_by_name(device: RpcDevice) -> dict[str, int]:
@@ -99,3 +102,22 @@ def parse_ble_scan_result_event(
             (b64decode(advertisement_data_b64), b64decode(scan_response_b64))
         ),
     )
+
+
+async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
+    """Ensure BLE is enabled.
+
+    Returns True if the device was restarted.
+
+    Raises RpcCallError if BLE is not supported or could not
+    be enabled.
+    """
+    ble_config = await device.ble_getconfig()
+    if ble_config["enable"]:
+        return False
+    ble_enable = await device.ble_setconfig(enable=True, enable_rpc=True)
+    if not ble_enable["restart_required"]:
+        return False
+    LOGGER.info("BLE enabled, restarting device %s", device.ip_address)
+    await device.trigger_reboot(3500)
+    return True

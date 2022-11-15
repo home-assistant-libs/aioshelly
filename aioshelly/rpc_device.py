@@ -40,6 +40,25 @@ class ShellyScriptCode(TypedDict, total=False):
     data: str
 
 
+class ShellyBLERpcConfig(TypedDict, total=False):
+    """Shelly BLE RPC Config."""
+
+    enable: bool
+
+
+class ShellyBLEConfig(TypedDict, total=False):
+    """Shelly BLE Config."""
+
+    enable: bool
+    rpc: ShellyBLERpcConfig
+
+
+class ShellyBLESetConfig(TypedDict, total=False):
+    """Shelly BLE Set Config."""
+
+    restart_required: bool
+
+
 def mergedicts(dict1: dict, dict2: dict) -> dict:
     """Deep dicts merge."""
     result = dict(dict1)
@@ -207,9 +226,9 @@ class RpcDevice:
         params = {"stage": "beta"} if beta else {"stage": "stable"}
         await self.call_rpc("Shelly.Update", params)
 
-    async def trigger_reboot(self) -> None:
+    async def trigger_reboot(self, delay_ms: int) -> None:
         """Trigger a device reboot."""
-        await self.call_rpc("Shelly.Reboot")
+        await self.call_rpc("Shelly.Reboot", {"delay_ms": delay_ms or 1000})
 
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
@@ -247,6 +266,20 @@ class RpcDevice:
     async def script_stop(self, script_id: int) -> None:
         """Stop a script using 'Script.Stop'."""
         await self.call_rpc("Script.Stop", {"id": script_id})
+
+    async def ble_setconfig(self, enable: bool, enable_rpc: bool) -> ShellyBLESetConfig:
+        """Enable or disable ble with BLE.SetConfig."""
+        return cast(
+            ShellyBLESetConfig,
+            await self.call_rpc(
+                "BLE.SetConfig",
+                {"config": {"enable": enable, "rpc": {"enable": enable_rpc}}},
+            ),
+        )
+
+    async def ble_getconfig(self) -> ShellyBLEConfig:
+        """Get the BLE config with BLE.GetConfig."""
+        return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
 
     @property
     def requires_auth(self) -> bool:
