@@ -40,6 +40,25 @@ class ShellyScriptCode(TypedDict, total=False):
     data: str
 
 
+class ShellyBLERpcConfig(TypedDict, total=False):
+    """Shelly BLE RPC Config."""
+
+    enable: bool
+
+
+class ShellyBLEConfig(TypedDict, total=False):
+    """Shelly BLE Config."""
+
+    enable: bool
+    rpc: ShellyBLERpcConfig
+
+
+class ShellyBLESetConfig(TypedDict, total=False):
+    """Shelly BLE Set Config."""
+
+    restart_required: bool
+
+
 def mergedicts(dict1: dict, dict2: dict) -> dict:
     """Deep dicts merge."""
     result = dict(dict1)
@@ -247,6 +266,19 @@ class RpcDevice:
     async def script_stop(self, script_id: int) -> None:
         """Stop a script using 'Script.Stop'."""
         await self.call_rpc("Script.Stop", {"id": script_id})
+
+    async def ble_setconfig(self, enable: bool, enable_rpc: bool) -> ShellyBLESetConfig:
+        """Enable or disable ble with BLE.SetConfig."""
+        return cast(
+            ShellyBLESetConfig,
+            await self.call_rpc(
+                "BLE.SetConfig", {"enable": enable, "rpc": {"enable": enable_rpc}}
+            ),
+        )
+
+    async def ble_getconfig(self) -> ShellyBLEConfig:
+        """Get the BLE config with BLE.GetConfig."""
+        return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
 
     @property
     def requires_auth(self) -> bool:
