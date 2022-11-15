@@ -107,7 +107,7 @@ def parse_ble_scan_result_event(
 async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
     """Ensure BLE is enabled.
 
-    Returns True if the device needs to be restarted.
+    Returns True if the device was restarted.
 
     Raises RpcCallError if BLE is not supported or could not
     be enabled.
@@ -117,5 +117,7 @@ async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
         return False
     ble_enable = await device.ble_setconfig(enable=True, enable_rpc=True)
     if not ble_enable["restart_required"]:
-        return False
+        return True
+    LOGGER.info("BLE enabled, restarting device %s", device.ip_address)
+    await device.trigger_reboot(3500)
     return True
