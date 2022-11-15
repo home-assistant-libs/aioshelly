@@ -30,6 +30,13 @@ async def _async_get_scripts_by_name(device: RpcDevice) -> dict[str, int]:
     return {script["name"]: script["id"] for script in scripts}
 
 
+async def async_stop_scanner(device: RpcDevice) -> None:
+    """Stop scanner."""
+    script_name_to_id = await _async_get_scripts_by_name(device)
+    if script_id := script_name_to_id.get(BLE_SCRIPT_NAME):
+        await device.script_stop(script_id)
+
+
 async def async_start_scanner(  # pylint: disable=too-many-arguments
     device: RpcDevice,
     active: bool,
