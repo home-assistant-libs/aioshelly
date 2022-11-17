@@ -1,7 +1,7 @@
 """Setup module for aioshelly."""
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 PROJECT_DIR = Path(__file__).parent.resolve()
 README_FILE = PROJECT_DIR / "README.md"
@@ -18,7 +18,7 @@ setup(
     description="Asynchronous library to control Shelly devices.",
     long_description=README_FILE.read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
-    packages=["aioshelly", "aioshelly.ble"],
+    packages=find_packages(),
     python_requires=">=3.9",
     package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
