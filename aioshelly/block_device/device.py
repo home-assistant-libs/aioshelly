@@ -11,16 +11,16 @@ import async_timeout
 from aiohttp import ClientResponseError
 from aiohttp.client import ClientResponse
 
-from .coap import COAP, CoapMessage
-from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
-from .exceptions import (
+from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
+from ..exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
     NotInitialized,
     ShellyError,
     WrongShellyGen,
 )
+from .coap import COAP, CoapMessage
 
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"

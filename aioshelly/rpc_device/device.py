@@ -10,9 +10,9 @@ import aiohttp
 import async_timeout
 from aiohttp.client import ClientSession
 
-from .common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from .const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
-from .exceptions import (
+from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
+from ..exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
     NotInitialized,
