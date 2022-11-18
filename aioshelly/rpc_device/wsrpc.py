@@ -21,15 +21,15 @@ from aiohttp.web import (
     get,
 )
 
-from .const import NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
-from .exceptions import (
+from ..const import NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
+from ..exceptions import (
     ConnectionClosed,
     DeviceConnectionError,
     InvalidAuthError,
     InvalidMessage,
     RpcCallError,
 )
-from .json import json_dumps, json_loads
+from ..json import json_dumps, json_loads
 
 _LOGGER = logging.getLogger(__name__)
 
