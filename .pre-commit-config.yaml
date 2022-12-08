@@ -22,12 +22,12 @@ repos:
           - --skip="./.*,*.csv,*.json"
           - --quiet-level=2
         exclude_types: [csv, json]
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 4.0.1
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-docstrings==1.5.0
+          - flake8-docstrings==1.6.0
         files: ^aioshelly/.+\.py$
         args:
           - --max-line-length=500
