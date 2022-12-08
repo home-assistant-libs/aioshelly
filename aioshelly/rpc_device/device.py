@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from enum import Enum, auto
-from typing import Any, Callable, TypedDict, cast
+from typing import Any, Callable, cast
 
 import aiohttp
 import async_timeout
@@ -20,43 +20,10 @@ from ..exceptions import (
     ShellyError,
     WrongShellyGen,
 )
+from .models import ShellyBLEConfig, ShellyBLESetConfig, ShellyScript, ShellyScriptCode
 from .wsrpc import WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class ShellyScript(TypedDict, total=False):
-    """Shelly Script."""
-
-    id: int
-    name: str
-    enable: bool
-    running: bool
-
-
-class ShellyScriptCode(TypedDict, total=False):
-    """Shelly Script Code."""
-
-    data: str
-
-
-class ShellyBLERpcConfig(TypedDict, total=False):
-    """Shelly BLE RPC Config."""
-
-    enable: bool
-
-
-class ShellyBLEConfig(TypedDict, total=False):
-    """Shelly BLE Config."""
-
-    enable: bool
-    rpc: ShellyBLERpcConfig
-
-
-class ShellyBLESetConfig(TypedDict, total=False):
-    """Shelly BLE Set Config."""
-
-    restart_required: bool
 
 
 def mergedicts(dict1: dict, dict2: dict) -> dict:
