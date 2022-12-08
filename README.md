@@ -1,12 +1,29 @@
 # Aioshelly
 
-## Asynchronous library to control Shelly devices
+Asynchronous library to control Shelly devices
 
-## This library is under development
+**This library is under development**
 
-Requires Python >= 3.9 and uses asyncio, aiohttp and socket.
+## Requirements
 
-Gen1 Device (Block/CoAP) example:
+- Python >= 3.9
+- bluetooth-data-tools
+- aiohttp
+- orjson
+
+## Install
+```bash
+pip install aioshelly
+```
+
+## Install from Source
+Run the following command inside this folder
+```bash
+pip install --upgrade .
+```
+
+## Examples
+### Gen1 Device (Block/CoAP) example:
 
 ```python
 import asyncio
@@ -50,7 +67,7 @@ if __name__ == "__main__":
     asyncio.run(test_block_device())
 ```
 
-Gen2 (RPC/WebSocket) device example:
+### Gen2 (RPC/WebSocket) device example:
 
 ```python
 import asyncio
@@ -93,22 +110,22 @@ if __name__ == "__main__":
     asyncio.run(test_rpc_device())
 ```
 
-## Included examples
+## Example script
 
-The repository includes two examples to quickly try it out.
+The repository includes example script to quickly try it out.
 
-Connect to a device and print its status whenever we receive a state change:
+### Connect to a device and print its status whenever we receive a state change:
 
 ```
-python3 example.py -ip <ip> [-u <username>] [-p <password]
+python3 example.py -ip <ip> [-u <username>] [-p <password] -i
 ```
 
-Connect to all the devices in `devices.json` at once and print their status:
+### Connect to all the devices in `devices.json` at once and print their status:
 
 ```
 python3 example.py -d -i
 ```
-## Show usage help:
+### Show usage help:
 ```
 python3 example.py -h
 ```
