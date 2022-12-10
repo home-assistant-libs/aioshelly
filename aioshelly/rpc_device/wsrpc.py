@@ -252,7 +252,8 @@ class WsRPC:
         _LOGGER.debug("Websocket client connection from %s closed", self._ip_address)
 
         for call_item in self._calls.values():
-            call_item.resolve.cancel()
+            if not call_item.resolve.done():
+                call_item.resolve.set_exception(DeviceConnectionError(call_item))
         self._calls.clear()
 
         if not self._client.closed:
