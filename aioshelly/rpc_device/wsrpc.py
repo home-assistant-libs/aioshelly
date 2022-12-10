@@ -34,7 +34,7 @@ from ..json import json_dumps, json_loads
 _LOGGER = logging.getLogger(__name__)
 
 
-async def receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
+def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
     """Receive json or raise."""
     if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
         raise ConnectionClosed("Connection was closed.")
@@ -297,7 +297,7 @@ class WsRPC:
                 if msg.type == WSMsgType.PONG:
                     self._schedule_heartbeat()
                     continue
-                frame = await receive_json_or_raise(msg)
+                frame = _receive_json_or_raise(msg)
                 _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
             except InvalidMessage as err:
                 _LOGGER.error("Invalid Message from host %s: %s", self._ip_address, err)
@@ -413,7 +413,7 @@ class WsServer:
 
         async for msg in ws_res:
             try:
-                frame = await receive_json_or_raise(msg)
+                frame = _receive_json_or_raise(msg)
                 _LOGGER.debug("recv(%s): %s", ip, frame)
             except ConnectionClosed:
                 await ws_res.close()
