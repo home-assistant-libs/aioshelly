@@ -228,7 +228,7 @@ class WsRPC:
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
         self._rx_task = None
-        self._heart_beat_task = None
+        self._cancel_heatbeat_and_pong_response_cb()
         if self._client is None:
             return
 
