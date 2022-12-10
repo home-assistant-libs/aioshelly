@@ -165,7 +165,7 @@ class WsRPC:
         _LOGGER.debug("Trying to connect to device at %s", self._ip_address)
         try:
             self._client = await aiohttp_session.ws_connect(
-                f"http://{self._ip_address}/rpc"
+                f"http://{self._ip_address}/rpc", autoping=False
             )
         except (
             client_exceptions.WSServerHandshakeError,
@@ -293,16 +293,23 @@ class WsRPC:
             try:
                 msg = await self._client.receive()
                 self._last_time = time.time()
+                _LOGGER.warning("Got message: %s", msg.type)
 
                 if msg.type == WSMsgType.PONG:
                     self._schedule_heartbeat()
+                    continue
+                if msg.type == WSMsgType.PING:
+                    await self._client.pong(msg.data)
                     continue
                 frame = await receive_json_or_raise(msg)
                 _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
             except InvalidMessage as err:
                 _LOGGER.error("Invalid Message from host %s: %s", self._ip_address, err)
             except ConnectionClosed:
+                _LOGGER.exception("Connection closed from host %s", self._ip_address)
                 break
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected error while receiving message")
 
             if not self._client.closed:
                 self.handle_frame(frame)
