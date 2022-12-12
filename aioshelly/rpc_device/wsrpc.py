@@ -315,7 +315,8 @@ class WsRPC:
         self._cancel_heatbeat_and_pong_response_cb()
 
         for call_item in self._calls.values():
-            call_item.resolve.cancel()
+            if not call_item.resolve.done():
+                call_item.resolve.set_exception(DeviceConnectionError(call_item))
         self._calls.clear()
 
         if not self._client.closed:
