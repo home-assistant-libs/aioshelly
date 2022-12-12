@@ -224,7 +224,10 @@ class WsRPC:
 
     def _pong_not_received(self) -> None:
         """Pong not received."""
-        _LOGGER.error("Pong not received, disconnecting")
+        _LOGGER.error(
+            "%s: Pong not received, device is likely unresponsive; disconnecting",
+            self._ip_address,
+        )
         asyncio.create_task(self.disconnect())
 
     async def disconnect(self) -> None:
