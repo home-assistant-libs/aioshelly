@@ -33,6 +33,8 @@ from ..json import json_dumps, json_loads
 
 _LOGGER = logging.getLogger(__name__)
 
+WS_HEATBEAT_HALF_INTERVAL = WS_HEARTBEAT / 2
+
 
 def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
     """Receive json or raise."""
@@ -198,14 +200,14 @@ class WsRPC:
         """Schedule heartbeat."""
         self._cancel_heatbeat_and_pong_response_cb()
         self._heartbeat_cb = self._loop.call_later(
-            WS_HEARTBEAT / 2, self._maybe_send_heartbeat
+            WS_HEATBEAT_HALF_INTERVAL, self._maybe_send_heartbeat
         )
 
     def _schedule_pong_response_cb(self) -> None:
         """Schedule pong response callback."""
         self._cancel_pong_response_cb()
         self._pong_response_cb = self._loop.call_later(
-            WS_HEARTBEAT / 2, self._pong_not_received
+            WS_HEATBEAT_HALF_INTERVAL, self._pong_not_received
         )
 
     def _maybe_send_heartbeat(self) -> None:
