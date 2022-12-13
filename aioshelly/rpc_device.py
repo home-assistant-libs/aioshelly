@@ -192,14 +192,14 @@ class RpcDevice:
             # Auth error during async init, used by sleeping devices
             # Will raise 'invalidAuthError' on next property read
             if not async_init:
-                await self.shutdown()
+                await self._disconnect_websocket()
                 raise
             self.initialized = True
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
             if not async_init:
-                await self.shutdown()
+                await self._disconnect_websocket()
                 raise DeviceConnectionError(err) from err
         finally:
             self._initializing = False
@@ -208,9 +208,17 @@ class RpcDevice:
             self._update_listener(self, UpdateType.INITIALIZED)
 
     async def shutdown(self) -> None:
-        """Shutdown device."""
-        self._update_listener = None
+        """Shutdown device and remove the listener.
 
+        This method will unsubscribe the update listener and disconnect the websocket.
+
+        To fully reverse a shutdown, call initialize() and subscribe_updates() again.
+        """
+        self._update_listener = None
+        await self._disconnect_websocket()
+
+    async def _disconnect_websocket(self) -> None:
+        """Disconnect websocket."""
         if self._unsub_ws:
             self._unsub_ws()
             self._unsub_ws = None
