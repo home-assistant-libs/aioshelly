@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import socket
 import time
 from asyncio import tasks
 from dataclasses import dataclass
@@ -34,6 +35,8 @@ from ..json import json_dumps, json_loads
 _LOGGER = logging.getLogger(__name__)
 
 WS_HEATBEAT_HALF_INTERVAL = WS_HEARTBEAT / 2
+
+BUFFER_SIZE = 1024 * 64
 
 
 def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
@@ -174,6 +177,18 @@ class WsRPC:
             client_exceptions.ClientError,
         ) as err:
             raise DeviceConnectionError(err) from err
+
+        # Try to reduce the pressure on shelly device as it measures
+        # ram in bytes and we measure ram in megabytes.
+        sock: socket.socket = self._client.get_extra_info("socket")
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFFER_SIZE)
+        except OSError as err:
+            _LOGGER.warning(
+                "%s: Failed to set socket receive buffer size: %s",
+                self._ip_address,
+                err,
+            )
 
         self._rx_task = asyncio.create_task(self._rx_msgs())
         self._schedule_heartbeat()
