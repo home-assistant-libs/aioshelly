@@ -9,6 +9,8 @@ import struct
 from types import TracebackType
 from typing import Callable, cast
 
+COAP_OPTION_DEVICE_ID = 3332
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -27,6 +29,7 @@ class CoapMessage:
         """Initialize a coap message."""
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
+        self.options: dict[int, bytes] = {}
 
         try:
             self.vttkl, self.code, self.mid = struct.unpack("!BBH", payload[:4])
@@ -36,9 +39,34 @@ class CoapMessage:
         if self.code not in (30, 69):
             raise InvalidMessage(f"Wrong type, {self.code}")
 
+        raw_data = payload[4:]
+        option_number = 0
+        data = b""
+
+        # parse options
+        while raw_data:
+            if raw_data[0] == 0xFF:  # end of options marker
+                data = raw_data[1:]
+                break
+
+            delta = (raw_data[0] & 0xF0) >> 4
+            length = raw_data[0] & 0x0F
+            (delta, raw_data) = self._read_extended_field_value(delta, raw_data[1:])
+            (length, raw_data) = self._read_extended_field_value(length, raw_data)
+            option_number += delta
+
+            if len(raw_data) < length:
+                raise InvalidMessage("Option announced but absent")
+
+            self.options[option_number] = raw_data[:length]
+            raw_data = raw_data[length:]
+
+        if not data:
+            raise InvalidMessage("Received message without data")
+
         try:
-            self.payload = json.loads(payload.rsplit(b"\xff", 1)[1].decode())
-        except (json.decoder.JSONDecodeError, UnicodeDecodeError, IndexError) as err:
+            self.payload = json.loads(data.decode())
+        except (json.decoder.JSONDecodeError, UnicodeDecodeError) as err:
             raise InvalidMessage(
                 f"Message type {self.code} is not a valid JSON format: {str(payload)}"
             ) from err
@@ -48,12 +76,29 @@ class CoapMessage:
         else:
             coap_type = "reply"
         _LOGGER.debug(
-            "CoapMessage: ip=%s, type=%s(%s), payload=%s",
+            "CoapMessage: ip=%s, type=%s(%s), options=%s, payload=%s",
             self.ip,
             coap_type,
             self.code,
+            self.options,
             self.payload,
         )
+
+    @staticmethod
+    def _read_extended_field_value(value: int, raw_data: bytes) -> tuple[int, bytes]:
+        """Decode large values of option delta and option length."""
+        if value >= 0 and value < 13:
+            return (value, raw_data)
+        elif value == 13:
+            if len(raw_data) < 1:
+                raise InvalidMessage("Option ended prematurely")
+            return (raw_data[0] + 13, raw_data[1:])
+        elif value == 14:
+            if len(raw_data) < 2:
+                raise InvalidMessage("Option ended prematurely")
+            return (int.from_bytes(raw_data[:2], "big") + 269, raw_data[2:])
+        else:
+            raise InvalidMessage("Option contained partial payload marker.")
 
 
 def socket_init(socket_port: int) -> socket.socket:
@@ -110,24 +155,38 @@ class COAP(asyncio.DatagramProtocol):
         try:
             msg = CoapMessage(addr, data)
         except InvalidMessage as err:
-            if host_ip in self.subscriptions:
-                _LOGGER.error("Invalid Message from known host %s: %s", host_ip, err)
-            else:
-                _LOGGER.debug("Invalid Message from unknown host %s: %s", host_ip, err)
+            _LOGGER.debug("Invalid Message from host %s: %s", host_ip, err)
             return
 
         if self._message_received:
             self._message_received(msg)
 
+        if COAP_OPTION_DEVICE_ID not in msg.options:
+            _LOGGER.debug("Message from host %s missing device id option", host_ip)
+            return
+
+        try:
+            device_id = msg.options[COAP_OPTION_DEVICE_ID].decode().split("#")[1]
+        except (UnicodeDecodeError, IndexError) as err:
+            _LOGGER.debug("Invalid device id from host %s: %s", host_ip, err)
+            return
+
+        if device_id in self.subscriptions:
+            _LOGGER.debug("Calling CoAP message update for device id %s", device_id)
+            self.subscriptions[device_id](msg)
+            return
+
         if msg.ip in self.subscriptions:
-            _LOGGER.debug("Calling CoAP message update for device %s", msg.ip)
+            _LOGGER.debug("Calling CoAP message update for host %s", msg.ip)
             self.subscriptions[msg.ip](msg)
 
-    def subscribe_updates(self, ip: str, message_received: Callable) -> Callable:
+    def subscribe_updates(
+        self, ip_or_device_id: str, message_received: Callable
+    ) -> Callable:
         """Subscribe to received updates."""
-        _LOGGER.debug("Adding device %s to CoAP message subscriptions", ip)
-        self.subscriptions[ip] = message_received
-        return lambda: self.subscriptions.pop(ip)
+        _LOGGER.debug("Adding device %s to CoAP message subscriptions", ip_or_device_id)
+        self.subscriptions[ip_or_device_id] = message_received
+        return lambda: self.subscriptions.pop(ip_or_device_id)
 
     async def __aenter__(self) -> "COAP":
         """Entering async context manager."""

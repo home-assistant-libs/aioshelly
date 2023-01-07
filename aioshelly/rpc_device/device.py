@@ -63,8 +63,11 @@ class RpcDevice:
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
+        sub_id = options.ip_address
+        if options.device_mac:
+            sub_id = options.device_mac
         self._unsub_ws: Callable | None = ws_context.subscribe_updates(
-            options.ip_address, self._wsrpc.handle_frame
+            sub_id, self._wsrpc.handle_frame
         )
         self._update_listener: Callable | None = None
         self.initialized: bool = False

@@ -62,8 +62,11 @@ class BlockDevice:
         self._settings: dict[str, Any] | None = None
         self.shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
+        sub_id = options.ip_address
+        if options.device_mac:
+            sub_id = options.device_mac[-6:]
         self._unsub_coap: Callable | None = coap_context.subscribe_updates(
-            options.ip_address, self._coap_message_received
+            sub_id, self._coap_message_received
         )
         self._update_listener: Callable | None = None
         self._coap_response_events: dict = {}

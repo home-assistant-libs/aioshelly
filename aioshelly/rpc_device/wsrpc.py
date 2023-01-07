@@ -443,13 +443,23 @@ class WsServer:
             except ConnectionClosed:
                 await ws_res.close()
             except InvalidMessage as err:
-                if ip in self.subscriptions:
-                    _LOGGER.error("Invalid Message from known host %s: %s", ip, err)
-                else:
-                    _LOGGER.debug("Invalid Message from unknown host %s: %s", ip, err)
+                _LOGGER.debug("Invalid Message from host %s: %s", ip, err)
             else:
+                try:
+                    device_id = frame["src"].split("-")[1].upper()
+                except (KeyError, IndexError) as err:
+                    _LOGGER.debug("Invalid device id from host %s: %s", ip, err)
+                    continue
+
+                if device_id in self.subscriptions:
+                    _LOGGER.debug(
+                        "Calling WsRPC message update for device id %s", device_id
+                    )
+                    self.subscriptions[device_id](frame)
+                    continue
+
                 if ip in self.subscriptions:
-                    _LOGGER.debug("Calling WsRPC message update for device %s", ip)
+                    _LOGGER.debug("Calling WsRPC message update for host %s", ip)
                     self.subscriptions[ip](frame)
 
         _LOGGER.debug("Websocket server connection from %s closed", ip)

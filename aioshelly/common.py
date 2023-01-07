@@ -33,6 +33,7 @@ class ConnectionOptions:
     password: str | None = None
     temperature_unit: str = "C"
     auth: aiohttp.BasicAuth | None = None
+    device_mac: str | None = None
 
     def __post_init__(self) -> None:
         """Call after initialization."""
