@@ -26,7 +26,7 @@ from aioshelly.exceptions import (
     ShellyError,
     WrongShellyGen,
 )
-from aioshelly.rpc_device import RpcDevice, WsServer
+from aioshelly.rpc_device import RpcDevice, WsServer, UpdateType
 
 coap_context = COAP()
 ws_context = WsServer()
@@ -134,7 +134,7 @@ async def connect_and_print_device(
     device.subscribe_updates(device_updated)
 
 
-def device_updated(cb_device: BlockDevice | RpcDevice) -> None:
+def device_updated(cb_device: BlockDevice | RpcDevice, *_: UpdateType) -> None:
     """Device updated callback."""
     print()
     print(f"{datetime.now().strftime('%H:%M:%S')} Device updated!")
