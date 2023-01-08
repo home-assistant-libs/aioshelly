@@ -87,18 +87,18 @@ class CoapMessage:
     @staticmethod
     def _read_extended_field_value(value: int, raw_data: bytes) -> tuple[int, bytes]:
         """Decode large values of option delta and option length."""
-        if value >= 0 and value < 13:
+        if 0 <= value < 13:
             return (value, raw_data)
-        elif value == 13:
+        if value == 13:
             if len(raw_data) < 1:
                 raise InvalidMessage("Option ended prematurely")
             return (raw_data[0] + 13, raw_data[1:])
-        elif value == 14:
+        if value == 14:
             if len(raw_data) < 2:
                 raise InvalidMessage("Option ended prematurely")
             return (int.from_bytes(raw_data[:2], "big") + 269, raw_data[2:])
-        else:
-            raise InvalidMessage("Option contained partial payload marker.")
+
+        raise InvalidMessage("Option contained partial payload marker.")
 
 
 def socket_init(socket_port: int) -> socket.socket:
