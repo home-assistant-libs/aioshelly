@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import logging
 import time
@@ -378,6 +379,9 @@ class WsRPC:
                 await self._send_json(call.request_frame)
                 resp: dict[str, Any] = await call.resolve
         except asyncio.TimeoutError as exc:
+            with contextlib.suppress(asyncio.CancelledError):
+                call.resolve.cancel()
+                await call.resolve
             raise DeviceConnectionError(call) from exc
 
         _LOGGER.debug("%s(%s) -> %s", call.method, call.params, resp)
