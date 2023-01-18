@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import socket
 import struct
 from types import TracebackType
 from typing import Callable, cast
+
+from ..json import JSONDecodeError, json_loads
 
 COAP_OPTION_DEVICE_ID = 3332
 
@@ -65,8 +66,8 @@ class CoapMessage:
             raise InvalidMessage("Received message without data")
 
         try:
-            self.payload = json.loads(data.decode())
-        except (json.decoder.JSONDecodeError, UnicodeDecodeError) as err:
+            self.payload = json_loads(data.decode())
+        except (JSONDecodeError, UnicodeDecodeError) as err:
             raise InvalidMessage(
                 f"Message type {self.code} is not a valid JSON format: {str(payload)}"
             ) from err
@@ -166,7 +167,7 @@ class COAP(asyncio.DatagramProtocol):
             return
 
         try:
-            device_id = msg.options[COAP_OPTION_DEVICE_ID].decode().split("#")[1]
+            device_id = msg.options[COAP_OPTION_DEVICE_ID].decode().split("#")[1][-6:]
         except (UnicodeDecodeError, IndexError) as err:
             _LOGGER.debug("Invalid device id from host %s: %s", host_ip, err)
             return

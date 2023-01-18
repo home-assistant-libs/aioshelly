@@ -4,6 +4,7 @@ from typing import Any
 
 import orjson
 
+JSONDecodeError = orjson.JSONDecodeError
 json_loads = orjson.loads  # pylint: disable=no-member
 
 

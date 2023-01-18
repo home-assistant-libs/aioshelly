@@ -20,6 +20,7 @@ from ..exceptions import (
     ShellyError,
     WrongShellyGen,
 )
+from ..json import json_loads
 from .coap import COAP, CoapMessage
 
 BLOCK_VALUE_UNIT = "U"
@@ -278,7 +279,7 @@ class BlockDevice:
             self._last_error = DeviceConnectionError(err)
             raise DeviceConnectionError from err
 
-        resp_json = await resp.json()
+        resp_json = await resp.json(loads=json_loads)
         _LOGGER.debug("aiohttp response: %s", resp_json)
         return cast(dict, resp_json)
 
