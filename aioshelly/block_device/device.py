@@ -60,7 +60,7 @@ class BlockDevice:
         self.blocks: list | None = None
         self.coap_s: dict[str, Any] | None = None
         self._settings: dict[str, Any] | None = None
-        self.shelly: dict[str, Any] | None = None
+        self._shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
         self._unsub_coap: Callable | None = coap_context.subscribe_updates(
             options.ip_address, self._coap_message_received
@@ -235,7 +235,7 @@ class BlockDevice:
 
     async def update_shelly(self) -> None:
         """Device update for /shelly (HTTP)."""
-        self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+        self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
     async def _coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
@@ -325,8 +325,6 @@ class BlockDevice:
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
-        assert self.shelly
-
         if "auth" not in self.shelly:
             raise WrongShellyGen
 
@@ -355,6 +353,14 @@ class BlockDevice:
         return self._status
 
     @property
+    def shelly(self) -> dict[str, Any]:
+        """Device firmware version."""
+        if self._shelly is None:
+            raise NotInitialized
+
+        return self._shelly
+
+    @property
     def gen(self) -> int:
         """Device generation: GEN1 - CoAP."""
         return 1
@@ -362,27 +368,22 @@ class BlockDevice:
     @property
     def firmware_version(self) -> str:
         """Device firmware version."""
-        if not self.initialized:
-            raise NotInitialized
-
-        assert self.shelly
-
         return cast(str, self.shelly["fw"])
 
     @property
     def model(self) -> str:
         """Device model."""
-        if not self.initialized:
-            raise NotInitialized
-
-        assert self.shelly
-
         return cast(str, self.shelly["type"])
 
     @property
     def hostname(self) -> str:
         """Device hostname."""
         return cast(str, self.settings["device"]["hostname"])
+
+    @property
+    def name(self) -> str:
+        """Device name."""
+        return cast(str, self.settings["name"] or self.hostname)
 
     @property
     def last_error(self) -> ShellyError | None:

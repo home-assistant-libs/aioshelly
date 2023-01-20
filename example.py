@@ -155,7 +155,7 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
         return
 
     model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
-    print(f"** {model_name} - {device.hostname} @ {device.ip_address} **")
+    print(f"** {device.name} - {model_name}  @ {device.ip_address} **")
     print()
 
     if device.gen == 1:

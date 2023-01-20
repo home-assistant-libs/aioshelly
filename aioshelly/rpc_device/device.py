@@ -58,7 +58,7 @@ class RpcDevice:
         """Device init."""
         self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
-        self.shelly: dict[str, Any] | None = None
+        self._shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
@@ -133,7 +133,7 @@ class RpcDevice:
         self.initialized = False
         ip = self.options.ip_address
         try:
-            self.shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+            self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
             if self.requires_auth:
                 if self.options.username is None or self.options.password is None:
@@ -259,8 +259,6 @@ class RpcDevice:
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
-        assert self.shelly
-
         if "auth_en" not in self.shelly:
             raise WrongShellyGen
 
@@ -311,6 +309,14 @@ class RpcDevice:
         return self._config
 
     @property
+    def shelly(self) -> dict[str, Any]:
+        """Device firmware version."""
+        if self._shelly is None:
+            raise NotInitialized
+
+        return self._shelly
+
+    @property
     def gen(self) -> int:
         """Device generation: GEN2 - RPC."""
         return 2
@@ -318,42 +324,27 @@ class RpcDevice:
     @property
     def firmware_version(self) -> str:
         """Device firmware version."""
-        assert self.shelly
-
-        if not self.initialized:
-            raise NotInitialized
-
         return cast(str, self.shelly["fw_id"])
 
     @property
     def version(self) -> str:
         """Device version."""
-        assert self.shelly
-
-        if not self.initialized:
-            raise NotInitialized
-
         return cast(str, self.shelly["ver"])
 
     @property
     def model(self) -> str:
         """Device model."""
-        assert self.shelly
-
-        if not self.initialized:
-            raise NotInitialized
-
         return cast(str, self.shelly["model"])
 
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        assert self.shelly
-
-        if not self.initialized:
-            raise NotInitialized
-
         return cast(str, self.shelly["id"])
+
+    @property
+    def name(self) -> str:
+        """Device name."""
+        return cast(str, self.config["sys"]["device"].get("name") or self.hostname)
 
     @property
     def connected(self) -> bool:
