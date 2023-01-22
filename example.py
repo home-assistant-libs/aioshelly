@@ -240,6 +240,9 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument(
         "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
+    parser.add_argument(
+        "--mac", "-m", type=str, help="Optional device MAC to subscribe for updates"
+    )
 
     arguments = parser.parse_args()
 
@@ -278,7 +281,9 @@ async def main() -> None:
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
-        options = ConnectionOptions(args.ip_address, args.username, args.password)
+        options = ConnectionOptions(
+            args.ip_address, args.username, args.password, device_mac=args.mac
+        )
         await test_single(options, args.init, gen)
     else:
         parser.error("--ip_address or --devices must be specified")

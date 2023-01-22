@@ -20,6 +20,7 @@ from ..exceptions import (
     ShellyError,
     WrongShellyGen,
 )
+from ..json import json_loads
 from .coap import COAP, CoapMessage
 
 BLOCK_VALUE_UNIT = "U"
@@ -62,8 +63,11 @@ class BlockDevice:
         self._settings: dict[str, Any] | None = None
         self._shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
+        sub_id = options.ip_address
+        if options.device_mac:
+            sub_id = options.device_mac[-6:]
         self._unsub_coap: Callable | None = coap_context.subscribe_updates(
-            options.ip_address, self._coap_message_received
+            sub_id, self._coap_message_received
         )
         self._update_listener: Callable | None = None
         self._coap_response_events: dict = {}
@@ -275,7 +279,7 @@ class BlockDevice:
             self._last_error = DeviceConnectionError(err)
             raise DeviceConnectionError from err
 
-        resp_json = await resp.json()
+        resp_json = await resp.json(loads=json_loads)
         _LOGGER.debug("aiohttp response: %s", resp_json)
         return cast(dict, resp_json)
 
