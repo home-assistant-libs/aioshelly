@@ -235,8 +235,14 @@ class WsRPC:
             # so schedule next heartbeat
             self._schedule_heartbeat()
             return
+        asyncio.create_task(self._ping_if_not_closed())
+
+    async def _ping_if_not_closed(self) -> None:
+        """Send ping if the client is not closed."""
+        if not self._client or self._client.closed:
+            return
         self._schedule_pong_response_cb()
-        asyncio.create_task(self._client.ping())
+        await self._client.ping()
 
     def _pong_not_received(self) -> None:
         """Pong not received."""
