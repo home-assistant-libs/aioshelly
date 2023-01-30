@@ -36,3 +36,17 @@ class ShellyBLESetConfig(TypedDict, total=False):
     """Shelly BLE Set Config."""
 
     restart_required: bool
+
+
+class ShellyWsConfig(TypedDict, total=False):
+    """Shelly Outbound Websocket Config."""
+
+    enable: bool
+    server: str | None
+    ssl_ca: str
+
+
+class ShellyWsSetConfig(TypedDict, total=False):
+    """Shelly Outbound Websocket Set Config."""
+
+    restart_required: bool
