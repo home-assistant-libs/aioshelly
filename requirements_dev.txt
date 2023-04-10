@@ -2,7 +2,7 @@
 -r requirements_lint.txt
 requests
 types-requests
-pre-commit==3.2.1
+pre-commit==3.2.2
 tox==4.4.8
 wheel==0.40.0
 
