@@ -20,7 +20,14 @@ from ..exceptions import (
     ShellyError,
     WrongShellyGen,
 )
-from .models import ShellyBLEConfig, ShellyBLESetConfig, ShellyScript, ShellyScriptCode
+from .models import (
+    ShellyBLEConfig,
+    ShellyBLESetConfig,
+    ShellyScript,
+    ShellyScriptCode,
+    ShellyWsConfig,
+    ShellyWsSetConfig,
+)
 from .wsrpc import WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
@@ -258,6 +265,41 @@ class RpcDevice:
     async def ble_getconfig(self) -> ShellyBLEConfig:
         """Get the BLE config with BLE.GetConfig."""
         return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
+
+    async def ws_setconfig(
+        self, enable: bool, server: str, ssl_ca: str = "*"
+    ) -> ShellyWsSetConfig:
+        """Set the outbound websocket config."""
+        return cast(
+            ShellyWsSetConfig,
+            await self.call_rpc(
+                "Ws.SetConfig",
+                {"config": {"enable": enable, "server": server, "ssl_ca": ssl_ca}},
+            ),
+        )
+
+    async def ws_getconfig(self) -> ShellyWsConfig:
+        """Get the outbound websocket config."""
+        return cast(ShellyWsConfig, await self.call_rpc("Ws.GetConfig"))
+
+    async def update_outbound_websocket(self, server: str) -> bool:
+        """Update the outbound websocket (if needed).
+
+        Returns True if the device was restarted.
+
+        Raises RpcCallError if set failed.
+        """
+        ws_config = await self.ws_getconfig()
+        if ws_config["enable"] and ws_config["server"] == server:
+            return False
+        ws_enable = await self.ws_setconfig(enable=True, server=server)
+        if not ws_enable["restart_required"]:
+            return False
+        _LOGGER.info(
+            "Outbound websocket enabled, restarting device %s", self.ip_address
+        )
+        await self.trigger_reboot(3500)
+        return True
 
     @property
     def requires_auth(self) -> bool:

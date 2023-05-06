@@ -244,9 +244,26 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--mac", "-m", type=str, help="Optional device MAC to subscribe for updates"
     )
 
+    parser.add_argument(
+        "--update_ws",
+        "-uw",
+        type=str,
+        help="Update outbound WebSocket (Gen2) and exit",
+    )
+
     arguments = parser.parse_args()
 
     return parser, arguments
+
+
+async def update_outbound_ws(
+    options: ConnectionOptions, init: bool, ws_url: str
+) -> None:
+    """Update outbound WebSocket URL (Gen2)."""
+    async with aiohttp.ClientSession() as aiohttp_session:
+        device: RpcDevice = await create_device(aiohttp_session, options, init, 2)
+        print(f"Updating outbound weboskcet URL to {ws_url}")
+        print(f"Restart required: {await device.update_outbound_websocket(ws_url)}")
 
 
 async def main() -> None:
@@ -284,7 +301,10 @@ async def main() -> None:
         options = ConnectionOptions(
             args.ip_address, args.username, args.password, device_mac=args.mac
         )
-        await test_single(options, args.init, gen)
+        if args.update_ws:
+            await update_outbound_ws(options, args.init, args.update_ws)
+        else:
+            await test_single(options, args.init, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
