@@ -71,6 +71,7 @@ MODEL_NAMES = {
     "SNSW-0024X": "Shelly Plus I4",
     "SNSW-002P16EU": "Shelly Plus 2PM",
     "SNSW-102P16EU": "Shelly Plus 2PM",
+    "SPEM-002CEBEU50": "Shelly Pro EM",
     "SPEM-003CEBEU": "Shelly Pro 3EM",
     "SPSW-001PE16EU": "Shelly Pro 1PM",
     "SPSW-001XE16EU": "Shelly Pro 1",
