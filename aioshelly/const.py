@@ -57,6 +57,7 @@ MODEL_NAMES = {
     "SHVIN-1": "Shelly Vintage",
     "SHWT-1": "Shelly Flood",
     # Gen2 RPC based models
+    "SAWD-0A1XX10EU1": "Shelly Wall Display",
     "SNPL-00110IT": "Shelly Plus Plug IT",
     "SNPL-00112EU": "Shelly Plus Plug S",
     "SNPL-00112UK": "Shelly Plus Plug UK",
