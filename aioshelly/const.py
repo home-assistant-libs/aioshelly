@@ -74,6 +74,7 @@ MODEL_NAMES = {
     "SNSW-102P16EU": "Shelly Plus 2PM",
     "SPEM-002CEBEU50": "Shelly Pro EM",
     "SPEM-003CEBEU": "Shelly Pro 3EM",
+    "SPSH-002PE16EU": "Shelly Pro Dual Cover PM",
     "SPSW-001PE16EU": "Shelly Pro 1PM",
     "SPSW-001XE16EU": "Shelly Pro 1",
     "SPSW-002PE16EU": "Shelly Pro 2PM",
