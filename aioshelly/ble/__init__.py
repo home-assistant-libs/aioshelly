@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from base64 import b64decode
+from binascii import a2b_base64
 from typing import Any
 
 from bluetooth_data_tools import BLEGAPAdvertisement, parse_advertisement_data
@@ -99,7 +99,10 @@ def parse_ble_scan_result_event(
         address.upper(),
         rssi,
         parse_advertisement_data(
-            (b64decode(advertisement_data_b64), b64decode(scan_response_b64))
+            (
+                a2b_base64(advertisement_data_b64.encode("ascii")),
+                a2b_base64(scan_response_b64.encode("ascii")),
+            )
         ),
     )
 
