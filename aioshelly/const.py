@@ -68,6 +68,7 @@ MODEL_NAMES = {
     "SNSN-0D24X": "Shelly Plus I4DC",
     "SNSW-001P15UL": "Shelly Plus 1PM UL",
     "SNSW-001P16EU": "Shelly Plus 1PM",
+    "SNSW-001P8EU": "Shelly Plus 1PM Mini",
     "SNSW-001X15UL": "Shelly Plus 1 UL",
     "SNSW-001X16EU": "Shelly Plus 1",
     "SNSW-001X8EU": "Shelly Plus 1 Mini",
