@@ -193,7 +193,7 @@ class WsRPC:
                 err,
             )
 
-        self._rx_task = self._create_and_gather_tasks(self._rx_msgs())
+        self._rx_task = self._create_and_track_task(self._rx_msgs())
         self._schedule_heartbeat()
         _LOGGER.info("Connected to %s", self._ip_address)
 
@@ -237,7 +237,7 @@ class WsRPC:
             # so schedule next heartbeat
             self._schedule_heartbeat()
             return
-        self._create_and_gather_tasks(self._ping_if_not_closed())
+        self._create_and_track_task(self._ping_if_not_closed())
 
     async def _ping_if_not_closed(self) -> None:
         """Send ping if the client is not closed."""
@@ -252,7 +252,7 @@ class WsRPC:
             "%s: Pong not received, device is likely unresponsive; disconnecting",
             self._ip_address,
         )
-        self._create_and_gather_tasks(self.disconnect())
+        self._create_and_track_task(self.disconnect())
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
@@ -296,7 +296,7 @@ class WsRPC:
             if frame_id:
                 # and expects a response
                 _LOGGER.debug("handle call for frame_id: %s", frame_id)
-                self._create_and_gather_tasks(self._handle_call(frame_id))
+                self._create_and_track_task(self._handle_call(frame_id))
             else:
                 # this is a notification
                 _LOGGER.debug("Notification: %s %s", method, params)
@@ -416,8 +416,8 @@ class WsRPC:
         assert self._client
         await self._client.send_json(data, dumps=json_dumps)
 
-    def _create_and_gather_tasks(self, func: Coroutine) -> Task:
-        """Create and gather tasks."""
+    def _create_and_track_task(self, func: Coroutine) -> Task:
+        """Create and and hold strong reference to the task."""
         task = asyncio.create_task(func)
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
