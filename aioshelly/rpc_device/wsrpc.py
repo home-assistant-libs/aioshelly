@@ -7,7 +7,8 @@ import hashlib
 import logging
 import socket
 import time
-from asyncio import tasks
+from asyncio import Task, tasks
+from collections.abc import Coroutine
 from dataclasses import dataclass
 from typing import Any, Callable, cast
 
@@ -157,6 +158,7 @@ class WsRPC:
         self._pong_response_cb: asyncio.TimerHandle | None = None
         self._loop = asyncio.get_running_loop()
         self._last_time: float = 0
+        self._background_tasks: set[Task] = set()
 
     @property
     def _next_id(self) -> int:
@@ -235,7 +237,7 @@ class WsRPC:
             # so schedule next heartbeat
             self._schedule_heartbeat()
             return
-        asyncio.create_task(self._ping_if_not_closed())
+        self._create_and_track_task(self._ping_if_not_closed())
 
     async def _ping_if_not_closed(self) -> None:
         """Send ping if the client is not closed."""
@@ -250,7 +252,7 @@ class WsRPC:
             "%s: Pong not received, device is likely unresponsive; disconnecting",
             self._ip_address,
         )
-        asyncio.create_task(self.disconnect())
+        self._create_and_track_task(self.disconnect())
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
@@ -294,7 +296,7 @@ class WsRPC:
             if frame_id:
                 # and expects a response
                 _LOGGER.debug("handle call for frame_id: %s", frame_id)
-                asyncio.create_task(self._handle_call(frame_id))
+                self._create_and_track_task(self._handle_call(frame_id))
             else:
                 # this is a notification
                 _LOGGER.debug("Notification: %s %s", method, params)
@@ -413,6 +415,12 @@ class WsRPC:
         _LOGGER.debug("send(%s): %s", self._ip_address, data)
         assert self._client
         await self._client.send_json(data, dumps=json_dumps)
+
+    def _create_and_track_task(self, func: Coroutine) -> None:
+        """Create and and hold strong reference to the task."""
+        task = asyncio.create_task(func)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
 
 class WsServer:
