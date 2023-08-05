@@ -108,12 +108,17 @@ class RpcDevice:
     ) -> None:
         """Received status notification from device."""
         update_type = UpdateType.UNKNOWN
+        is_same_status = False
         if params is not None:
             if method == "NotifyFullStatus":
-                self._status = params
+                new_status = params
+                is_same_status = new_status == self._status
+                self._status = new_status
                 update_type = UpdateType.STATUS
             elif method == "NotifyStatus" and self._status is not None:
-                self._status = dict(mergedicts(self._status, params))
+                new_status = dict(mergedicts(self._status, params))
+                is_same_status = new_status == self._status
+                self._status = new_status
                 update_type = UpdateType.STATUS
             elif method == "NotifyEvent":
                 self._event = params
@@ -126,7 +131,10 @@ class RpcDevice:
             loop.create_task(self._async_init())
             return
 
-        if self._update_listener and self.initialized:
+        if update_type == UpdateType.STATUS:
+            _LOGGER.warning("is_same_status: %s", is_same_status)
+
+        if not is_same_status and self._update_listener and self.initialized:
             self._update_listener(self, update_type)
 
     @property
