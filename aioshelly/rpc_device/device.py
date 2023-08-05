@@ -119,7 +119,9 @@ class RpcDevice:
             elif method == "NotifyStatus" and self._status is not None:
                 new_status = dict(mergedicts(self._status, params))
                 is_same_status = new_status == self._status
-                _LOGGER.warning("old: %s, new: %s", self._status, new_status)
+                _LOGGER.warning(
+                    "partial: %s old: %s, new: %s", params, self._status, new_status
+                )
                 self._status = new_status
                 update_type = UpdateType.STATUS
             elif method == "NotifyEvent":
