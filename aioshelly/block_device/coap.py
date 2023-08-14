@@ -5,6 +5,7 @@ import asyncio
 import logging
 import socket
 import struct
+from enum import Enum, auto
 from types import TracebackType
 from typing import Callable, cast
 
@@ -23,6 +24,13 @@ class InvalidMessage(CoapError):
     """Raised during COAP message parsing errors."""
 
 
+class CoapType(Enum):
+    """Coap message type."""
+
+    PERIODIC = auto()
+    REPLY = auto()
+
+
 class CoapMessage:
     """Represents a received coap message."""
 
@@ -31,6 +39,7 @@ class CoapMessage:
         self.ip = sender_addr[0]
         self.port = sender_addr[1]
         self.options: dict[int, bytes] = {}
+        self.coap_type = CoapType.REPLY
 
         try:
             self.vttkl, self.code, self.mid = struct.unpack("!BBH", payload[:4])
@@ -73,13 +82,12 @@ class CoapMessage:
             ) from err
 
         if self.code == 30:
-            coap_type = "periodic"
-        else:
-            coap_type = "reply"
+            self.coap_type = CoapType.PERIODIC
+
         _LOGGER.debug(
             "CoapMessage: ip=%s, type=%s(%s), options=%s, payload=%s",
             self.ip,
-            coap_type,
+            self.coap_type,
             self.code,
             self.options,
             self.payload,
