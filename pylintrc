@@ -22,7 +22,6 @@ max-public-methods=25
 # wrong-import-order - isort guards this
 disable=
   format,
-  abstract-class-little-used,
   abstract-method,
   cyclic-import,
   duplicate-code,

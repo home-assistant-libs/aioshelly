@@ -19,7 +19,7 @@ setup(
     long_description=README_FILE.read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     packages=find_packages(),
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
     platforms="any",
@@ -29,8 +29,8 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )
