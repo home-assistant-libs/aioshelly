@@ -6,7 +6,7 @@ Asynchronous library to control Shelly devices
 
 ## Requirements
 
-- Python >= 3.9
+- Python >= 3.10
 - bluetooth-data-tools
 - aiohttp
 - orjson
