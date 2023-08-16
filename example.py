@@ -16,7 +16,7 @@ from typing import Any, cast
 import aiohttp
 
 import aioshelly
-from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice
+from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import MODEL_NAMES, WS_API_URL
 from aioshelly.exceptions import (
@@ -26,7 +26,7 @@ from aioshelly.exceptions import (
     ShellyError,
     WrongShellyGen,
 )
-from aioshelly.rpc_device import RpcDevice, UpdateType, WsServer
+from aioshelly.rpc_device import RpcDevice, RpcUpdateType, WsServer
 
 coap_context = COAP()
 ws_context = WsServer()
@@ -135,7 +135,7 @@ async def connect_and_print_device(
 
 
 def device_updated(
-    cb_device: BlockDevice | RpcDevice, update_type: UpdateType = UpdateType.UNKNOWN
+    cb_device: BlockDevice | RpcDevice, update_type: BlockUpdateType | RpcUpdateType
 ) -> None:
     """Device updated callback."""
     print()

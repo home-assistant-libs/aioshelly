@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, Callable, cast
 
@@ -21,7 +22,7 @@ from ..exceptions import (
     WrongShellyGen,
 )
 from ..json import json_loads
-from .coap import COAP, CoapMessage
+from .coap import COAP, CoapMessage, CoapType
 
 BLOCK_VALUE_UNIT = "U"
 BLOCK_VALUE_TYPE = "T"
@@ -42,6 +43,14 @@ BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class BlockUpdateType(Enum):
+    """Block Update type."""
+
+    COAP_PERIODIC = auto()
+    COAP_REPLY = auto()
+    INITIALIZED = auto()
 
 
 class BlockDevice:
@@ -149,7 +158,7 @@ class BlockDevice:
             self._initializing = False
 
         if self._update_listener:
-            self._update_listener(self)
+            self._update_listener(self, BlockUpdateType.INITIALIZED)
 
     def shutdown(self) -> None:
         """Shutdown device."""
@@ -172,7 +181,7 @@ class BlockDevice:
         if not msg.payload:
             return
         if "G" in msg.payload:
-            self._update_s(msg.payload)
+            self._update_s(msg.payload, msg.coap_type)
             path = "s"
         elif "blk" in msg.payload:
             self._update_d(msg.payload)
@@ -218,12 +227,16 @@ class BlockDevice:
 
         self.blocks = blocks
 
-    def _update_s(self, data: dict[str, Any]) -> None:
+    def _update_s(self, data: dict[str, Any], coap_type: CoapType) -> None:
         """Device update from cit/s call."""
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
         if self._update_listener and self.initialized:
-            self._update_listener(self)
+            if coap_type == CoapType.PERIODIC:
+                self._update_listener(self, BlockUpdateType.COAP_PERIODIC)
+                return
+
+            self._update_listener(self, BlockUpdateType.COAP_REPLY)
 
     def subscribe_updates(self, update_listener: Callable) -> None:
         """Subscribe to device status updates."""
