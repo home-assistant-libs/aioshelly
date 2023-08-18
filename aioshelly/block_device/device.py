@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 import aiohttp
 import async_timeout
@@ -117,7 +118,9 @@ class BlockDevice:
         self.initialized = False
         ip = self.options.ip_address
         try:
-            await self.update_shelly()
+            self._shelly = await get_info(
+                self.aiohttp_session, self.options.ip_address, self.options.device_mac
+            )
 
             if self.requires_auth and not self.options.auth:
                 raise InvalidAuthError("auth missing and required")
@@ -153,7 +156,7 @@ class BlockDevice:
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
             if not async_init:
                 self.shutdown()
-                raise DeviceConnectionError from err
+                raise DeviceConnectionError(err) from err
         finally:
             self._initializing = False
 

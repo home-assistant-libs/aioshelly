@@ -23,6 +23,7 @@ from aioshelly.exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
     InvalidAuthError,
+    MacAddressMismatchError,
     ShellyError,
     WrongShellyGen,
 )
@@ -68,6 +69,9 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
         except DeviceConnectionError as err:
             print(f"Error connecting to {options.ip_address}, error: {repr(err)}")
             return
+        except MacAddressMismatchError as err:
+            print(f"MAC address mismatch, error: {repr(err)}")
+            return
         except WrongShellyGen:
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
             return
@@ -106,13 +110,15 @@ async def test_devices(init: bool, gen: int | None) -> None:
             print(f"Error printing device @ {options.ip_address}")
 
             if isinstance(result, FirmwareUnsupported):
-                print(f"Device firmware not supported")
+                print("Device firmware not supported")
             elif isinstance(result, InvalidAuthError):
-                print(f"Invalid or missing authorization")
+                print("Invalid or missing authorization")
             elif isinstance(result, DeviceConnectionError):
-                print(f"Error connecting to device")
+                print("Error connecting to device")
+            elif isinstance(result, MacAddressMismatchError):
+                print("MAC address mismatch error")
             elif isinstance(result, WrongShellyGen):
-                print(f"Wrong Shelly generation")
+                print("Wrong Shelly generation")
             else:
                 print()
                 traceback.print_tb(result.__traceback__)

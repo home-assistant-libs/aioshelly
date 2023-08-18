@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 import aiohttp
 import async_timeout
@@ -143,7 +144,9 @@ class RpcDevice:
         self.initialized = False
         ip = self.options.ip_address
         try:
-            self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+            self._shelly = await get_info(
+                self.aiohttp_session, self.options.ip_address, self.options.device_mac
+            )
 
             if self.requires_auth:
                 if self.options.username is None or self.options.password is None:
