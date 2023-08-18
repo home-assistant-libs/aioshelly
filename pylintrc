@@ -26,6 +26,7 @@ disable=
   cyclic-import,
   duplicate-code,
   inconsistent-return-statements,
+  too-many-branches,
   too-many-instance-attributes,
   too-many-public-methods,
   wrong-import-order,

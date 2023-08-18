@@ -16,6 +16,7 @@ from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
 from ..exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
+    MacAddressMismatchError,
     NotInitialized,
     RpcCallError,
     ShellyError,
@@ -175,6 +176,12 @@ class RpcDevice:
                 await self._disconnect_websocket()
                 raise
             self.initialized = True
+        except MacAddressMismatchError as err:
+            self._last_error = err
+            _LOGGER.debug("host %s: error: %r", ip, err)
+            if not async_init:
+                await self._disconnect_websocket()
+                raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)

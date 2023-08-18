@@ -18,6 +18,7 @@ from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
 from ..exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
+    MacAddressMismatchError,
     NotInitialized,
     ShellyError,
     WrongShellyGen,
@@ -151,6 +152,12 @@ class BlockDevice:
             if not async_init:
                 self.shutdown()
                 raise self._last_error from err
+        except MacAddressMismatchError as err:
+            self._last_error = err
+            _LOGGER.debug("host %s: error: %r", ip, err)
+            if not async_init:
+                self.shutdown()
+                raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
