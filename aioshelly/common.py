@@ -17,7 +17,11 @@ from .const import (
     GEN1_MIN_FIRMWARE_DATE,
     GEN2_MIN_FIRMWARE_DATE,
 )
-from .exceptions import DeviceConnectionError, FirmwareUnsupported
+from .exceptions import (
+    DeviceConnectionError,
+    FirmwareUnsupported,
+    MacAddressMismatchError,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +72,9 @@ async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOpt
 
 
 async def get_info(
-    aiohttp_session: aiohttp.ClientSession, ip_address: str
+    aiohttp_session: aiohttp.ClientSession,
+    ip_address: str,
+    device_mac: str | None = None,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
     try:
@@ -82,6 +88,12 @@ async def get_info(
         error = DeviceConnectionError(err)
         _LOGGER.debug("host %s: error: %r", ip_address, error)
         raise error from err
+
+    mac = result["mac"]
+    if device_mac and device_mac != mac:
+        mac_err = MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
+        _LOGGER.debug("host %s: error: %r", ip_address, mac_err)
+        raise mac_err
 
     if not shelly_supported_firmware(result):
         fw_error = FirmwareUnsupported(result)

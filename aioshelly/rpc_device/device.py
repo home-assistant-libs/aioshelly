@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 import aiohttp
 import async_timeout
@@ -15,6 +16,7 @@ from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
 from ..exceptions import (
     DeviceConnectionError,
     InvalidAuthError,
+    MacAddressMismatchError,
     NotInitialized,
     RpcCallError,
     ShellyError,
@@ -143,7 +145,9 @@ class RpcDevice:
         self.initialized = False
         ip = self.options.ip_address
         try:
-            self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+            self._shelly = await get_info(
+                self.aiohttp_session, self.options.ip_address, self.options.device_mac
+            )
 
             if self.requires_auth:
                 if self.options.username is None or self.options.password is None:
@@ -172,6 +176,12 @@ class RpcDevice:
                 await self._disconnect_websocket()
                 raise
             self.initialized = True
+        except MacAddressMismatchError as err:
+            self._last_error = err
+            _LOGGER.debug("host %s: error: %r", ip, err)
+            if not async_init:
+                await self._disconnect_websocket()
+                raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)

@@ -42,6 +42,10 @@ class InvalidAuthError(ShellyError):
     """Raised to indicate invalid or missing authentication error."""
 
 
+class MacAddressMismatchError(ShellyError):
+    """Raised if input MAC address does not match the device MAC address."""
+
+
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 
