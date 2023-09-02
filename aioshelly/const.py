@@ -66,6 +66,7 @@ MODEL_NAMES = {
     "SNPM-001PCEU16": "Shelly Plus PM Mini",
     "SNSN-0013A": "Shelly Plus H&T",
     "SNSN-0031Z": "Shelly Plus Smoke",
+    "SNSN-0043X": "Shelly Plus Uni",
     "SNSN-0D24X": "Shelly Plus I4DC",
     "SNSW-001P15UL": "Shelly Plus 1PM UL",
     "SNSW-001P16EU": "Shelly Plus 1PM",
