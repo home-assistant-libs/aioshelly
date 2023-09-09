@@ -8,9 +8,9 @@ import logging
 import socket
 import time
 from asyncio import Task, tasks
-from collections.abc import Coroutine
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 import aiohttp
 import async_timeout
@@ -111,13 +111,16 @@ class SessionData:
 class RPCCall:
     """RPCCall class."""
 
+    __slots__ = ("auth", "call_id", "params", "method", "src", "dst", "resolve")
+
     def __init__(
         self,
         call_id: int,
         method: str,
         params: dict[str, Any] | None,
         session: SessionData,
-    ):
+        resolve: asyncio.Future[dict[str, Any]],
+    ) -> None:
         """Initialize RPC class."""
         self.auth = session.auth
         self.call_id = call_id
@@ -125,7 +128,7 @@ class RPCCall:
         self.method = method
         self.src = session.src
         self.dst = session.dst
-        self.resolve: asyncio.Future = asyncio.Future()
+        self.resolve = resolve
 
     @property
     def request_frame(self) -> dict[str, Any]:
@@ -394,13 +397,14 @@ class WsRPC:
         if self._client is None:
             raise RuntimeError("Not connected")
 
-        call = RPCCall(self._next_id, method, params, self._session)
+        future: asyncio.Future[dict[str, Any]] = self._loop.create_future()
+        call = RPCCall(self._next_id, method, params, self._session, future)
         self._calls[call.call_id] = call
 
         try:
             async with async_timeout.timeout(timeout):
                 await self._send_json(call.request_frame)
-                resp: dict[str, Any] = await call.resolve
+                resp = await future
         except asyncio.TimeoutError as exc:
             with contextlib.suppress(asyncio.CancelledError):
                 call.resolve.cancel()
