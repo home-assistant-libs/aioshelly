@@ -113,7 +113,7 @@ class RPCCall:
 
     __slots__ = ("auth", "call_id", "params", "method", "src", "dst", "resolve")
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         call_id: int,
         method: str,
