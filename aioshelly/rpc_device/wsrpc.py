@@ -407,8 +407,8 @@ class WsRPC:
                 resp = await future
         except asyncio.TimeoutError as exc:
             with contextlib.suppress(asyncio.CancelledError):
-                call.resolve.cancel()
-                await call.resolve
+                future.cancel()
+                await future
             raise DeviceConnectionError(call) from exc
 
         _LOGGER.debug("%s(%s) -> %s", call.method, call.params, resp)
