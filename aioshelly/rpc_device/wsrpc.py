@@ -11,6 +11,7 @@ from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import Any, cast
+from yarl import URL
 
 import aiohttp
 import async_timeout
@@ -176,7 +177,8 @@ class WsRPC:
         _LOGGER.debug("Trying to connect to device at %s", self._ip_address)
         try:
             self._client = await aiohttp_session.ws_connect(
-                f"http://{self._ip_address}/rpc", autoping=False
+                URL.build(scheme="http", host=self._ip_address, path="/rpc"),
+                autoping=False,
             )
         except (
             client_exceptions.WSServerHandshakeError,

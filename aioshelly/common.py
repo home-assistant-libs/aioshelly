@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any, Union
+from yarl import URL
 
 import aiohttp
 
@@ -79,7 +80,7 @@ async def get_info(
     """Get info from device through REST call."""
     try:
         async with aiohttp_session.get(
-            f"http://{ip_address}/shelly",
+            URL.build(scheme="http", host=ip_address, path="/shelly"),
             raise_for_status=True,
             timeout=DEVICE_IO_TIMEOUT,
         ) as resp:

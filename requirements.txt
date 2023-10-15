@@ -1,3 +1,4 @@
 bluetooth-data-tools>=0.3.0
 aiohttp
+yarl
 orjson>=3.8.1
