@@ -46,6 +46,10 @@ class MacAddressMismatchError(ShellyError):
     """Raised if input MAC address does not match the device MAC address."""
 
 
+class NotSupported(ShellyError):
+    """Raised if functionality not supported by device."""
+
+
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 

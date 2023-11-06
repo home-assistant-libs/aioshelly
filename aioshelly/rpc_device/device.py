@@ -18,6 +18,7 @@ from ..exceptions import (
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
+    NotSupported,
     RpcCallError,
     ShellyError,
     WrongShellyGen,
@@ -71,6 +72,8 @@ class RpcDevice:
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
+        self._device_info: dict[str, Any] | None = None
+        self._profiles: dict[str, Any] | None = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
         sub_id = options.ip_address
         if options.device_mac:
@@ -162,6 +165,8 @@ class RpcDevice:
             async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
+                await self.update_device_info()
+                await self.update_profiles()
 
                 if not async_init or self._status is None:
                     await self.update_status()
@@ -232,6 +237,22 @@ class RpcDevice:
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
+
+    async def update_device_info(self) -> None:
+        """Get device config from 'Shelly.GetDeviceInfo'."""
+        self._device_info = await self.call_rpc("Shelly.GetDeviceInfo")
+
+    async def update_profiles(self) -> None:
+        """Get device config from 'Shelly.ListProfiles'."""
+        if self._device_info and "profile" in self._device_info:
+            self._profiles = (await self.call_rpc("Shelly.ListProfiles"))["profiles"]
+
+    async def set_profile(self, profile_name: str) -> None:
+        """Set device profile via 'Shelly.SetProfile'."""
+        if self._profiles and profile_name in self._profiles:
+            await self.call_rpc("Shelly.SetProfile", {"name": profile_name})
+        else:
+            raise ValueError("Invalid profile_name")
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -362,6 +383,39 @@ class RpcDevice:
             raise InvalidAuthError
 
         return self._config
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Get device config."""
+        if not self.initialized:
+            raise NotInitialized
+
+        if self._device_info is None:
+            raise InvalidAuthError
+
+        return self._device_info
+
+    @property
+    def profiles(self) -> dict[str, Any] | None:
+        """Get device config."""
+        if not self.initialized:
+            raise NotInitialized
+
+        if "profile" not in self.device_info:
+            raise NotSupported
+
+        return self._profiles
+
+    @property
+    def profile(self) -> str:
+        """Get device config."""
+        if not self.initialized:
+            raise NotInitialized
+
+        if "profile" not in self.device_info:
+            raise NotSupported
+
+        return cast(str, self.device_info["profile"])
 
     @property
     def shelly(self) -> dict[str, Any]:
