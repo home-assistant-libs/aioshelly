@@ -389,7 +389,7 @@ class RpcDevice:
         return self._config
 
     @property
-    def profiles(self) -> dict[str, Any] | None:
+    def profiles(self) -> dict[str, Any]:
         """Get device config."""
         if not self.initialized:
             raise NotInitialized
