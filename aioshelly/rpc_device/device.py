@@ -165,7 +165,6 @@ class RpcDevice:
             async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
-                await self.update_device_info()
                 await self.update_profiles()
 
                 if not async_init or self._status is None:
@@ -238,21 +237,26 @@ class RpcDevice:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
 
-    async def update_device_info(self) -> None:
-        """Get device config from 'Shelly.GetDeviceInfo'."""
-        self._device_info = await self.call_rpc("Shelly.GetDeviceInfo")
-
     async def update_profiles(self) -> None:
         """Get device config from 'Shelly.ListProfiles'."""
-        if self._device_info and "profile" in self._device_info:
+        if "profile" in self.shelly:
             self._profiles = (await self.call_rpc("Shelly.ListProfiles"))["profiles"]
 
     async def set_profile(self, profile_name: str) -> None:
         """Set device profile via 'Shelly.SetProfile'."""
-        if self._profiles and profile_name in self._profiles:
+        if self._shelly.get('profile') and self._shelly['profile'] != profile_name:
             await self.call_rpc("Shelly.SetProfile", {"name": profile_name})
-        else:
-            raise ValueError("Invalid profile_name")
+            await self.shutdown()
+            # device is rebooted on profile_name change as profile is changed
+            # 3 seconds sleep is needed to wait for device to perform reboot action
+            # as there is no way to determine is device rebooted
+            await asyncio.sleep(2)
+            while self._shelly['profile'] != profile_name:
+                await asyncio.sleep(1)
+                self._shelly = await get_info(
+                    self.aiohttp_session, self.options.ip_address, self.options.device_mac
+                )
+            await self.initialize()
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -385,23 +389,12 @@ class RpcDevice:
         return self._config
 
     @property
-    def device_info(self) -> dict[str, Any]:
-        """Get device config."""
-        if not self.initialized:
-            raise NotInitialized
-
-        if self._device_info is None:
-            raise InvalidAuthError
-
-        return self._device_info
-
-    @property
     def profiles(self) -> dict[str, Any] | None:
         """Get device config."""
         if not self.initialized:
             raise NotInitialized
 
-        if "profile" not in self.device_info:
+        if "profile" not in self._shelly:
             raise NotSupported
 
         return self._profiles
@@ -412,10 +405,10 @@ class RpcDevice:
         if not self.initialized:
             raise NotInitialized
 
-        if "profile" not in self.device_info:
+        if "profile" not in self._shelly:
             raise NotSupported
 
-        return cast(str, self.device_info["profile"])
+        return cast(str, self._shelly["profile"])
 
     @property
     def shelly(self) -> dict[str, Any]:
