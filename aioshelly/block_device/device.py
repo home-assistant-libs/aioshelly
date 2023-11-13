@@ -286,7 +286,7 @@ class BlockDevice:
         try:
             resp: ClientResponse = await self.aiohttp_session.request(
                 method,
-                URL.build(scheme="http", host=self.options.ip_address, path=path),
+                URL.build(scheme="http", host=self.options.ip_address, path=f"/{path}"),
                 params=params,
                 auth=self.options.auth,
                 raise_for_status=True,
