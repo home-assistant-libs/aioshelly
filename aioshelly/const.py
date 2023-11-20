@@ -55,7 +55,46 @@ MODEL_UNI = "SHUNI-1"
 MODEL_VALVE = "SHTRV-01"
 MODEL_VINTAGE = "SHBVIN-1"
 MODEL_VINTAGE_V2 = "SHVIN-1"
-
+# Gen2 RPC based models
+MODEL_BLU_GATEWAY = "SNGW-BT01"
+MODEL_PLUS_1 = "SNSW-001X16EU"
+MODEL_PLUS_1_MINI = "SNSW-001X8EU"
+MODEL_PLUS_1_UL = "SNSW-001X15UL"
+MODEL_PLUS_10V = "SNGW-0A11WW010"
+MODEL_PLUS_1PM = "SNSW-001P16EU"
+MODEL_PLUS_1PM_MINI = "SNSW-001P8EU"
+MODEL_PLUS_1PM_UL = "SNSW-001P15UL"
+MODEL_PLUS_2PM = "SNSW-002P16EU"
+MODEL_PLUS_2PM_V2 = "SNSW-102P16EU"
+MODEL_PLUS_HT = "SNSN-0013A"
+MODEL_PLUS_I4 = "SNSW-0024X"
+MODEL_PLUS_I4DC = "SNSN-0D24X"
+MODEL_PLUS_PLUG_IT = "SNPL-00110IT"
+MODEL_PLUS_PLUG_S = "SNPL-00112EU"
+MODEL_PLUS_PLUG_UK = "SNPL-00112UK"
+MODEL_PLUS_PLUG_US = "SNPL-00116US"
+MODEL_PLUS_PM_MINI = "SNPM-001PCEU16"
+MODEL_PLUS_SMOKE = "SNSN-0031Z"
+MODEL_PLUS_UNI = "SNSN-0043X"
+MODEL_PRO_1 = "SPSW-001XE16EU"
+MODEL_PRO_1_V2 = "SPSW-101XE16EU"
+MODEL_PRO_1_V3 = "SPSW-201XE16EU"
+MODEL_PRO_1PM = "SPSW-001PE16EU"
+MODEL_PRO_1PM_V2 = "SPSW-101PE16EU"
+MODEL_PRO_1PM_V3 = "SPSW-201PE16EU"
+MODEL_PRO_2 = "SPSW-002XE16EU"
+MODEL_PRO_2_V2 = "SPSW-102XE16EU"
+MODEL_PRO_2_V3 = "SPSW-202XE16EU"
+MODEL_PRO_2PM = "SPSW-002PE16EU"
+MODEL_PRO_2PM_V2 = "SPSW-102PE16EU"
+MODEL_PRO_2PM_V2 = "SPSW-202PE16EU"
+MODEL_PRO_3 = "SPSW-003XE16EU"
+MODEL_PRO_4PM = "SPSW-004PE16EU"
+MODEL_PRO_4PM_V2 = "SPSW-104PE16EU"
+MODEL_PRO_DUAL_COVER = "SPSH-002PE16EU"
+MODEL_PRO_EM = "SPEM-002CEBEU50"
+MODEL_PRO_EM3 = "SPEM-003CEBEU"
+MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
 
 MODEL_NAMES = {
     # Gen1 CoAP based models
@@ -102,45 +141,45 @@ MODEL_NAMES = {
     MODEL_VINTAGE: "Shelly Vintage",
     MODEL_VINTAGE_V2: "Shelly Vintage",
     # Gen2 RPC based models
-    "SAWD-0A1XX10EU1": "Shelly Wall Display",
-    "SNGW-0A11WW010": "Shelly Plus 10V",
-    "SNPL-00110IT": "Shelly Plus Plug IT",
-    "SNPL-00112EU": "Shelly Plus Plug S",
-    "SNPL-00112UK": "Shelly Plus Plug UK",
-    "SNPL-00116US": "Shelly Plus Plug US",
-    "SNPM-001PCEU16": "Shelly Plus PM Mini",
-    "SNSN-0013A": "Shelly Plus H&T",
-    "SNSN-0031Z": "Shelly Plus Smoke",
-    "SNSN-0043X": "Shelly Plus Uni",
-    "SNSN-0D24X": "Shelly Plus I4DC",
-    "SNSW-001P15UL": "Shelly Plus 1PM UL",
-    "SNSW-001P16EU": "Shelly Plus 1PM",
-    "SNSW-001P8EU": "Shelly Plus 1PM Mini",
-    "SNSW-001X15UL": "Shelly Plus 1 UL",
-    "SNSW-001X16EU": "Shelly Plus 1",
-    "SNSW-001X8EU": "Shelly Plus 1 Mini",
-    "SNSW-0024X": "Shelly Plus I4",
-    "SNSW-002P16EU": "Shelly Plus 2PM",
-    "SNSW-102P16EU": "Shelly Plus 2PM",
-    "SPEM-002CEBEU50": "Shelly Pro EM",
-    "SPEM-003CEBEU": "Shelly Pro 3EM",
-    "SPSH-002PE16EU": "Shelly Pro Dual Cover PM",
-    "SPSW-001PE16EU": "Shelly Pro 1PM",
-    "SPSW-001XE16EU": "Shelly Pro 1",
-    "SPSW-002PE16EU": "Shelly Pro 2PM",
-    "SPSW-002XE16EU": "Shelly Pro 2",
-    "SPSW-003XE16EU": "Shelly Pro 3",
-    "SPSW-004PE16EU": "Shelly Pro 4PM",
-    "SPSW-101PE16EU": "Shelly Pro 1PM",
-    "SPSW-101XE16EU": "Shelly Pro 1",
-    "SPSW-102PE16EU": "Shelly Pro 2PM",
-    "SPSW-102XE16EU": "Shelly Pro 2",
-    "SPSW-104PE16EU": "Shelly Pro 4PM",
-    "SPSW-201PE16EU": "Shelly Pro 1PM",
-    "SPSW-201XE16EU": "Shelly Pro 1",
-    "SPSW-202PE16EU": "Shelly Pro 2PM",
-    "SPSW-202XE16EU": "Shelly Pro 2",
-    "SNGW-BT01": "Shelly Blu Gateway",
+    MODEL_BLU_GATEWAY: "Shelly Blu Gateway",
+    MODEL_PLUS_1: "Shelly Plus 1",
+    MODEL_PLUS_1_MINI: "Shelly Plus 1 Mini",
+    MODEL_PLUS_1_UL: "Shelly Plus 1 UL",
+    MODEL_PLUS_10V: "Shelly Plus 10V",
+    MODEL_PLUS_1PM: "Shelly Plus 1PM",
+    MODEL_PLUS_1PM_MINI: "Shelly Plus 1PM Mini",
+    MODEL_PLUS_1PM_UL: "Shelly Plus 1PM UL",
+    MODEL_PLUS_2PM: "Shelly Plus 2PM",
+    MODEL_PLUS_2PM_V2: "Shelly Plus 2PM",
+    MODEL_PLUS_HT: "Shelly Plus H&T",
+    MODEL_PLUS_I4: "Shelly Plus I4",
+    MODEL_PLUS_I4DC: "Shelly Plus I4DC",
+    MODEL_PLUS_PLUG_IT: "Shelly Plus Plug IT",
+    MODEL_PLUS_PLUG_S: "Shelly Plus Plug S",
+    MODEL_PLUS_PLUG_UK: "Shelly Plus Plug UK",
+    MODEL_PLUS_PLUG_US: "Shelly Plus Plug US",
+    MODEL_PLUS_PM_MINI: "Shelly Plus PM Mini",
+    MODEL_PLUS_SMOKE: "Shelly Plus Smoke",
+    MODEL_PLUS_UNI: "Shelly Plus Uni",
+    MODEL_PRO_1: "Shelly Pro 1",
+    MODEL_PRO_1_V2: "Shelly Pro 1",
+    MODEL_PRO_1_V3: "Shelly Pro 1",
+    MODEL_PRO_1PM: "Shelly Pro 1PM",
+    MODEL_PRO_1PM_V2: "Shelly Pro 1PM",
+    MODEL_PRO_1PM_V3: "Shelly Pro 1PM",
+    MODEL_PRO_2: "Shelly Pro 2",
+    MODEL_PRO_2_V2: "Shelly Pro 2",
+    MODEL_PRO_2_V3: "Shelly Pro 2",
+    MODEL_PRO_2PM: "Shelly Pro 2PM",
+    MODEL_PRO_2PM_V2: "Shelly Pro 2PM",
+    MODEL_PRO_2PM_V2: "Shelly Pro 2PM",
+    MODEL_PRO_3: "Shelly Pro 3",
+    MODEL_PRO_4PM: "Shelly Pro 4PM",
+    MODEL_PRO_4PM_V2: "Shelly Pro 4PM",
+    MODEL_PRO_DUAL_COVER: "Shelly Pro Dual Cover PM",
+    MODEL_PRO_EM: "Shelly Pro EM",
+    MODEL_PRO_EM3: "Shelly Pro 3EM",
+    MODEL_WALL_DISPLAY: "Shelly Wall Display",
 }
 
 # Timeout used for Device IO
