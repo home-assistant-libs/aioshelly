@@ -12,50 +12,95 @@ CONNECT_ERRORS = (
     OSError,
 )
 
+# Gen1 CoAP based models
+MODEL_1 = "SHSW-1"
+MODEL_1L = "SHSW-L"
+MODEL_1PM = "SHSW-PM"
+MODEL_2 = "SHSW-21"
+MODEL_25 = "SHSW-25"
+MODEL_2LED = "SH2LED-1"
+MODEL_4PRO = "SHSW-44"  # CoAP v1, unsupported
+MODEL_AIR = "SHAIR-1"
+MODEL_BULB = "SHBLB-1"
+MODEL_BULB_RGBW = "SHCB-1"
+MODEL_BUTTON1 = "SHBTN-1"
+MODEL_BUTTON1_V2 = "SHBTN-2"  # hw v2
+MODEL_COLOR = "SHCL-255"
+MODEL_DIMMER = "SHDM-1"
+MODEL_DIMMER_2 = "SHDM-2"
+MODEL_DIMMER_W1 = "SHDIMW-1"
+MODEL_DUO = "SHBDUO-1"
+MODEL_DW = "SHDW-1"
+MODEL_DW_2 = "SHDW-2"
+MODEL_EM = "SHEM"
+MODEL_EM3 = "SHEM-3"
+MODEL_FLOOD = "SHWT-1"
+MODEL_GAS = "SHGS-1"
+MODEL_HT = "SHHT-1"
+MODEL_I3 = "SHIX3-1"
+MODEL_MOTION = "SHMOS-01"
+MODEL_MOTION_2 = "SHMOS-02"
+MODEL_PLUG = "SHPLG-1"
+MODEL_PLUG_E = "SHPLG2-1"
+MODEL_PLUG_S = "SHPLG-S"
+MODEL_PLUG_US = "SHPLG-U1"
+MODEL_RGBW = "SHRGBWW-01"
+MODEL_RGBW2 = "SHRGBW2"
+MODEL_SENSE = "SHSEN-1"  # CoAP v1, unsupported
+MODEL_SMOKE = "SHSM-01"
+MODEL_SMOKE_2 = "SHSM-02"
+MODEL_SPOT = "SHSPOT-1"
+MODEL_SPOT_2 = "SHSPOT-2"
+MODEL_UNI = "SHUNI-1"
+MODEL_VALVE = "SHTRV-01"
+MODEL_VINTAGE = "SHBVIN-1"
+MODEL_VINTAGE_V2 = "SHVIN-1"
+
+
 MODEL_NAMES = {
     # Gen1 CoAP based models
-    "SH2LED-1": "Shelly 2LED",
-    "SHAIR-1": "Shelly Air",
-    "SHBDUO-1": "Shelly DUO",
-    "SHBLB-1": "Shelly Bulb",
-    "SHBTN-1": "Shelly Button1",
-    "SHBTN-2": "Shelly Button1",  # hw v2
-    "SHBVIN-1": "Shelly Vintage",
-    "SHCB-1": "Shelly Bulb RGBW",
-    "SHCL-255": "Shelly Color",
-    "SHDIMW-1": "Shelly Dimmer W1",
-    "SHDM-1": "Shelly Dimmer",
-    "SHDM-2": "Shelly Dimmer 2",
-    "SHDW-1": "Shelly Door/Window",
-    "SHDW-2": "Shelly Door/Window 2",
-    "SHEM": "Shelly EM",
-    "SHEM-3": "Shelly 3EM",
-    "SHGS-1": "Shelly Gas",
-    "SHHT-1": "Shelly H&T",
-    "SHIX3-1": "Shelly i3",
-    "SHMOS-01": "Shelly Motion",
-    "SHMOS-02": "Shelly Motion 2",
-    "SHPLG-1": "Shelly Plug",
-    "SHPLG-S": "Shelly Plug S",
-    "SHPLG-U1": "Shelly Plug US",
-    "SHPLG2-1": "Shelly Plug E",
-    "SHRGBW2": "Shelly RGBW2",
-    "SHRGBWW-01": "Shelly RGBW",
-    "SHSEN-1": "Shelly Sense",  # CoAP v1, unsupported
-    "SHSM-01": "Shelly Smoke",
-    "SHSM-02": "Shelly Smoke 2",
-    "SHSPOT-1": "Shelly Spot",
-    "SHSPOT-2": "Shelly Spot 2",
-    "SHSW-1": "Shelly 1",
-    "SHSW-21": "Shelly 2",
-    "SHSW-25": "Shelly 2.5",
-    "SHSW-44": "Shelly 4Pro",  # CoAP v1, unsupported
-    "SHSW-L": "Shelly 1L",
-    "SHSW-PM": "Shelly 1PM",
-    "SHTRV-01": "Shelly Valve",
-    "SHUNI-1": "Shelly UNI",
-    "SHVIN-1": "Shelly Vintage",
-    "SHWT-1": "Shelly Flood",
+    MODEL_1: "Shelly 1",
+    MODEL_1L: "Shelly 1L",
+    MODEL_1PM: "Shelly 1PM",
+    MODEL_2: "Shelly 2",
+    MODEL_25: "Shelly 2.5",
+    MODEL_2LED: "Shelly 2LED",
+    MODEL_4PRO: "Shelly 4Pro",
+    MODEL_AIR: "Shelly Air",
+    MODEL_BULB: "Shelly Bulb",
+    MODEL_BULB_RGBW: "Shelly Bulb RGBW",
+    MODEL_BUTTON1: "Shelly Button1",
+    MODEL_BUTTON1_V2: "Shelly Button1",
+    MODEL_COLOR: "Shelly Color",
+    MODEL_DIMMER: "Shelly Dimmer",
+    MODEL_DIMMER_2: "Shelly Dimmer 2",
+    MODEL_DIMMER_W1: "Shelly Dimmer W1",
+    MODEL_DUO: "Shelly DUO",
+    MODEL_DW: "Shelly Door/Window",
+    MODEL_DW_2: "Shelly Door/Window 2",
+    MODEL_EM: "Shelly EM",
+    MODEL_EM3: "Shelly 3EM",
+    MODEL_FLOOD: "Shelly Flood",
+    MODEL_GAS: "Shelly Gas",
+    MODEL_HT: "Shelly H&T",
+    MODEL_I3: "Shelly i3",
+    MODEL_MOTION: "Shelly Motion",
+    MODEL_MOTION_2: "Shelly Motion 2",
+    MODEL_PLUG: "Shelly Plug",
+    MODEL_PLUG_E: "Shelly Plug E",
+    MODEL_PLUG_S: "Shelly Plug S",
+    MODEL_PLUG_US: "Shelly Plug US",
+    MODEL_RGBW: "Shelly RGBW",
+    MODEL_RGBW2: "Shelly RGBW2",
+    MODEL_SENSE: "Shelly Sense",
+    MODEL_SMOKE: "Shelly Smoke",
+    MODEL_SMOKE_2: "Shelly Smoke 2",
+    MODEL_SPOT: "Shelly Spot",
+    MODEL_SPOT_2: "Shelly Spot 2",
+    MODEL_UNI: "Shelly UNI",
+    MODEL_VALVE: "Shelly Valve",
+    MODEL_VINTAGE: "Shelly Vintage",
+    MODEL_VINTAGE_V2: "Shelly Vintage",
     # Gen2 RPC based models
     "SAWD-0A1XX10EU1": "Shelly Wall Display",
     "SNGW-0A11WW010": "Shelly Plus 10V",
