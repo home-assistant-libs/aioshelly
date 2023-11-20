@@ -95,6 +95,7 @@ MODEL_NAMES = {
     "SPSW-201XE16EU": "Shelly Pro 1",
     "SPSW-202PE16EU": "Shelly Pro 2PM",
     "SPSW-202XE16EU": "Shelly Pro 2",
+    "SNGW-BT01": "Shelly Blu Gateway",
 }
 
 # Timeout used for Device IO
