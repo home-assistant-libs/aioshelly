@@ -141,7 +141,7 @@ MODEL_NAMES = {
     MODEL_VINTAGE: "Shelly Vintage",
     MODEL_VINTAGE_V2: "Shelly Vintage",
     # Gen2 RPC based models
-    MODEL_BLU_GATEWAY: "Shelly Blu Gateway",
+    MODEL_BLU_GATEWAY: "Shelly BLU Gateway",
     MODEL_PLUS_1: "Shelly Plus 1",
     MODEL_PLUS_1_MINI: "Shelly Plus 1 Mini",
     MODEL_PLUS_1_UL: "Shelly Plus 1 UL",
