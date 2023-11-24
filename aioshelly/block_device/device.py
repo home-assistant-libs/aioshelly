@@ -7,6 +7,7 @@ from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, cast
+from yarl import URL
 
 import aiohttp
 import async_timeout
@@ -285,7 +286,7 @@ class BlockDevice:
         try:
             resp: ClientResponse = await self.aiohttp_session.request(
                 method,
-                f"http://{self.options.ip_address}/{path}",
+                URL.build(scheme="http", host=self.options.ip_address, path=f"/{path}"),
                 params=params,
                 auth=self.options.auth,
                 raise_for_status=True,
