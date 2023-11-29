@@ -284,6 +284,7 @@ class WsRPC:
 
     def handle_frame(self, frame: dict[str, Any]) -> None:
         """Handle RPC frame."""
+        _LOGGER.debug("RPC frame: %s", frame)
         if peer_src := frame.get("src"):
             if self._session.dst is not None and peer_src != self._session.dst:
                 _LOGGER.warning(
@@ -296,7 +297,7 @@ class WsRPC:
         if method := frame.get("method"):
             # peer is invoking a method
             params = frame.get("params")
-            if frame_id:
+            if frame_id and method != "NotifyStatus":
                 # and expects a response
                 _LOGGER.debug("handle call for frame_id: %s", frame_id)
                 self._create_and_track_task(self._handle_call(frame_id))
