@@ -373,8 +373,11 @@ class RpcDevice:
 
     @property
     def gen(self) -> int:
-        """Device generation: GEN2 - RPC."""
-        return 2
+        """Device generation: GEN2/3 - RPC."""
+        if self._shelly is None:
+            raise NotInitialized
+
+        return cast(int, self._shelly["gen"])
 
     @property
     def firmware_version(self) -> str:
