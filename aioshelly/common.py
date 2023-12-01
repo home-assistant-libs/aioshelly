@@ -8,15 +8,16 @@ import re
 from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any, Union
-from yarl import URL
 
 import aiohttp
+from yarl import URL
 
 from .const import (
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
     GEN1_MIN_FIRMWARE_DATE,
     GEN2_MIN_FIRMWARE_DATE,
+    GEN3_MIN_FIRMWARE_DATE,
 )
 from .exceptions import (
     DeviceConnectionError,
@@ -119,7 +120,9 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
         fw_ver = GEN1_MIN_FIRMWARE_DATE
     else:
         fw_str = result["fw_id"]
-        fw_ver = GEN2_MIN_FIRMWARE_DATE
+        fw_ver = (
+            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE
+        )
 
     match = FIRMWARE_PATTERN.search(fw_str)
 
