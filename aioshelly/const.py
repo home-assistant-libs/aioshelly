@@ -97,6 +97,8 @@ MODEL_PRO_EM = "SPEM-002CEBEU50"
 MODEL_PRO_EM3 = "SPEM-003CEBEU"
 MODEL_PRO_EM3_400 = "SPEM-003CEBEU400"
 MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
+# Gen3 RPC based models
+MODEL_PLUS_1_MINI_G3 = "S3SW-001X8EU"
 
 MODEL_NAMES = {
     # Gen1 CoAP based models
@@ -175,7 +177,6 @@ MODEL_NAMES = {
     MODEL_PRO_2_V3: "Shelly Pro 2",
     MODEL_PRO_2PM: "Shelly Pro 2PM",
     MODEL_PRO_2PM_V2: "Shelly Pro 2PM",
-    MODEL_PRO_2PM_V2: "Shelly Pro 2PM",
     MODEL_PRO_3: "Shelly Pro 3",
     MODEL_PRO_4PM: "Shelly Pro 4PM",
     MODEL_PRO_4PM_V2: "Shelly Pro 4PM",
@@ -184,6 +185,8 @@ MODEL_NAMES = {
     MODEL_PRO_EM3: "Shelly Pro 3EM",
     MODEL_PRO_EM3_400: "Shelly Pro 3EM-400",
     MODEL_WALL_DISPLAY: "Shelly Wall Display",
+    # Gen3 RPC based models
+    MODEL_PLUS_1_MINI_G3: "Shelly Plus 1 Mini",
 }
 
 # Timeout used for Device IO
