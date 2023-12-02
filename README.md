@@ -67,7 +67,7 @@ if __name__ == "__main__":
     asyncio.run(test_block_device())
 ```
 
-### Gen2 (RPC/WebSocket) device example:
+### Gen2 and Gen3 (RPC/WebSocket) device example:
 
 ```python
 import asyncio
@@ -85,7 +85,7 @@ from aioshelly.rpc_device import RpcDevice, WsServer
 
 
 async def test_rpc_device():
-    """Test Gen2 RPC (WebSocket) based device."""
+    """Test Gen2/Gen3 RPC (WebSocket) based device."""
     options = ConnectionOptions("192.168.1.188", "username", "password")
     ws_context = WsServer()
     await ws_context.initialize(8123)
