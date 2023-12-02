@@ -192,8 +192,8 @@ DEVICE_IO_TIMEOUT = 10
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10
 
-# Firmware 1.8.0 release date (CoAP v2)
-GEN1_MIN_FIRMWARE_DATE = 20200812
+# Firmware 1.13.0 release date (this also means 2.1.9 for Motion/Motion 2/TRV)
+GEN1_MIN_FIRMWARE_DATE = 20230503
 
 # Firmware 0.8.1 release date
 GEN2_MIN_FIRMWARE_DATE = 20210921
