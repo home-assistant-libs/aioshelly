@@ -18,7 +18,7 @@ import aiohttp
 import aioshelly
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import MODEL_NAMES, WS_API_URL
+from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, RPC_GENERATIONS, WS_API_URL
 from aioshelly.exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
@@ -46,10 +46,10 @@ async def create_device(
         else:
             raise ShellyError("Unknown Gen")
 
-    if gen == 1:
+    if gen in BLOCK_GENERATIONS:
         return await BlockDevice.create(aiohttp_session, coap_context, options, init)
 
-    if gen in (2, 3):
+    if gen in RPC_GENERATIONS:
         return await RpcDevice.create(aiohttp_session, ws_context, options, init)
 
     raise ShellyError("Unknown Gen")
@@ -164,9 +164,9 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
     print(f"** {device.name} - {model_name}  @ {device.ip_address} **")
     print()
 
-    if device.gen == 1:
+    if device.gen in BLOCK_GENERATIONS:
         print_block_device(cast(BlockDevice, device))
-    elif device.gen == 2:
+    elif device.gen == RPC_GENERATIONS:
         print_rpc_device(cast(RpcDevice, device))
 
 
