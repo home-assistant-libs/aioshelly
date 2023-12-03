@@ -18,7 +18,7 @@ import aiohttp
 import aioshelly
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import MODEL_NAMES, WS_API_URL
+from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, RPC_GENERATIONS, WS_API_URL
 from aioshelly.exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
@@ -39,17 +39,17 @@ async def create_device(
     init: bool,
     gen: int | None,
 ) -> Any:
-    """Create a Gen1/Gen2 device."""
+    """Create a Gen1/Gen2/Gen3 device."""
     if gen is None:
         if info := await aioshelly.common.get_info(aiohttp_session, options.ip_address):
             gen = info.get("gen", 1)
         else:
             raise ShellyError("Unknown Gen")
 
-    if gen == 1:
+    if gen in BLOCK_GENERATIONS:
         return await BlockDevice.create(aiohttp_session, coap_context, options, init)
 
-    if gen == 2:
+    if gen in RPC_GENERATIONS:
         return await RpcDevice.create(aiohttp_session, ws_context, options, init)
 
     raise ShellyError("Unknown Gen")
@@ -164,9 +164,9 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
     print(f"** {device.name} - {model_name}  @ {device.ip_address} **")
     print()
 
-    if device.gen == 1:
+    if device.gen in BLOCK_GENERATIONS:
         print_block_device(cast(BlockDevice, device))
-    elif device.gen == 2:
+    elif device.gen == RPC_GENERATIONS:
         print_rpc_device(cast(RpcDevice, device))
 
 
@@ -192,7 +192,7 @@ def print_block_device(device: BlockDevice) -> None:
 
 
 def print_rpc_device(device: RpcDevice) -> None:
-    """Print RPC (GEN2) device data."""
+    """Print RPC (GEN2/3) device data."""
     print(f"Status: {device.status}")
     print(f"Event: {device.event}")
     print(f"Connected: {device.connected}")
@@ -244,6 +244,9 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
     )
     parser.add_argument(
+        "--gen3", "-g3", action="store_true", help="Force Gen 3 (RPC) device"
+    )
+    parser.add_argument(
         "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
     parser.add_argument(
@@ -254,7 +257,7 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--update_ws",
         "-uw",
         type=str,
-        help="Update outbound WebSocket (Gen2) and exit",
+        help="Update outbound WebSocket (Gen2/3) and exit",
     )
 
     arguments = parser.parse_args()
@@ -265,7 +268,7 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
 async def update_outbound_ws(
     options: ConnectionOptions, init: bool, ws_url: str
 ) -> None:
-    """Update outbound WebSocket URL (Gen2)."""
+    """Update outbound WebSocket URL (Gen2/3)."""
     async with aiohttp.ClientSession() as aiohttp_session:
         device: RpcDevice = await create_device(aiohttp_session, options, init, 2)
         print(f"Updating outbound weboskcet URL to {ws_url}")
@@ -281,12 +284,18 @@ async def main() -> None:
 
     if args.gen1 and args.gen2:
         parser.error("--gen1 and --gen2 can't be used together")
+    elif args.gen1 and args.gen3:
+        parser.error("--gen1 and --gen3 can't be used together")
+    elif args.gen2 and args.gen3:
+        parser.error("--gen2 and --gen3 can't be used together")
 
     gen = None
     if args.gen1:
         gen = 1
     elif args.gen2:
         gen = 2
+    elif args.gen3:
+        gen = 3
 
     if args.debug:
         logging.basicConfig(level="DEBUG", force=True)
