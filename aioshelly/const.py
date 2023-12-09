@@ -204,8 +204,8 @@ HTTP_CALL_TIMEOUT = 10
 # Firmware 1.8.0 release date (CoAP v2)
 GEN1_MIN_FIRMWARE_DATE = 20200812
 
-# Firmware 0.8.1 release date
-GEN2_MIN_FIRMWARE_DATE = 20210921
+# Firmware 1.0.0 release date
+GEN2_MIN_FIRMWARE_DATE = 20230803
 
 # Firmware 1.0.99 release date
 GEN3_MIN_FIRMWARE_DATE = 20231102
