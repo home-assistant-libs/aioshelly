@@ -201,8 +201,8 @@ DEVICE_IO_TIMEOUT = 10
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10
 
-# Firmware 1.8.0 release date (CoAP v2)
-GEN1_MIN_FIRMWARE_DATE = 20200812
+# Firmware 1.11.0 release date
+GEN1_MIN_FIRMWARE_DATE = 20210715
 
 # Firmware 1.0.0 release date
 GEN2_MIN_FIRMWARE_DATE = 20230803
