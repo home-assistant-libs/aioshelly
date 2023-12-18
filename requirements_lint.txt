@@ -4,4 +4,4 @@ isort==5.13.2
 mypy==1.7.1
 orjson>=3.8.1
 pydocstyle==6.3.0
-pylint==3.0.2
+pylint==3.0.3
