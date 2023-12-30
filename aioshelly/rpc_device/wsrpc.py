@@ -348,6 +348,7 @@ class WsRPC:
                     break
                 except Exception:  # pylint: disable=broad-except
                     _LOGGER.exception("Unexpected error while receiving message")
+                    raise
 
                 if not self._client.closed:
                     self.handle_frame(frame)
