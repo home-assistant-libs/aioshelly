@@ -11,7 +11,6 @@ from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import Any, cast
-from yarl import URL
 
 import aiohttp
 import async_timeout
@@ -24,6 +23,7 @@ from aiohttp.web import (
     WebSocketResponse,
     get,
 )
+from yarl import URL
 
 from ..const import NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
 from ..exceptions import (
@@ -261,7 +261,11 @@ class WsRPC:
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
-        self._rx_task = None
+        if self._rx_task is not None:
+            self._rx_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._rx_task
+            self._rx_task = None
         self._cancel_heatbeat_and_pong_response_cb()
         if self._client is None:
             return
@@ -323,41 +327,52 @@ class WsRPC:
     async def _rx_msgs(self) -> None:
         assert self._client
 
-        while not self._client.closed:
-            try:
-                msg = await self._client.receive()
-                self._last_time = time.time()
-                if msg.type == WSMsgType.PONG:
-                    self._schedule_heartbeat()
-                    continue
-                if msg.type == WSMsgType.PING:
-                    await self._client.pong(msg.data)
-                    continue
-                frame = _receive_json_or_raise(msg)
-                _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
-            except InvalidMessage as err:
-                _LOGGER.error("Invalid Message from host %s: %s", self._ip_address, err)
-            except ConnectionClosed:
-                break
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected error while receiving message")
+        try:
+            while not self._client.closed:
+                try:
+                    msg = await self._client.receive()
+                    self._last_time = time.time()
+                    if msg.type == WSMsgType.PONG:
+                        self._schedule_heartbeat()
+                        continue
+                    if msg.type == WSMsgType.PING:
+                        await self._client.pong(msg.data)
+                        continue
+                    frame = _receive_json_or_raise(msg)
+                    _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
+                except InvalidMessage as err:
+                    _LOGGER.error(
+                        "Invalid Message from host %s: %s", self._ip_address, err
+                    )
+                except ConnectionClosed:
+                    break
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Unexpected error while receiving message")
+
+                if not self._client.closed:
+                    self.handle_frame(frame)
+        finally:
+            _LOGGER.debug(
+                "Websocket client connection from %s closed", self._ip_address
+            )
+            self._cancel_heatbeat_and_pong_response_cb()
+            # Ensure the underlying transport is closed
+            # Remove this after aiohttp 3.9.2 is released
+            # as it leaks before this version (and has for
+            # a long time)
+            with contextlib.suppress(Exception):
+                self._client._response.close()  # pylint: disable=protected-access
+
+            for call_item in self._calls.values():
+                if not call_item.resolve.done():
+                    call_item.resolve.set_exception(DeviceConnectionError(call_item))
+            self._calls.clear()
 
             if not self._client.closed:
-                self.handle_frame(frame)
+                await self._client.close()
 
-        _LOGGER.debug("Websocket client connection from %s closed", self._ip_address)
-        self._cancel_heatbeat_and_pong_response_cb()
-
-        for call_item in self._calls.values():
-            if not call_item.resolve.done():
-                call_item.resolve.set_exception(DeviceConnectionError(call_item))
-        self._calls.clear()
-
-        if not self._client.closed:
-            await self._client.close()
-
-        self._client = None
-        self._on_notification(NOTIFY_WS_CLOSED)
+            self._client = None
+            self._on_notification(NOTIFY_WS_CLOSED)
 
     @property
     def connected(self) -> bool:
