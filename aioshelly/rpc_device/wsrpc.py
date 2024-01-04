@@ -369,14 +369,15 @@ class WsRPC:
                     call_item.resolve.set_exception(DeviceConnectionError(call_item))
             self._calls.clear()
 
+            client = self._client
             self._client = None
             self._on_notification(NOTIFY_WS_CLOSED)
 
             # Close last since the await can yield
             # to the event loop and we want to minimize
             # race conditions
-            if not self._client.closed:
-                await self._client.close()
+            if client.closed:
+                await client.close()
 
     @property
     def connected(self) -> bool:
