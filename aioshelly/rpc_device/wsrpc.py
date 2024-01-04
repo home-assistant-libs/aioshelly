@@ -376,7 +376,7 @@ class WsRPC:
             # Close last since the await can yield
             # to the event loop and we want to minimize
             # race conditions
-            if client.closed:
+            if not client.closed:
                 await client.close()
 
     @property
