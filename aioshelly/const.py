@@ -216,7 +216,8 @@ HTTP_CALL_TIMEOUT = 10
 GEN1_MIN_FIRMWARE_DATE = 20201124
 
 # Firmware 1.11.0 release date (introduction of light transition)
-GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210715
+# Due to date fluctuation for different models, 20210710 was used.
+GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210710
 
 # Firmware 1.0.0 release date
 GEN2_MIN_FIRMWARE_DATE = 20230803
