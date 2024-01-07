@@ -212,8 +212,8 @@ DEVICE_IO_TIMEOUT = 10
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10
 
-# Firmware 1.9.4 release date (latest firmware for SHPLG-1)
-GEN1_MIN_FIRMWARE_DATE = 20210115
+# Firmware 1.9.0 release date
+GEN1_MIN_FIRMWARE_DATE = 20201124
 
 # Firmware 1.11.0 release date (introduction of light transition)
 GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210715
