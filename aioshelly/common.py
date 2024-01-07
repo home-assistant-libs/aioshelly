@@ -15,7 +15,9 @@ from yarl import URL
 from .const import (
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
+    GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
     GEN1_MIN_FIRMWARE_DATE,
+    GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
 )
@@ -117,7 +119,10 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
         ]:
             return False
         fw_str = result["fw"]
-        fw_ver = GEN1_MIN_FIRMWARE_DATE
+        if result["type"] in GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION:
+            fw_ver = GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE
+        else:
+            fw_ver = GEN1_MIN_FIRMWARE_DATE
     else:
         fw_str = result["fw_id"]
         fw_ver = (

@@ -197,6 +197,15 @@ MODEL_NAMES = {
     MODEL_PLUS_PM_MINI_G3: "Shelly Plus PM Mini",
 }
 
+GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = (
+    MODEL_DUO,
+    MODEL_BULB_RGBW,
+    MODEL_DIMMER,
+    MODEL_DIMMER_2,
+    MODEL_RGBW2,
+    MODEL_VINTAGE_V2,
+)
+
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10
 
@@ -205,6 +214,9 @@ HTTP_CALL_TIMEOUT = 10
 
 # Firmware 1.9.4 release date (latest firmware for SHPLG-1)
 GEN1_MIN_FIRMWARE_DATE = 20210115
+
+# Firmware 1.11.0 release date (introduction of light transition)
+GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210715
 
 # Firmware 1.0.0 release date
 GEN2_MIN_FIRMWARE_DATE = 20230803
