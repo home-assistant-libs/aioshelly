@@ -197,14 +197,27 @@ MODEL_NAMES = {
     MODEL_PLUS_PM_MINI_G3: "Shelly Plus PM Mini",
 }
 
+GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = (
+    MODEL_DUO,
+    MODEL_BULB_RGBW,
+    MODEL_DIMMER,
+    MODEL_DIMMER_2,
+    MODEL_RGBW2,
+    MODEL_VINTAGE_V2,
+)
+
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10
 
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10
 
-# Firmware 1.11.0 release date
-GEN1_MIN_FIRMWARE_DATE = 20210715
+# Firmware 1.9.0 release date
+GEN1_MIN_FIRMWARE_DATE = 20201124
+
+# Firmware 1.11.0 release date (introduction of light transition)
+# Due to date fluctuation for different models, 20210710 was used.
+GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210710
 
 # Firmware 1.0.0 release date
 GEN2_MIN_FIRMWARE_DATE = 20230803
