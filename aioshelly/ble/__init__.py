@@ -84,27 +84,33 @@ async def async_start_scanner(  # pylint: disable=too-many-arguments
 
 
 def parse_ble_scan_result_event(
-    data: list[Any],
+    data: dict[str, Any],
 ) -> tuple[str, int, BLEGAPAdvertisement]:
     """Parse BLE scan result event."""
-    version: int = data[0]
+    version: int = data.ver
     if version != BLE_SCAN_RESULT_VERSION:
         raise ValueError(f"Unsupported BLE scan result version: {version}")
 
-    address: str = data[1]
-    rssi: int = data[2]
-    advertisement_data_b64: str = data[3]
-    scan_response_b64: str = data[4]
-    return (
-        address.upper(),
-        rssi,
-        parse_advertisement_data(
-            (
-                a2b_base64(advertisement_data_b64.encode("ascii")),
-                a2b_base64(scan_response_b64.encode("ascii")),
-            )
-        ),
-    )
+    result: list[Any] = []
+
+    for adv in data.advs:
+        address: str = adv[0]
+        rssi: int = adv[1]
+        advertisement_data_b64: str = adv[2]
+        scan_response_b64: str = adv[3]
+
+        result.append({
+            "address": address.upper(),
+            "rssi": rssi,
+            "adv": parse_advertisement_data(
+                (
+                    a2b_base64(advertisement_data_b64.encode("ascii")),
+                    a2b_base64(scan_response_b64.encode("ascii")),
+                ),
+            ),
+        })
+
+    return result
 
 
 async def async_ensure_ble_enabled(device: RpcDevice) -> bool:

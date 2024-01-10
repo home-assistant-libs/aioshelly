@@ -23,6 +23,7 @@ BLE_CODE = """
 const queueServeTimer = 450; // in ms, timer for events emitting
 const burstSendCount =  5; // number if events, emitted on timer event
 const maxQueue =  80; // if the queue exceeds the limit, all new events are ignored until it empties
+const packetsInSingleEvent = 5; // max number of packets in single event
 
 let queue = [];
 let timerHandler = null;
@@ -35,8 +36,13 @@ function timerCallback() {
       break;
     }
 
-    Shelly.emitEvent("%event_type%", queue[0]);
-    queue = queue.slice(1);
+    Shelly.emitEvent(
+      "%event_type%", {
+        ver: %version%, 
+        advs: queue.slice(0, packetsInSingleEvent),
+      }
+    );
+    queue = queue.slice(packetsInSingleEvent);
   }
     
   timerHandler = null;
@@ -55,7 +61,6 @@ function bleCallback(event, res) {
   }
 
   queue.push([
-    %version%,
     res.addr,
     res.rssi,
     btoa(res.advData),
