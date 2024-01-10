@@ -192,9 +192,9 @@ MODEL_NAMES = {
     MODEL_PRO_EM3_400: "Shelly Pro 3EM-400",
     MODEL_WALL_DISPLAY: "Shelly Wall Display",
     # Gen3 RPC based models
-    MODEL_PLUS_1_MINI_G3: "Shelly Plus 1 Mini",
-    MODEL_PLUS_1PM_MINI_G3: "Shelly Plus 1PM Mini",
-    MODEL_PLUS_PM_MINI_G3: "Shelly Plus PM Mini",
+    MODEL_PLUS_1_MINI_G3: "Shelly 1 Mini Gen3",
+    MODEL_PLUS_1PM_MINI_G3: "Shelly 1PM Mini Gen3",
+    MODEL_PLUS_PM_MINI_G3: "Shelly PM Mini Gen3",
 }
 
 GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = (
