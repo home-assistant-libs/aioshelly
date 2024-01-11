@@ -102,6 +102,7 @@ MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
 # Gen3 RPC based models
 MODEL_1_MINI_G3 = "S3SW-001X8EU"
 MODEL_1PM_MINI_G3 = "S3SW-001P8EU"
+MODEL_HT_G3 = "S3SN-0U12A"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 
 MODEL_NAMES = {
@@ -194,6 +195,7 @@ MODEL_NAMES = {
     # Gen3 RPC based models
     MODEL_1_MINI_G3: "Shelly 1 Mini Gen3",
     MODEL_1PM_MINI_G3: "Shelly 1PM Mini Gen3",
+    MODEL_HT_G3: "Shelly H&T Gen3",
     MODEL_PM_MINI_G3: "Shelly PM Mini Gen3",
 }
 
