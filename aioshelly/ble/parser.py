@@ -17,7 +17,7 @@ def parse_ble_scan_result_event(
     version: int = data[0]
     if version == 1:
         return [_adv_to_ble_tuple(data[1])]
-    elif version == 2:
+    if version == 2:
         advs: list[Any] = data[1]
         return [_adv_to_ble_tuple(adv) for adv in advs]
     raise ValueError(f"Unsupported BLE scan result version: {version}")
