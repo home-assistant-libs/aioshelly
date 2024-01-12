@@ -28,9 +28,9 @@ const packetsInSingleEvent = 5; // max number of packets in single event
 let queue = [];
 let timerHandler = null;
 
-function timerCallback() {  
+function timerCallback() {
   Timer.clear(timerHandler);
-  
+
   for(let i = 0; i < burstSendCount; i++) {
     if (queue.length <= 0) {
       break;
@@ -38,13 +38,13 @@ function timerCallback() {
 
     Shelly.emitEvent(
       "%event_type%", [
-        %version%, 
+        %version%,
         queue.slice(0, packetsInSingleEvent),
       ]
     );
     queue = queue.slice(packetsInSingleEvent);
   }
-    
+
   timerHandler = null;
   if (queue.length > 0) {
     timerHandler = Timer.set(queueServeTimer, false, timerCallback);
@@ -55,7 +55,7 @@ function bleCallback(event, res) {
   if (event !== BLE.Scanner.SCAN_RESULT) {
     return
   }
-  
+
   if (queue.length > maxQueue) {
     return;
   }
