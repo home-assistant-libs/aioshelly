@@ -37,10 +37,10 @@ function timerCallback() {
     }
 
     Shelly.emitEvent(
-      "%event_type%", {
-        ver: %version%, 
-        advs: queue.slice(0, packetsInSingleEvent),
-      }
+      "%event_type%", [
+        %version%, 
+        queue.slice(0, packetsInSingleEvent),
+      ]
     );
     queue = queue.slice(packetsInSingleEvent);
   }
