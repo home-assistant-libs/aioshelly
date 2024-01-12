@@ -1,4 +1,5 @@
-bluetooth-data-tools>=0.3.0
+bluetooth-data-tools>=1.19.0
 aiohttp
+habluetooth>=2.2.0
 yarl
 orjson>=3.8.1
