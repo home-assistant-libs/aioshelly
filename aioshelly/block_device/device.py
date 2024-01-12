@@ -7,12 +7,12 @@ from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, cast
+from yarl import URL
 
 import aiohttp
 import async_timeout
 from aiohttp import ClientResponseError
 from aiohttp.client import ClientResponse
-from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
