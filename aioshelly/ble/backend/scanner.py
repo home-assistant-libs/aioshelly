@@ -7,7 +7,7 @@ from typing import Any
 from bluetooth_data_tools import monotonic_time_coarse
 from habluetooth import BaseHaRemoteScanner
 
-from ..const import BLE_SCAN_RESULT_EVENT, BLE_SCAN_RESULT_VERSION
+from ..const import BLE_SCAN_RESULT_EVENT
 from ..parser import parse_ble_scan_result_event
 
 LOGGER = logging.getLogger(__name__)
@@ -21,14 +21,8 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
         if event.get("event") != BLE_SCAN_RESULT_EVENT:
             return
 
-        data = event["data"]
-
-        if data[0] != BLE_SCAN_RESULT_VERSION:
-            LOGGER.warning("Unsupported BLE scan result version: %s", data[0])
-            return
-
         try:
-            parsed_advs = parse_ble_scan_result_event(data)
+            parsed_advs = parse_ble_scan_result_event(event["data"])
         except Exception as err:  # pylint: disable=broad-except
             # Broad exception catch because we have no
             # control over the data that is coming in.
@@ -40,11 +34,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
             self._async_on_advertisement(
                 address,
                 rssi,
-                parsed.local_name,
-                parsed.service_uuids,
-                parsed.service_data,
-                parsed.manufacturer_data,
-                parsed.tx_power,
+                *parsed,
                 {},
                 now,
             )
