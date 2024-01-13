@@ -20,10 +20,10 @@ DEFAULT_DURATION_MS = -1
 
 BLE_CODE = """
 // aioshelly BLE script 2.0
-const queueServeTimer = 450; // in ms, timer for events emitting
+const queueServeTimer = 100; // in ms, timer for events emitting
 const burstSendCount =  5; // number if events, emitted on timer event
 const maxQueue =  80; // if the queue exceeds the limit, all new events are ignored until it empties
-const packetsInSingleEvent = 5; // max number of packets in single event
+const packetsInSingleEvent = 16; // max number of packets in single event
 
 let queue = [];
 let timerHandler = null;
