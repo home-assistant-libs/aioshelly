@@ -29,8 +29,6 @@ let queue = [];
 let timerHandler = null;
 
 function timerCallback() {
-  Timer.clear(timerHandler);
-
   for(let i = 0; i < burstSendCount; i++) {
     if (queue.length <= 0) {
       break;
