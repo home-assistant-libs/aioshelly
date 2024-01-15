@@ -7,11 +7,17 @@ from collections.abc import Callable
 from enum import Enum, auto
 from typing import Any, cast
 
-import aiohttp
 import async_timeout
-from aiohttp.client import ClientSession
+from aiohttp import ClientSession
+from yarl import URL
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import (
+    ConnectionOptions,
+    IpOrOptionsType,
+    get_firmware_from_web,
+    get_info,
+    process_ip_or_options,
+)
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
 from ..exceptions import (
     DeviceConnectionError,
@@ -62,7 +68,7 @@ class RpcDevice:
     def __init__(
         self,
         ws_context: WsServer,
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         options: ConnectionOptions,
     ):
         """Device init."""
@@ -72,6 +78,7 @@ class RpcDevice:
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
+        self._info: dict[str, Any] | None = None
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
         sub_id = options.ip_address
         if options.device_mac:
@@ -87,7 +94,7 @@ class RpcDevice:
     @classmethod
     async def create(
         cls,
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         ws_context: WsServer,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,
@@ -163,6 +170,7 @@ class RpcDevice:
             async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
+                await self.update_info()
 
                 if not async_init or self._status is None:
                     await self.update_status()
@@ -233,6 +241,10 @@ class RpcDevice:
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
+
+    async def update_info(self) -> None:
+        """Get device status from 'Shelly.GetDeviceInfo'."""
+        self._info = await self.call_rpc("Shelly.GetDeviceInfo")
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -312,6 +324,27 @@ class RpcDevice:
         await self.trigger_reboot(3500)
         return True
 
+    async def get_latest_firmware(self) -> None | str:
+        """Get the latest available firmware information from Shelly."""
+        url = URL.build(
+            scheme="https",
+            host="updates.shelly.cloud",
+            path=f"/update/{self.info['app']}",
+        )
+        resp_json = await get_firmware_from_web(self.aiohttp_session, url)
+
+        if not resp_json:
+            return None
+
+        firmware = resp_json["stable"]["build_id"]
+        _LOGGER.debug(
+            "Latest firmware for device %s [%s] is %s",
+            self.name,
+            self.ip_address,
+            firmware,
+        )
+        return cast(str, firmware)
+
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
@@ -363,6 +396,17 @@ class RpcDevice:
             raise InvalidAuthError
 
         return self._config
+
+    @property
+    def info(self) -> dict[str, Any]:
+        """Get device info."""
+        if not self.initialized:
+            raise NotInitialized
+
+        if self._info is None:
+            raise InvalidAuthError
+
+        return self._info
 
     @property
     def shelly(self) -> dict[str, Any]:

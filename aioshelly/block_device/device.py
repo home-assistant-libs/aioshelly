@@ -7,14 +7,15 @@ from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, cast
-
-import aiohttp
-import async_timeout
-from aiohttp import ClientResponseError
-from aiohttp.client import ClientResponse
 from yarl import URL
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import (
+    ConnectionOptions,
+    IpOrOptionsType,
+    get_firmware_from_web,
+    get_info,
+    process_ip_or_options,
+)
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
 from ..exceptions import (
     DeviceConnectionError,
@@ -63,12 +64,12 @@ class BlockDevice:
     def __init__(
         self,
         coap_context: COAP,
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         options: ConnectionOptions,
     ):
         """Device init."""
         self.coap_context: COAP = coap_context
-        self.aiohttp_session: aiohttp.ClientSession = aiohttp_session
+        self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
         self.coap_d: dict[str, Any] | None = None
         self.blocks: list | None = None
@@ -91,7 +92,7 @@ class BlockDevice:
     @classmethod
     async def create(
         cls,
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         coap_context: COAP,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,
@@ -350,6 +351,23 @@ class BlockDevice:
     async def set_thermostat_state(self, channel: int = 0, **kwargs: Any) -> None:
         """Set thermostat state (Shelly TRV)."""
         await self.http_request("get", f"thermostat/{channel}", kwargs)
+
+    async def get_latest_firmware(self) -> None | str:
+        """Get the latest available firmware information from Shelly."""
+        url = URL.build(scheme="http", host="api.shelly.cloud", path="/files/firmware")
+        resp_json = await get_firmware_from_web(self.aiohttp_session, url)
+
+        if not resp_json:
+            return None
+
+        firmware = resp_json["data"][self.model]["version"]
+        _LOGGER.debug(
+            "Latest firmware for device %s [%s] is %s",
+            self.name,
+            self.ip_address,
+            firmware,
+        )
+        return cast(str, firmware)
 
     @property
     def requires_auth(self) -> bool:
