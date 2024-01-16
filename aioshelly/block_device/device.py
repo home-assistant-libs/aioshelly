@@ -7,17 +7,18 @@ from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, cast
-from yarl import URL
 
 import aiohttp
 import async_timeout
 from aiohttp import ClientResponseError
 from aiohttp.client import ClientResponse
+from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
 from ..exceptions import (
     DeviceConnectionError,
+    FirmwareUnsupported,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -153,7 +154,7 @@ class BlockDevice:
             if not async_init:
                 self.shutdown()
                 raise self._last_error from err
-        except MacAddressMismatchError as err:
+        except (MacAddressMismatchError, FirmwareUnsupported) as err:
             self._last_error = err
             _LOGGER.debug("host %s: error: %r", ip, err)
             if not async_init:
