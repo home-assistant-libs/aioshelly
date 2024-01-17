@@ -78,7 +78,7 @@ class RpcDevice:
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
-        self._info: dict[str, Any] | None = None
+        self._latest_firmware: dict[str, str] = {}
         self._wsrpc = WsRPC(options.ip_address, self._on_notification)
         sub_id = options.ip_address
         if options.device_mac:
@@ -170,7 +170,6 @@ class RpcDevice:
             async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
-                await self.update_info()
 
                 if not async_init or self._status is None:
                     await self.update_status()
@@ -241,10 +240,6 @@ class RpcDevice:
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
-
-    async def update_info(self) -> None:
-        """Get device status from 'Shelly.GetDeviceInfo'."""
-        self._info = await self.call_rpc("Shelly.GetDeviceInfo")
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -326,24 +321,27 @@ class RpcDevice:
 
     async def get_latest_firmware(self) -> None | str:
         """Get the latest available firmware information from Shelly."""
-        url = URL.build(
-            scheme="https",
-            host="updates.shelly.cloud",
-            path=f"/update/{self.info['app']}",
-        )
-        resp_json = await get_firmware_from_web(self.aiohttp_session, url)
+        model = self.shelly["app"]
+        if self._latest_firmware is {} or not self._latest_firmware.get(model):
+            _LOGGER.debug("Getting latest firmware information from Shelly Cloud")
+            url = URL.build(
+                scheme="https",
+                host="updates.shelly.cloud",
+                path=f"/update/{model}",
+            )
+            resp_json = await get_firmware_from_web(self.aiohttp_session, url)
 
-        if not resp_json:
-            return None
+            if not resp_json:
+                return None
 
-        firmware = resp_json["stable"]["build_id"]
-        _LOGGER.debug(
+            self._latest_firmware.update({model: resp_json["stable"]["build_id"]})
+        _LOGGER.info(
             "Latest firmware for device %s [%s] is %s",
             self.name,
             self.ip_address,
-            firmware,
+            self._latest_firmware[model],
         )
-        return cast(str, firmware)
+        return self._latest_firmware[model]
 
     @property
     def requires_auth(self) -> bool:
@@ -396,17 +394,6 @@ class RpcDevice:
             raise InvalidAuthError
 
         return self._config
-
-    @property
-    def info(self) -> dict[str, Any]:
-        """Get device info."""
-        if not self.initialized:
-            raise NotInitialized
-
-        if self._info is None:
-            raise InvalidAuthError
-
-        return self._info
 
     @property
     def shelly(self) -> dict[str, Any]:

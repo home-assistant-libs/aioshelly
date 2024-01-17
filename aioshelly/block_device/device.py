@@ -7,6 +7,9 @@ from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, cast
+
+import async_timeout
+from aiohttp import ClientResponse, ClientResponseError, ClientSession
 from yarl import URL
 
 from ..common import (
@@ -77,6 +80,7 @@ class BlockDevice:
         self._settings: dict[str, Any] | None = None
         self._shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
+        self._latest_firmware: dict[str, Any] = {}
         sub_id = options.ip_address
         if options.device_mac:
             sub_id = options.device_mac[-6:]
@@ -354,20 +358,24 @@ class BlockDevice:
 
     async def get_latest_firmware(self) -> None | str:
         """Get the latest available firmware information from Shelly."""
-        url = URL.build(scheme="http", host="api.shelly.cloud", path="/files/firmware")
-        resp_json = await get_firmware_from_web(self.aiohttp_session, url)
+        if self._latest_firmware is {}:
+            _LOGGER.debug("Getting latest firmware information from Shelly Cloud")
+            url = URL.build(
+                scheme="http", host="api.shelly.cloud", path="/files/firmware"
+            )
+            resp_json = await get_firmware_from_web(self.aiohttp_session, url)
 
-        if not resp_json:
-            return None
+            if not resp_json:
+                return None
 
-        firmware = resp_json["data"][self.model]["version"]
-        _LOGGER.debug(
+            self._latest_firmware.update({"data": resp_json["data"]})
+        _LOGGER.info(
             "Latest firmware for device %s [%s] is %s",
             self.name,
             self.ip_address,
-            firmware,
+            self._latest_firmware["data"][self.model]["version"],
         )
-        return cast(str, firmware)
+        return cast(str, self._latest_firmware["data"][self.model]["version"])
 
     @property
     def requires_auth(self) -> bool:
