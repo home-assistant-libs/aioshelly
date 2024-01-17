@@ -358,7 +358,7 @@ class BlockDevice:
 
     async def get_latest_firmware(self) -> None | str:
         """Get the latest available firmware information from Shelly."""
-        if self._latest_firmware == {}:
+        if not self._latest_firmware:
             _LOGGER.debug("Getting latest firmware information from Shelly Cloud")
             url = URL.build(
                 scheme="http", host="api.shelly.cloud", path="/files/firmware"

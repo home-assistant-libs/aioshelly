@@ -322,7 +322,7 @@ class RpcDevice:
     async def get_latest_firmware(self) -> None | str:
         """Get the latest available firmware information from Shelly."""
         model = self.shelly["app"]
-        if self._latest_firmware == {} or not self._latest_firmware.get(model):
+        if not self._latest_firmware or not self._latest_firmware.get(model):
             _LOGGER.debug("Getting latest firmware information from Shelly Cloud")
             url = URL.build(
                 scheme="https",
