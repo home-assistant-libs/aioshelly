@@ -13,6 +13,7 @@ import aiohttp
 from yarl import URL
 
 from .const import (
+    BLOCK_GENERATIONS,
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
     GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
@@ -20,6 +21,7 @@ from .const import (
     GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
+    HTTP_CALL_TIMEOUT,
 )
 from .exceptions import (
     DeviceConnectionError,
@@ -137,3 +139,23 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     # We compare firmware release dates because Shelly version numbering is
     # inconsistent, sometimes the word is used as the version number.
     return int(match[0]) >= fw_ver
+
+
+async def trigger_ota_http(session: aiohttp.ClientSession, host: str, gen: int) -> bool:
+    """Trigger a firmware update via OTA http endpoint."""
+    if gen in BLOCK_GENERATIONS:
+        path = "ota"
+    else:
+        path = "rpc/Shelly.Update"
+    try:
+        await session.get(
+            URL.build(scheme="http", host=host, path=f"/{path}"),
+            timeout=HTTP_CALL_TIMEOUT,
+        )
+    except aiohttp.ClientResponseError:
+        return False
+    except CONNECT_ERRORS:
+        return False
+
+    _LOGGER.debug("Update in progress for device %s", host)
+    return True
