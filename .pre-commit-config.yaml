@@ -84,3 +84,15 @@ repos:
     hooks:
       - id: mypy
         files: ^aioshelly/.+\.py$
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args:
+          [
+            "-rn",   # Only display messages
+            "-sn",   # Don't display the score
+          ]
