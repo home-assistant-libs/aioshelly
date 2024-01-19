@@ -141,7 +141,12 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     return int(match[0]) >= fw_ver
 
 
-async def trigger_ota_http(session: aiohttp.ClientSession, host: str, gen: int) -> bool:
+async def trigger_ota_http(
+    session: aiohttp.ClientSession,
+    host: str,
+    gen: int,
+    auth: aiohttp.BasicAuth | None = None,
+) -> bool:
     """Trigger a firmware update via OTA http endpoint."""
     if gen in BLOCK_GENERATIONS:
         path = "ota"
@@ -150,6 +155,7 @@ async def trigger_ota_http(session: aiohttp.ClientSession, host: str, gen: int) 
     try:
         await session.get(
             URL.build(scheme="http", host=host, path=f"/{path}"),
+            auth=auth,
             timeout=HTTP_CALL_TIMEOUT,
         )
     except aiohttp.ClientResponseError:
