@@ -14,7 +14,13 @@ from aiohttp import ClientResponseError
 from aiohttp.client import ClientResponse
 from yarl import URL
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import (
+    ConnectionOptions,
+    IpOrOptionsType,
+    get_info,
+    process_ip_or_options,
+    trigger_ota_http,
+)
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
 from ..exceptions import (
     DeviceConnectionError,
@@ -312,18 +318,17 @@ class BlockDevice:
         """Change device mode color/white."""
         return await self.http_request("get", "settings", {"mode": mode})
 
-    async def trigger_ota_update(
-        self, beta: bool = False, url: str | None = None
-    ) -> dict[str, Any]:
+    async def trigger_ota_update(self, beta: bool = False) -> bool:
         """Trigger an ota update."""
-        params = {"update": "true"}
-
-        if url:
-            params = {"url": url}
-        elif beta:
-            params = {"beta": "true"}
-
-        return await self.http_request("get", "ota", params=params)
+        return await trigger_ota_http(
+            self.aiohttp_session,
+            self.hostname,
+            self.gen,
+            self.options.username,
+            self.options.password,
+            None,
+            beta,
+        )
 
     async def trigger_reboot(self) -> None:
         """Trigger a device reboot."""

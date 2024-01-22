@@ -29,6 +29,7 @@ from .exceptions import (
     MacAddressMismatchError,
     UnableToUpdateFirmware,
 )
+from .rpc_device.authentication import AuthData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -146,16 +147,28 @@ async def trigger_ota_http(
     session: aiohttp.ClientSession,
     host: str,
     gen: int,
-    auth: aiohttp.BasicAuth | None = None,
+    username: str | None,
+    password: str | None,
+    realm: str | None,
+    beta: bool = False,
 ) -> bool:
     """Trigger a firmware update via OTA http endpoint."""
     if gen in BLOCK_GENERATIONS:
         path = "/ota"
+        auth = aiohttp.BasicAuth(username, password) if username and password else None
+        params = {"beta": "true"} if beta else {"update": "true"}
     else:
         path = "/rpc/Shelly.Update"
+        auth = (
+            AuthData(realm, username, password).get_auth()
+            if username and password and realm
+            else None
+        )
+        params = {"stage": "beta"} if beta else {"stage": "stable"}
     try:
         await session.get(
             URL.build(scheme="http", host=host, path=path),
+            params=params,
             auth=auth,
             timeout=HTTP_CALL_TIMEOUT,
         )
