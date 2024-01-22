@@ -27,6 +27,7 @@ from .exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
     MacAddressMismatchError,
+    UnableToUpdateFirmware,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -149,19 +150,19 @@ async def trigger_ota_http(
 ) -> bool:
     """Trigger a firmware update via OTA http endpoint."""
     if gen in BLOCK_GENERATIONS:
-        path = "ota"
+        path = "/ota"
     else:
-        path = "rpc/Shelly.Update"
+        path = "/rpc/Shelly.Update"
     try:
         await session.get(
-            URL.build(scheme="http", host=host, path=f"/{path}"),
+            URL.build(scheme="http", host=host, path=path),
             auth=auth,
             timeout=HTTP_CALL_TIMEOUT,
         )
-    except aiohttp.ClientResponseError:
-        return False
-    except CONNECT_ERRORS:
-        return False
+    except aiohttp.ClientResponseError as exc:
+        raise UnableToUpdateFirmware from exc
+    except CONNECT_ERRORS as exc:
+        raise UnableToUpdateFirmware from exc
 
     _LOGGER.debug("Update in progress for device %s", host)
     return True
