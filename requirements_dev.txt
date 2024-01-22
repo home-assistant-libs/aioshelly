@@ -3,5 +3,5 @@
 requests
 types-requests
 pre-commit==3.6.0
-tox==4.12.0
+tox==4.12.1
 wheel==0.42.0
