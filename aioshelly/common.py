@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any, Union
 
-import aiohttp
+from aiohttp import BasicAuth, ClientResponse, ClientResponseError, ClientSession
 from yarl import URL
 
 from .const import (
@@ -20,12 +20,14 @@ from .const import (
     GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
+    HTTP_CALL_TIMEOUT,
 )
 from .exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
     MacAddressMismatchError,
 )
+from .json import json_loads
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ class ConnectionOptions:
     username: str | None = None
     password: str | None = None
     temperature_unit: str = "C"
-    auth: aiohttp.BasicAuth | None = None
+    auth: BasicAuth | None = None
     device_mac: str | None = None
 
     def __post_init__(self) -> None:
@@ -49,9 +51,7 @@ class ConnectionOptions:
             if self.password is None:
                 raise ValueError("Supply both username and password")
 
-            object.__setattr__(
-                self, "auth", aiohttp.BasicAuth(self.username, self.password)
-            )
+            object.__setattr__(self, "auth", BasicAuth(self.username, self.password))
 
 
 IpOrOptionsType = Union[str, ConnectionOptions]
@@ -76,7 +76,7 @@ async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOpt
 
 
 async def get_info(
-    aiohttp_session: aiohttp.ClientSession,
+    aiohttp_session: ClientSession,
     ip_address: str,
     device_mac: str | None = None,
 ) -> dict[str, Any]:
@@ -105,6 +105,25 @@ async def get_info(
         raise fw_error
 
     return result
+
+
+async def get_firmware_from_web(
+    aiohttp_session: ClientSession, url: URL
+) -> dict[str, Any]:
+    """Get latest available firmware from Shelly."""
+    try:
+        resp: ClientResponse = await aiohttp_session.get(
+            url,
+            timeout=HTTP_CALL_TIMEOUT,
+            ssl=False,
+        )
+    except ClientResponseError:
+        return {}
+    except CONNECT_ERRORS:
+        return {}
+
+    resp_json: dict[str, Any] = await resp.json(loads=json_loads)
+    return resp_json
 
 
 def shelly_supported_firmware(result: dict[str, Any]) -> bool:
