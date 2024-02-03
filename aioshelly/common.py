@@ -143,7 +143,7 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     return int(match[0]) >= fw_ver
 
 
-async def trigger_ota_http(
+async def trigger_ota_http(  # pylint: disable=too-many-arguments
     session: aiohttp.ClientSession,
     host: str,
     gen: int,
