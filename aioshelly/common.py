@@ -153,6 +153,7 @@ async def trigger_ota_http(
     beta: bool = False,
 ) -> bool:
     """Trigger a firmware update via OTA http endpoint."""
+    auth: aiohttp.BasicAuth | dict[str, Any] | None = None
     if gen in BLOCK_GENERATIONS:
         path = "/ota"
         auth = aiohttp.BasicAuth(username, password) if username and password else None
