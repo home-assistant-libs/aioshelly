@@ -18,6 +18,7 @@ from .const import (
     GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
     GEN1_MIN_FIRMWARE_DATE,
     GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
+    GEN1_MODELS_UNSUPPORTED,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
 )
@@ -113,10 +114,7 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     fw_ver: int
 
     if "fw" in result:
-        if result["type"] in [
-            "SHSW-44",
-            "SHSEN-1",
-        ]:
+        if result["type"] in GEN1_MODELS_UNSUPPORTED:
             return False
         fw_str = result["fw"]
         if result["type"] in GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION:

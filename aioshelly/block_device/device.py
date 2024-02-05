@@ -15,7 +15,7 @@ from aiohttp.client import ClientResponse
 from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT
+from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT, MODEL_RGBW2
 from ..exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
@@ -538,7 +538,7 @@ class LightBlock(Block, blk_type="light"):
 
     async def set_state(self, **kwargs: Any) -> dict[str, Any]:
         """Set light state."""
-        if self.device.settings["device"]["type"] == "SHRGBW2":
+        if self.device.settings["device"]["type"] == MODEL_RGBW2:
             path = f"{self.device.settings['mode']}/{self.channel}"
         else:
             path = f"{self.type}/{self.channel}"
