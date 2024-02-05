@@ -13,6 +13,7 @@ import aiohttp
 from yarl import URL
 
 from .const import (
+    BLOCK_GENERATIONS,
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
     GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
@@ -20,12 +21,15 @@ from .const import (
     GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
+    HTTP_CALL_TIMEOUT,
 )
 from .exceptions import (
     DeviceConnectionError,
     FirmwareUnsupported,
     MacAddressMismatchError,
+    UnableToUpdateFirmware,
 )
+from .rpc_device.authentication import AuthData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -137,3 +141,42 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     # We compare firmware release dates because Shelly version numbering is
     # inconsistent, sometimes the word is used as the version number.
     return int(match[0]) >= fw_ver
+
+
+async def trigger_ota_http(  # pylint: disable=too-many-arguments
+    session: aiohttp.ClientSession,
+    host: str,
+    gen: int,
+    username: str | None,
+    password: str | None,
+    realm: str | None,
+    beta: bool = False,
+) -> bool:
+    """Trigger a firmware update via OTA http endpoint."""
+    auth: aiohttp.BasicAuth | dict[str, Any] | None = None
+    if gen in BLOCK_GENERATIONS:
+        path = "/ota"
+        auth = aiohttp.BasicAuth(username, password) if username and password else None
+        params = {"beta": "true"} if beta else {"update": "true"}
+    else:
+        path = "/rpc/Shelly.Update"
+        auth = (
+            AuthData(realm, username, password).get_auth()
+            if username and password and realm
+            else None
+        )
+        params = {"stage": "beta"} if beta else {"stage": "stable"}
+    try:
+        await session.get(
+            URL.build(scheme="http", host=host, path=path),
+            params=params,
+            auth=auth,
+            timeout=HTTP_CALL_TIMEOUT,
+        )
+    except aiohttp.ClientResponseError as exc:
+        raise UnableToUpdateFirmware from exc
+    except CONNECT_ERRORS as exc:
+        raise UnableToUpdateFirmware from exc
+
+    _LOGGER.debug("Update in progress for device %s", host)
+    return True

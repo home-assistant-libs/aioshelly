@@ -46,6 +46,10 @@ class MacAddressMismatchError(ShellyError):
     """Raised if input MAC address does not match the device MAC address."""
 
 
+class UnableToUpdateFirmware(ShellyError):
+    """Raised if OTA is not able to complete the job."""
+
+
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 

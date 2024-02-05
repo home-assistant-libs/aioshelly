@@ -11,7 +11,13 @@ import aiohttp
 import async_timeout
 from aiohttp.client import ClientSession
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import (
+    ConnectionOptions,
+    IpOrOptionsType,
+    get_info,
+    process_ip_or_options,
+    trigger_ota_http,
+)
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
 from ..exceptions import (
     DeviceConnectionError,
@@ -217,10 +223,17 @@ class RpcDevice:
         """Subscribe to device status updates."""
         self._update_listener = update_listener
 
-    async def trigger_ota_update(self, beta: bool = False) -> None:
+    async def trigger_ota_update(self, beta: bool = False) -> bool:
         """Trigger an ota update."""
-        params = {"stage": "beta"} if beta else {"stage": "stable"}
-        await self.call_rpc("Shelly.Update", params)
+        return await trigger_ota_http(
+            self.aiohttp_session,
+            self.hostname,
+            self.gen,
+            self.options.username,
+            self.options.password,
+            self.shelly["auth_domain"],
+            beta,
+        )
 
     async def trigger_reboot(self, delay_ms: int = 1000) -> None:
         """Trigger a device reboot."""
