@@ -231,6 +231,7 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
                 data_normalized, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS
             )
         )
+        file.write(b"\n")
 
     sys.exit(0)
 

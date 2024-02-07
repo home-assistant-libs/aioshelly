@@ -1,0 +1,225 @@
+{
+  "config": {
+    "ble": {
+      "enable": false,
+      "observer": {
+        "enable": false
+      },
+      "rpc": {
+        "enable": true
+      }
+    },
+    "cloud": {
+      "enable": true,
+      "server": "shelly-9-eu.shelly.cloud:6022/jrpc"
+    },
+    "eth": {
+      "enable": true,
+      "gw": null,
+      "ip": null,
+      "ipv4mode": "dhcp",
+      "nameserver": null,
+      "netmask": null
+    },
+    "input:0": {
+      "enable": true,
+      "id": 0,
+      "invert": false,
+      "name": "Input Test Name 0",
+      "type": "switch"
+    },
+    "input:1": {
+      "enable": true,
+      "id": 1,
+      "invert": false,
+      "name": "Input Test Name 1",
+      "type": "switch"
+    },
+    "input:2": {
+      "enable": true,
+      "id": 2,
+      "invert": false,
+      "name": "Input Test Name 2",
+      "type": "switch"
+    },
+    "mqtt": {
+      "client_id": "shellypro3-aabbccddeeff",
+      "enable": false,
+      "enable_control": true,
+      "enable_rpc": true,
+      "rpc_ntf": true,
+      "server": null,
+      "ssl_ca": null,
+      "status_ntf": false,
+      "topic_prefix": "shellypro3-aabbccddeeff",
+      "use_client_cert": false,
+      "user": null
+    },
+    "switch:0": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "id": 0,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "Switch Test Name 0"
+    },
+    "switch:1": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "id": 1,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "Switch Test Name 1"
+    },
+    "switch:2": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "id": 2,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "Switch Test Name 2"
+    },
+    "sys": {
+      "cfg_rev": 23,
+      "debug": {
+        "file_level": null,
+        "level": 2,
+        "mqtt": {
+          "enable": false
+        },
+        "udp": {
+          "addr": null
+        },
+        "websocket": {
+          "enable": false
+        }
+      },
+      "device": {
+        "discoverable": true,
+        "eco_mode": true,
+        "fw_id": "20231219-133956/1.1.0-g34b5d4f",
+        "mac": "AABBCCDDEEFF",
+        "name": "Test Name"
+      },
+      "location": {
+        "lat": 45.4722,
+        "lon": 9.1922,
+        "tz": "Europe/Rome"
+      },
+      "rpc_udp": {
+        "dst_addr": null,
+        "listen_port": null
+      },
+      "sntp": {
+        "server": "192.168.1.10"
+      },
+      "ui_data": {}
+    },
+    "wifi": "Wifi-Network-Name",
+    "ws": {
+      "enable": false,
+      "server": null,
+      "ssl_ca": "ca.pem"
+    }
+  },
+  "shelly": {
+    "app": "Pro3",
+    "auth_domain": null,
+    "auth_en": false,
+    "fw_id": "20231219-133956/1.1.0-g34b5d4f",
+    "gen": 2,
+    "id": "shellypro3-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "model": "SPSW-003XE16EU",
+    "name": "Test Name",
+    "slot": 0,
+    "ver": "1.1.0"
+  },
+  "status": {
+    "ble": {},
+    "cloud": {
+      "connected": true
+    },
+    "eth": {
+      "ip": "192.168.1.106"
+    },
+    "input:0": {
+      "id": 0,
+      "state": false
+    },
+    "input:1": {
+      "id": 1,
+      "state": false
+    },
+    "input:2": {
+      "id": 2,
+      "state": false
+    },
+    "mqtt": {
+      "connected": false
+    },
+    "switch:0": {
+      "id": 0,
+      "output": false,
+      "source": "WS_in",
+      "temperature": {
+        "tC": 37.5,
+        "tF": 99.5
+      }
+    },
+    "switch:1": {
+      "id": 1,
+      "output": false,
+      "source": "WS_in",
+      "temperature": {
+        "tC": 37.5,
+        "tF": 99.5
+      }
+    },
+    "switch:2": {
+      "id": 2,
+      "output": false,
+      "source": "WS_in",
+      "temperature": {
+        "tC": 37.5,
+        "tF": 99.5
+      }
+    },
+    "sys": {
+      "available_updates": {
+        "beta": {
+          "version": "1.2.0-beta1"
+        }
+      },
+      "cfg_rev": 23,
+      "fs_free": 212992,
+      "fs_size": 524288,
+      "kvs_rev": 0,
+      "mac": "AABBCCDDEEFF",
+      "ram_free": 145828,
+      "ram_size": 244312,
+      "reset_reason": 3,
+      "restart_required": false,
+      "schedule_rev": 0,
+      "time": "18:28",
+      "unixtime": 1707326928,
+      "uptime": 2084007,
+      "webhook_rev": 0
+    },
+    "wifi": {
+      "rssi": 0,
+      "ssid": null,
+      "sta_ip": null,
+      "status": "disconnected"
+    },
+    "ws": {
+      "connected": false
+    }
+  }
+}

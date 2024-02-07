@@ -1,0 +1,165 @@
+{
+  "settings": {
+    "actions": {
+      "active": false,
+      "names": [
+        "alarm_off_url",
+        "alarm_mild_url",
+        "alarm_heavy_url"
+      ]
+    },
+    "allow_cross_origin": false,
+    "ap_roaming": {
+      "enabled": true,
+      "threshold": -70
+    },
+    "build_info": {
+      "build_id": "20230913-114427/v1.14.0-gcb84623",
+      "build_timestamp": "2023-09-13T11:44:27Z",
+      "build_version": "1.0"
+    },
+    "cloud": {
+      "connected": true,
+      "enabled": true
+    },
+    "coiot": {
+      "enabled": true,
+      "peer": "192.168.1.10:5683",
+      "update_period": 15
+    },
+    "debug_enable": false,
+    "device": {
+      "hostname": "shellygas-AABBCCDDEEFF",
+      "mac": "AABBCCDDEEFF",
+      "num_inputs": 0,
+      "num_outputs": 0,
+      "type": "SHGS-1"
+    },
+    "discoverable": false,
+    "eco_mode_enabled": true,
+    "fw": "20230913-114427/v1.14.0-gcb84623",
+    "hwinfo": {
+      "batch_id": 1,
+      "hw_revision": "prod-2020-04-09"
+    },
+    "lat": 45.472198,
+    "lng": 9.1922,
+    "login": {
+      "enabled": false,
+      "unprotected": false,
+      "username": "admin"
+    },
+    "mqtt": {
+      "clean_session": true,
+      "enable": false,
+      "id": "shellygas-AABBCCDDEEFF",
+      "keep_alive": 60,
+      "max_qos": 0,
+      "reconnect_timeout_max": 60.0,
+      "reconnect_timeout_min": 2.0,
+      "retain": false,
+      "server": "192.168.33.3:1883",
+      "update_period": 30,
+      "user": ""
+    },
+    "name": "Test Name",
+    "pin_code": "!Y7z@N",
+    "pon_wifi_reset": false,
+    "set_volume": 11,
+    "sntp": {
+      "enabled": true,
+      "server": "192.168.1.10"
+    },
+    "time": "18:28",
+    "timezone": "Europe/Rome",
+    "tz_dst": false,
+    "tz_dst_auto": true,
+    "tz_utc_offset": 3600,
+    "tzautodetect": true,
+    "unixtime": 1707326929,
+    "wifi_ap": {
+      "enabled": false,
+      "key": "",
+      "ssid": "shellygas-AABBCCDDEEFF"
+    },
+    "wifi_sta": {
+      "dns": null,
+      "enabled": true,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": "Wifi-Network-Name"
+    },
+    "wifi_sta1": {
+      "dns": null,
+      "enabled": false,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": null
+    }
+  },
+  "shelly": {
+    "auth": false,
+    "discoverable": false,
+    "fw": "20230913-114427/v1.14.0-gcb84623",
+    "longid": 1,
+    "mac": "AABBCCDDEEFF",
+    "name": "Test Name",
+    "num_inputs": 0,
+    "num_outputs": 0,
+    "type": "SHGS-1"
+  },
+  "status": {
+    "actions_stats": {
+      "skipped": 0
+    },
+    "cfg_changed_cnt": 0,
+    "cloud": {
+      "connected": true,
+      "enabled": true
+    },
+    "concentration": {
+      "is_valid": true,
+      "ppm": 0
+    },
+    "fs_free": 92117,
+    "fs_size": 233681,
+    "gas_sensor": {
+      "alarm_state": "none",
+      "self_test_state": "not_completed",
+      "sensor_state": "normal"
+    },
+    "has_update": false,
+    "mac": "AABBCCDDEEFF",
+    "mqtt": {
+      "connected": false
+    },
+    "ram_free": 40524,
+    "ram_total": 52528,
+    "serial": 790,
+    "time": "18:28",
+    "unixtime": 1707326929,
+    "update": {
+      "beta_version": "20231107-165146/v1.14.1-rc1-g0617c15",
+      "has_update": false,
+      "new_version": "20230913-114427/v1.14.0-gcb84623",
+      "old_version": "20230913-114427/v1.14.0-gcb84623",
+      "status": "idle"
+    },
+    "uptime": 1468391,
+    "valves": [
+      {
+        "state": "not_connected"
+      }
+    ],
+    "wifi_sta": {
+      "connected": true,
+      "ip": "192.168.1.66",
+      "rssi": -62,
+      "ssid": "Wifi-Network-Name"
+    }
+  }
+}

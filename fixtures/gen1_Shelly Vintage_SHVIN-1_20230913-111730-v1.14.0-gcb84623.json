@@ -1,0 +1,199 @@
+{
+  "settings": {
+    "actions": {
+      "active": false,
+      "names": [
+        "out_on_url",
+        "out_off_url"
+      ]
+    },
+    "allow_cross_origin": false,
+    "ap_roaming": {
+      "enabled": true,
+      "threshold": -70
+    },
+    "build_info": {
+      "build_id": "20230913-111730/v1.14.0-gcb84623",
+      "build_timestamp": "2023-09-13T11:17:30Z",
+      "build_version": "1.0"
+    },
+    "cloud": {
+      "connected": true,
+      "enabled": true
+    },
+    "coiot": {
+      "enabled": true,
+      "peer": "192.168.1.10:5683",
+      "update_period": 15
+    },
+    "debug_enable": false,
+    "device": {
+      "hostname": "ShellyVintage-AABBCCDDEEFF",
+      "mac": "AABBCCDDEEFF",
+      "num_outputs": 1,
+      "type": "SHVIN-1"
+    },
+    "discoverable": false,
+    "eco_mode_enabled": true,
+    "fw": "20230913-111730/v1.14.0-gcb84623",
+    "hwinfo": {
+      "batch_id": 0,
+      "hw_revision": "prod-102020"
+    },
+    "lat": 45.472198,
+    "lights": [
+      {
+        "auto_off": 0.0,
+        "auto_on": 0.0,
+        "brightness": 100,
+        "default_state": "last",
+        "ison": false,
+        "name": null,
+        "night_mode": {
+          "brightness": 0,
+          "enabled": false,
+          "end_time": "00:00",
+          "start_time": "00:00"
+        },
+        "schedule": false,
+        "schedule_rules": [],
+        "transition": 1000
+      }
+    ],
+    "lng": 9.1922,
+    "login": {
+      "enabled": false,
+      "unprotected": false,
+      "username": "admin"
+    },
+    "mode": "white",
+    "mqtt": {
+      "clean_session": true,
+      "enable": false,
+      "id": "ShellyVintage-AABBCCDDEEFF",
+      "keep_alive": 60,
+      "max_qos": 0,
+      "reconnect_timeout_max": 60.0,
+      "reconnect_timeout_min": 2.0,
+      "retain": false,
+      "server": "192.168.33.3:1883",
+      "update_period": 30,
+      "user": ""
+    },
+    "name": "Test Name",
+    "night_mode": {
+      "brightness": 0,
+      "enabled": false,
+      "end_time": "00:00",
+      "start_time": "00:00"
+    },
+    "pin_code": "",
+    "pon_wifi_reset": false,
+    "sntp": {
+      "enabled": true,
+      "server": "192.168.1.10"
+    },
+    "time": "18:28",
+    "timezone": "Europe/Rome",
+    "transition": 1000,
+    "tz_dst": false,
+    "tz_dst_auto": true,
+    "tz_utc_offset": 3600,
+    "tzautodetect": true,
+    "unixtime": 1707326930,
+    "wifi_ap": {
+      "enabled": false,
+      "key": "",
+      "ssid": "ShellyVintage-AABBCCDDEEFF"
+    },
+    "wifi_sta": {
+      "dns": null,
+      "enabled": true,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": "Wifi-Network-Name"
+    },
+    "wifi_sta1": {
+      "dns": null,
+      "enabled": false,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": null
+    }
+  },
+  "shelly": {
+    "auth": false,
+    "discoverable": false,
+    "fw": "20230913-111730/v1.14.0-gcb84623",
+    "longid": 1,
+    "mac": "AABBCCDDEEFF",
+    "name": "Test Name",
+    "num_outputs": 1,
+    "type": "SHVIN-1"
+  },
+  "status": {
+    "actions_stats": {
+      "skipped": 0
+    },
+    "cfg_changed_cnt": 0,
+    "cloud": {
+      "connected": true,
+      "enabled": true
+    },
+    "fs_free": 163903,
+    "fs_size": 233681,
+    "has_update": false,
+    "lights": [
+      {
+        "brightness": 100,
+        "has_timer": false,
+        "ison": false,
+        "source": "http",
+        "timer_duration": 0,
+        "timer_remaining": 0,
+        "timer_started": 0,
+        "transition": 0
+      }
+    ],
+    "mac": "AABBCCDDEEFF",
+    "meters": [
+      {
+        "counters": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_valid": true,
+        "power": 0.0,
+        "timestamp": 1707330530,
+        "total": 1
+      }
+    ],
+    "mqtt": {
+      "connected": false
+    },
+    "ram_free": 40444,
+    "ram_total": 52344,
+    "serial": 19777,
+    "time": "18:28",
+    "unixtime": 1707326930,
+    "update": {
+      "beta_version": "20231107-162609/v1.14.1-rc1-g0617c15",
+      "has_update": false,
+      "new_version": "20230913-111730/v1.14.0-gcb84623",
+      "old_version": "20230913-111730/v1.14.0-gcb84623",
+      "status": "idle"
+    },
+    "uptime": 895103,
+    "wifi_sta": {
+      "connected": true,
+      "ip": "192.168.1.80",
+      "rssi": -41,
+      "ssid": "Wifi-Network-Name"
+    }
+  }
+}
