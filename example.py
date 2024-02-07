@@ -282,6 +282,8 @@ async def main() -> None:
     await coap_context.initialize(args.coap_port)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
+    if not args.init and not (args.gen1 or args.gen2 or args.gen3):
+        parser.error("specify gen if no device init at startup")
     if args.gen1 and args.gen2:
         parser.error("--gen1 and --gen2 can't be used together")
     elif args.gen1 and args.gen3:
