@@ -6,15 +6,16 @@ import argparse
 import asyncio
 import json
 import logging
-import os
 import signal
 import sys
 import traceback
 from datetime import datetime
+from pathlib import Path
 from types import FrameType
 from typing import Any, cast
 
 import aiohttp
+from orjson import orjson
 
 import aioshelly
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
@@ -216,16 +217,21 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
         data_raw.update({"config": device.config})
         data_normalized = _normalize_rpc_data(data_raw)
 
-    folder = "fixtures"
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    with open(
-        f"{folder}/gen{device.gen} - {device.model} - {MODEL_NAMES[device.model]}.json",
-        "w",
-        encoding="utf-8",
-    ) as file:
-        json.dump(data_normalized, file, ensure_ascii=False, indent=4)
-        file.write("\n")
+    gen = device.gen
+    model = device.model
+    name = MODEL_NAMES.get(model, "Unknown")
+    version = device.firmware_version.replace("/", "-")
+    fixture_path = Path("fixtures") / f"gen{gen}_{name}_{model}_{version}.json"
+
+    print(f"Saving fixture to {fixture_path}")
+
+    with open(fixture_path, "wb") as file:
+        file.write(
+            orjson.dumps(
+                data_normalized, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS
+            )
+        )
+
     sys.exit(0)
 
 
