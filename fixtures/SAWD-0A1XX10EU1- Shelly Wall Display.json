@@ -1,0 +1,247 @@
+{
+    "config": {
+        "ble": {
+            "enable": false,
+            "rpc": {
+                "enable": true
+            },
+            "observer": {
+                "enable": false
+            }
+        },
+        "wifi": "Wifi-Network-Name",
+        "switch:0": {
+            "id": 0,
+            "auto_off": false,
+            "auto_on_delay": 0,
+            "initial_state": "off",
+            "in_mode": "follow",
+            "name": "Switch Test Name 0"
+        },
+        "input:0": {
+            "id": 0,
+            "type": "switch",
+            "invert": false,
+            "factory_reset": true,
+            "name": "Input Test Name 0"
+        },
+        "temperature:0": {
+            "id": 0,
+            "report_thr_C": 1,
+            "offset_C": 0,
+            "name": null
+        },
+        "humidity:0": {
+            "id": 0,
+            "report_thr": 1,
+            "offset": 0,
+            "name": null
+        },
+        "illuminance:0": {
+            "id": 0,
+            "bright_thr": 200,
+            "dark_thr": 30,
+            "name": null
+        },
+        "ui": {
+            "screen_saver": {
+                "enable": true,
+                "timeout": 10,
+                "show_clock": true,
+                "show_humidity": true,
+                "show_temperature": true
+            },
+            "lock_type": "none",
+            "disable_gestures_when_locked": false,
+            "show_favourites": false,
+            "show_main_sensor_graph": true,
+            "use_F": false,
+            "brightness": {
+                "auto": true,
+                "level": 0,
+                "auto_off": {
+                    "enable": true,
+                    "by_lux": false
+                }
+            },
+            "screen_off_when_idle": true,
+            "relay_state_overlay": {
+                "enable": true,
+                "always_visible": false
+            }
+        },
+        "sys": {
+            "device": {
+                "name": "Test Name",
+                "fw_id": "20240115-105444/1.2.8-59063a9a",
+                "mac": "AABBCCDDEEFF",
+                "discoverable": false,
+                "eco_mode": true
+            },
+            "cfg_rev": 32,
+            "location": {
+                "tz": "Europe/Rome",
+                "lat": 45.4722,
+                "lon": 9.1922
+            },
+            "sntp": {
+                "server": "192.168.1.10"
+            },
+            "debug": {
+                "websocket": {
+                    "enable": true
+                },
+                "mqtt": {
+                    "enable": false
+                },
+                "logs": {
+                    "Generic": true,
+                    "Bluetooth": true,
+                    "Cloud": true,
+                    "Interface": true,
+                    "Network": true,
+                    "RPC": true,
+                    "Thermostat": true,
+                    "Screen": true,
+                    "UART": true,
+                    "Webhooks": true,
+                    "WebSocket": true
+                }
+            }
+        },
+        "cloud": {
+            "enable": true,
+            "server": "shelly-9-eu.shelly.cloud:6022/jrpc"
+        },
+        "mqtt": {
+            "enable": false,
+            "client_id": "ShellyWallDisplay-AABBCCDDEEFF",
+            "topic_prefix": "ShellyWallDisplay-AABBCCDDEEFF"
+        },
+        "ws": {
+            "enable": false,
+            "ssl_ca": "ca.pem"
+        },
+        "thermostat:0": {
+            "id": 0,
+            "enable": true,
+            "sensor": "shelly://shellywalldisplay-aabbccddeeff/c/temperature:0",
+            "type": "heating",
+            "actuator": "shelly://shellywalldisplay-aabbccddeeff/c/switch:0",
+            "hysteresis": 1,
+            "invert_output": false,
+            "display_unit": "C",
+            "target_C": 21,
+            "name": null
+        },
+        "awaiting_auth_code": false
+    },
+    "shelly": {
+        "id": "ShellyWallDisplay-AABBCCDDEEFF",
+        "mac": "AABBCCDDEEFF",
+        "model": "SAWD-0A1XX10EU1",
+        "gen": 2,
+        "fw_id": "20240115-105444/1.2.8-59063a9a",
+        "ver": "1.2.8",
+        "app": "WallDisplay",
+        "auth_en": false,
+        "uptime": 1921615,
+        "app_uptime": 543232,
+        "discoverable": false,
+        "cfg_rev": 32,
+        "schedule_rev": 0,
+        "webhook_rev": 0,
+        "platform": "vXD10000M2",
+        "available_updates": {
+            "stable": {
+                "version": "1.2.8",
+                "build_id": "20240115-105444/1.2.8-59063a9a"
+            }
+        },
+        "restart_required": false,
+        "unixtime": 1707310177,
+        "relay_in_thermostat": true,
+        "sensor_in_thermostat": true,
+        "name": "Test Name"
+    },
+    "status": {
+        "ble": {},
+        "cloud": {
+            "connected": true
+        },
+        "mqtt": {
+            "connected": false
+        },
+        "temperature:0": {
+            "id": 0,
+            "tC": 21.5,
+            "tF": 70.7
+        },
+        "humidity:0": {
+            "id": 0,
+            "rh": 44.9
+        },
+        "illuminance:0": {
+            "id": 0,
+            "lux": 30,
+            "illumination": "twilight"
+        },
+        "switch:0": {
+            "id": 0,
+            "output": false,
+            "source": "THERMOSTAT"
+        },
+        "input:0": {
+            "id": 0,
+            "state": false
+        },
+        "sys": {
+            "id": "ShellyWallDisplay-AABBCCDDEEFF",
+            "mac": "AABBCCDDEEFF",
+            "model": "SAWD-0A1XX10EU1",
+            "gen": 2,
+            "fw_id": "20240115-105444/1.2.8-59063a9a",
+            "ver": "1.2.8",
+            "app": "WallDisplay",
+            "auth_en": false,
+            "uptime": 1921615,
+            "app_uptime": 543232,
+            "discoverable": false,
+            "cfg_rev": 32,
+            "schedule_rev": 0,
+            "webhook_rev": 0,
+            "platform": "vXD10000M2",
+            "available_updates": {
+                "stable": {
+                    "version": "1.2.8",
+                    "build_id": "20240115-105444/1.2.8-59063a9a"
+                }
+            },
+            "restart_required": false,
+            "unixtime": 1707310178,
+            "relay_in_thermostat": true,
+            "sensor_in_thermostat": true
+        },
+        "wifi": {
+            "sta_ip": "192.168.1.78",
+            "status": "got ip",
+            "mac": "11:22:33:44:55:66",
+            "ssid": "Wifi-Network-Name",
+            "rssi": -65,
+            "netmask": "255.255.255.0",
+            "gw": "192.168.1.1",
+            "nameserver": "192.168.1.10"
+        },
+        "awaiting_auth_code": false,
+        "thermostat:0": {
+            "id": 0,
+            "enable": true,
+            "target_C": 21,
+            "current_C": 21.5,
+            "output": false,
+            "schedules": {
+                "enable": false
+            }
+        }
+    }
+}
