@@ -241,6 +241,7 @@ def _replacement_values() -> dict[str, Any]:
         "wifi": "Wifi-Network-Name",
         "wifi_mac": "11:22:33:44:55:66",
         "device_mac": "AABBCCDDEEFF",
+        "device_short_mac": "DDEEFF",
         "device_name": "Test Name",
         "switch_name": "Switch Test Name",
         "input_name": "Input Test Name",
@@ -256,6 +257,7 @@ def _normalize_block_data(data: dict[str, Any]) -> dict[str, Any]:
     values = _replacement_values()
 
     real_mac: str = status["mac"]
+    short_mac: str = status["mac"][6:12]
 
     # Shelly endpoint
     shelly["name"] = values["device_name"]
@@ -268,22 +270,37 @@ def _normalize_block_data(data: dict[str, Any]) -> dict[str, Any]:
         status["wifi_sta"]["ssid"] = values["wifi"]
 
     # Config endpoint
+
+    # Some devices use short MAC (uppercase/lowercase)
     settings["device"]["hostname"] = settings["device"]["hostname"].replace(
         real_mac, values["device_mac"]
     )
+    settings["device"]["hostname"] = settings["device"]["hostname"].replace(
+        short_mac, values["device_short_mac"]
+    )
     settings["device"]["mac"] = values["device_mac"]
 
-    # Some devices use MAC uppercase, others lowercase
+    # Some devices use MAC and short MAC (uppercase/lowercase)
     settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
         real_mac, values["device_mac"]
     )
     settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
         real_mac.lower(), values["device_mac"].lower()
     )
+    settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
+        short_mac, values["device_short_mac"]
+    )
+    settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
+        short_mac.lower(), values["device_short_mac"].lower()
+    )
 
     settings["name"] = values["device_name"]
+    # Some devices use MAC and short MAC (uppercase/lowercase)
     settings["wifi_ap"]["ssid"] = settings["wifi_ap"]["ssid"].replace(
         real_mac, values["device_mac"]
+    )
+    settings["wifi_ap"]["ssid"] = settings["wifi_ap"]["ssid"].replace(
+        short_mac, values["device_short_mac"]
     )
     settings["wifi_sta"]["ssid"] = values["wifi"]
 
