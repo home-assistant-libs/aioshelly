@@ -166,7 +166,7 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
 
     if device.gen in BLOCK_GENERATIONS:
         print_block_device(cast(BlockDevice, device))
-    elif device.gen == RPC_GENERATIONS:
+    elif device.gen in RPC_GENERATIONS:
         print_rpc_device(cast(RpcDevice, device))
 
 
