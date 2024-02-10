@@ -1,4 +1,5 @@
 """Shelly exceptions."""
+
 from __future__ import annotations
 
 # Internal or run time errors:

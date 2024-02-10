@@ -1,4 +1,5 @@
 """Shelly Gen2 RPC based device models."""
+
 from __future__ import annotations
 
 from typing import TypedDict

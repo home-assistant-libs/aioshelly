@@ -1,4 +1,5 @@
 """WsRpc for Shelly."""
+
 from __future__ import annotations
 
 import asyncio

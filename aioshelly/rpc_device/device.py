@@ -1,4 +1,5 @@
 """Shelly Gen2 RPC based device."""
+
 from __future__ import annotations
 
 import asyncio

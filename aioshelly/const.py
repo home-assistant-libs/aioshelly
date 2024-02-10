@@ -1,4 +1,5 @@
 """Constants for aioshelly."""
+
 import asyncio
 
 import aiohttp

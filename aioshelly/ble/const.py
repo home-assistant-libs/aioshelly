@@ -1,4 +1,5 @@
 """Shelly Gen2+ BLE support."""
+
 from __future__ import annotations
 
 BLE_SCAN_RESULT_EVENT = "ble.scan_result"
