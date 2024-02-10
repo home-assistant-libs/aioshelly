@@ -1,4 +1,5 @@
 """Verify script that downloads all Coiot examples from the Shelly website and checks to make sure that we can parse them."""
+
 import json
 import logging
 import re
