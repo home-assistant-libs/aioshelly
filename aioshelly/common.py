@@ -1,4 +1,5 @@
 """Common code for Shelly library."""
+
 from __future__ import annotations
 
 import asyncio

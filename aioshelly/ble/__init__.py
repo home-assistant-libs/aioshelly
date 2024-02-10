@@ -1,4 +1,5 @@
 """Shelly Gen2 BLE support."""
+
 from __future__ import annotations
 
 import logging

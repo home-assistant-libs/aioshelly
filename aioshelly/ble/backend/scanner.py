@@ -1,4 +1,5 @@
 """Bluetooth scanner for shelly."""
+
 from __future__ import annotations
 
 import logging

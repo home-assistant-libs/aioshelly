@@ -1,4 +1,5 @@
 """Shelly Gen1 CoAP block based device."""
+
 from __future__ import annotations
 
 import asyncio
