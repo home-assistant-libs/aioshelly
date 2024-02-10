@@ -233,7 +233,9 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
         )
         file.write(b"\n")
 
-    sys.exit(0)
+    coap_context.close()
+    ws_context.close()
+    sys.exit()
 
 
 def _replacement_values() -> dict[str, Any]:
