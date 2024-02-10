@@ -249,6 +249,7 @@ def _replacement_values() -> dict[str, Any]:
         "em_name": "Energy Monitor Test Name",
         "mqtt_server": "mqtt.test.server",
         "sntp_server": "sntp.test.server",
+        "coiot_peer": "home-assistant.server:8123",
     }
 
 
@@ -273,6 +274,9 @@ def _normalize_block_data(data: dict[str, Any]) -> dict[str, Any]:
         status["wifi_sta"]["ssid"] = values["wifi"]
 
     # Config endpoint
+
+    if settings["coiot"].get("peer"):
+        settings["coiot"]["peer"] = values["coiot_peer"]
 
     # Some devices use short MAC (uppercase/lowercase)
     settings["device"]["hostname"] = settings["device"]["hostname"].replace(
