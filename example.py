@@ -245,7 +245,10 @@ def _replacement_values() -> dict[str, Any]:
         "device_name": "Test Name",
         "switch_name": "Switch Test Name",
         "input_name": "Input Test Name",
+        "script_name": "Script Test Name",
         "em_name": "Energy Monitor Test Name",
+        "mqtt_server": "mqtt.test.server",
+        "sntp_server": "sntp.test.server",
     }
 
 
@@ -333,6 +336,7 @@ def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
     config["mqtt"]["client_id"] = config["mqtt"]["client_id"].replace(
         real_mac.lower(), values["device_mac"].lower()
     )
+    config["mqtt"]["server"] = values["mqtt_server"]
 
     if config["mqtt"].get("topic_prefix"):
         # Some devices use MAC uppercase, others lowercase
@@ -342,6 +346,9 @@ def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
         config["mqtt"]["topic_prefix"] = config["mqtt"]["topic_prefix"].replace(
             real_mac.lower(), values["device_mac"].lower()
         )
+
+    if config["sys"].get("sntp"):
+        config["sys"]["sntp"]["server"] = values["sntp_server"]
 
     for id_ in range(5):
         if config.get(f"thermostat:{id_}"):
@@ -361,6 +368,9 @@ def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
         if config.get(f"em:{id_}"):
             config[f"em:{id_}"]["name"] = f"{values['em_name']} {id_}"
 
+        if config.get(f"script:{id_}"):
+            config[f"script:{id_}"]["name"] = f"{values['script_name']} {id_}"
+
     if config.get("wifi"):
         config["wifi"] = values["wifi"]
 
@@ -370,6 +380,14 @@ def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
     shelly["id"] = shelly["id"].replace(real_mac, values["device_mac"])
     shelly["id"] = shelly["id"].replace(real_mac.lower(), values["device_mac"].lower())
     shelly["mac"] = values["device_mac"]
+
+    if shelly.get("auth_domain"):
+        shelly["auth_domain"] = shelly["auth_domain"].replace(
+            real_mac, values["device_mac"]
+        )
+        shelly["auth_domain"] = shelly["auth_domain"].replace(
+            real_mac.lower(), values["device_mac"].lower()
+        )
 
     # Status endpoint
     status["sys"]["mac"] = values["device_mac"]
