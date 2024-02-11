@@ -10,6 +10,7 @@ import signal
 import sys
 import traceback
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 from types import FrameType
 from typing import Any, cast
@@ -82,7 +83,7 @@ async def test_single(
 
         print_device(device, dump)
 
-        device.subscribe_updates(device_updated)
+        device.subscribe_updates(partial(device_updated, dump=dump))
 
         while True:
             await asyncio.sleep(0.1)
@@ -142,17 +143,19 @@ async def connect_and_print_device(
     """Connect and print device data."""
     device = await create_device(aiohttp_session, options, init, gen)
     print_device(device, dump)
-    device.subscribe_updates(device_updated)
+    device.subscribe_updates(partial(device_updated, dump=dump))
 
 
 def device_updated(
-    cb_device: BlockDevice | RpcDevice, update_type: BlockUpdateType | RpcUpdateType
+    cb_device: BlockDevice | RpcDevice,
+    update_type: BlockUpdateType | RpcUpdateType,
+    dump: bool = False,
 ) -> None:
     """Device updated callback."""
     print()
     print(f"{datetime.now().strftime('%H:%M:%S')} Device updated! ({update_type})")
     try:
-        print_device(cb_device, False)
+        print_device(cb_device, dump)
     except InvalidAuthError:
         print("Invalid or missing authorization (from async init)")
 
