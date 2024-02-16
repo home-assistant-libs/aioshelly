@@ -278,17 +278,18 @@ class BlockDevice:
         return event
 
     async def http_request(
-        self, method: str, path: str, params: Any | None = None
+        self, method: str, path: str, params: Any | None = None, retry: bool = True
     ) -> dict[str, Any]:
         """Device HTTP request."""
         if self.options.auth is None and self.requires_auth:
             raise InvalidAuthError("auth missing and required")
 
-        _LOGGER.debug("aiohttp request: /%s (params=%s)", path, params)
+        host = self.options.ip_address
+        _LOGGER.debug("host %s: http request: /%s (params=%s)", host, path, params)
         try:
             resp: ClientResponse = await self.aiohttp_session.request(
                 method,
-                URL.build(scheme="http", host=self.options.ip_address, path=f"/{path}"),
+                URL.build(scheme="http", host=host, path=f"/{path}"),
                 params=params,
                 auth=self.options.auth,
                 raise_for_status=True,
@@ -303,6 +304,13 @@ class BlockDevice:
             raise DeviceConnectionError from err
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
+            if retry:
+                _LOGGER.debug("host %s: http request error: %r", host, self._last_error)
+                return await self.http_request(method, path, params, retry=False)
+
+            _LOGGER.debug(
+                "host %s: http request retry error: %r", host, self._last_error
+            )
             raise DeviceConnectionError from err
 
         resp_json = await resp.json(loads=json_loads)
