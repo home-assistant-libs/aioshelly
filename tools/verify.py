@@ -43,8 +43,7 @@ class CoiotExample:
     @reify
     def content(self):
         """Get file content."""
-        return requests.get(self.url, timeout=DEVICE_IO_TIMEOUT,
-                            verify=False).text
+        return requests.get(self.url, timeout=DEVICE_IO_TIMEOUT, verify=False).text
 
     @reify
     def content_parsed(self):
@@ -90,8 +89,8 @@ class CoiotExample:
     def device(self):
         """Create mocked device."""
         device = BlockDevice(Mock(), None, ConnectionOptions("mock-ip"))
-        device._update_d(self.cit_d) # pylint: disable=protected-access
-        device._update_s(self.cit_s, CoapType.REPLY) # pylint: disable=protected-access
+        device._update_d(self.cit_d)  # pylint: disable=protected-access
+        device._update_s(self.cit_s, CoapType.REPLY)  # pylint: disable=protected-access
         return device
 
 
