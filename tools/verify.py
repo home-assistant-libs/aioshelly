@@ -11,7 +11,10 @@ import requests
 import urllib3
 from aiohttp.helpers import reify
 
-import aioshelly
+from aioshelly.block_device import BLOCK_VALUE_UNIT, BlockDevice
+from aioshelly.block_device.coap import CoapType
+from aioshelly.common import ConnectionOptions
+from aioshelly.const import DEVICE_IO_TIMEOUT
 
 urllib3.disable_warnings()
 
@@ -40,7 +43,7 @@ class CoiotExample:
     @reify
     def content(self):
         """Get file content."""
-        return requests.get(self.url, verify=False).text
+        return requests.get(self.url, timeout=DEVICE_IO_TIMEOUT, verify=False).text
 
     @reify
     def content_parsed(self):
@@ -85,9 +88,9 @@ class CoiotExample:
     @reify
     def device(self):
         """Create mocked device."""
-        device = aioshelly.Device(Mock(), None, aioshelly.ConnectionOptions("mock-ip"))
-        device._update_d(self.cit_d)
-        device._update_s(self.cit_s)
+        device = BlockDevice(Mock(), None, ConnectionOptions("mock-ip"))
+        device._update_d(self.cit_d)  # pylint: disable=protected-access
+        device._update_s(self.cit_s, CoapType.REPLY)  # pylint: disable=protected-access
         return device
 
 
@@ -96,6 +99,7 @@ def coiot_examples():
     index = requests.get(
         BASE_URL,
         # Not sure, local machine barfs on their cert
+        timeout=DEVICE_IO_TIMEOUT,
         verify=False,
     ).text
     return [
@@ -118,8 +122,8 @@ def print_example(example):
             if value is None:
                 value = "None"
 
-            if aioshelly.BLOCK_VALUE_UNIT in info:
-                unit = " " + info[aioshelly.BLOCK_VALUE_UNIT]
+            if BLOCK_VALUE_UNIT in info:
+                unit = " " + info[BLOCK_VALUE_UNIT]
             else:
                 unit = ""
 
@@ -136,7 +140,7 @@ def run():
     for example in coiot_examples():
         try:
             print_example(example)
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             errors.append((example, err))
             break
 
