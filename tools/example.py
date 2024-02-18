@@ -21,16 +21,22 @@ from aioshelly.exceptions import (
     MacAddressMismatchError,
     WrongShellyGen,
 )
-from tools.common import CommonTools, coap_context, ws_context
+from tools.common import (
+    coap_context,
+    connect_and_print_device,
+    create_device,
+    device_updated,
+    print_device,
+    update_outbound_ws,
+    ws_context,
+)
 
 
-async def test_single(
-    common: CommonTools, options: ConnectionOptions, init: bool, gen: int | None
-) -> None:
+async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -> None:
     """Test single device."""
     async with aiohttp.ClientSession() as aiohttp_session:
         try:
-            device = await common.create_device(aiohttp_session, options, init, gen)
+            device = await create_device(aiohttp_session, options, init, gen)
         except FirmwareUnsupported as err:
             print(f"Device firmware not supported, error: {repr(err)}")
             return
@@ -47,15 +53,15 @@ async def test_single(
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
             return
 
-        common.print_device(device)
+        print_device(device)
 
-        device.subscribe_updates(common.device_updated)
+        device.subscribe_updates(device_updated)
 
         while True:
             await asyncio.sleep(0.1)
 
 
-async def test_devices(common: CommonTools, init: bool, gen: int | None) -> None:
+async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     device_options = []
     with open("devices.json", encoding="utf8") as fp:
@@ -66,9 +72,7 @@ async def test_devices(common: CommonTools, init: bool, gen: int | None) -> None
         results = await asyncio.gather(
             *[
                 asyncio.gather(
-                    common.connect_and_print_device(
-                        aiohttp_session, options, init, gen
-                    ),
+                    connect_and_print_device(aiohttp_session, options, init, gen),
                 )
                 for options in device_options
             ],
@@ -175,8 +179,6 @@ async def main() -> None:
     await coap_context.initialize(args.coap_port)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
-    common = CommonTools()
-
     if not args.init and not (args.gen1 or args.gen2 or args.gen3):
         parser.error("specify gen if no device init at startup")
     if args.gen1 and args.gen2:
@@ -206,7 +208,7 @@ async def main() -> None:
     signal.signal(signal.SIGINT, handle_sigint)  # type: ignore [func-returns-value]
 
     if args.devices:
-        await test_devices(common, args.init, gen)
+        await test_devices(args.init, gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
@@ -214,9 +216,9 @@ async def main() -> None:
             args.ip_address, args.username, args.password, device_mac=args.mac
         )
         if args.update_ws:
-            await common.update_outbound_ws(options, args.init, args.update_ws)
+            await update_outbound_ws(options, args.init, args.update_ws)
         else:
-            await test_single(common, options, args.init, gen)
+            await test_single(options, args.init, gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
