@@ -65,13 +65,13 @@ async def connect_and_save(
 
 def save_endpoints(device: BlockDevice | RpcDevice) -> None:
     """Save device endpoints."""
-    data_raw = {"shelly": device.shelly, "status": device.status}
+    data_raw = {"shelly": device.shelly.copy(), "status": device.status.copy()}
 
     if device.gen in BLOCK_GENERATIONS:
-        data_raw.update({"settings": device.settings})
+        data_raw.update({"settings": device.settings.copy()})
         data_normalized = _redact_block_data(data_raw)
     else:
-        data_raw.update({"config": device.config})
+        data_raw.update({"config": device.config.copy()})
         data_normalized = _redact_rpc_data(data_raw)
 
     gen = device.gen
@@ -183,10 +183,11 @@ def _redact_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
     shelly: dict[str, Any] = data["shelly"]
 
     real_mac: str = status["sys"]["mac"]
+    device = config["sys"]["device"]
 
     # Config endpoint
-    config["sys"]["device"]["name"] = NORMALIZE_VALUES["device_name"]
-    config["sys"]["device"]["mac"] = NORMALIZE_VALUES["device_mac"]
+    device["name"] = NORMALIZE_VALUES["device_name"]
+    device["mac"] = NORMALIZE_VALUES["device_mac"]
 
     # Some devices use MAC uppercase, others lowercase
     config["mqtt"]["client_id"] = config["mqtt"]["client_id"].replace(
