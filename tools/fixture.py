@@ -69,10 +69,10 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
 
     if device.gen in BLOCK_GENERATIONS:
         data_raw.update({"settings": device.settings})
-        data_normalized = _normalize_block_data(data_raw)
+        data_normalized = _redact_block_data(data_raw)
     else:
         data_raw.update({"config": device.config})
-        data_normalized = _normalize_rpc_data(data_raw)
+        data_normalized = _redact_rpc_data(data_raw)
 
     gen = device.gen
     model = device.model
@@ -112,11 +112,11 @@ def _replacement_values() -> dict[str, Any]:
     }
 
 
-def _normalize_block_data(data: dict[str, Any]) -> dict[str, Any]:
-    """Normalize data for BLOCK devices."""
-    status = data["status"]
-    shelly = data["shelly"]
-    settings = data["settings"]
+def _redact_block_data(data: dict[str, Any]) -> dict[str, Any]:
+    """Redact data for BLOCK devices."""
+    status: dict[str, Any] = data["status"]
+    shelly: dict[str, Any] = data["shelly"]
+    settings: dict[str, Any] = data["settings"]
     values = _replacement_values()
 
     real_mac: str = status["mac"]
@@ -178,11 +178,11 @@ def _normalize_block_data(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
-    """Normalize data for RPC devices."""
-    config = data["config"]
-    status = data["status"]
-    shelly = data["shelly"]
+def _redact_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
+    """Redact data for RPC devices."""
+    config: dict[str, Any] = data["config"]
+    status: dict[str, Any] = data["status"]
+    shelly: dict[str, Any] = data["shelly"]
 
     real_mac: str = status["sys"]["mac"]
 
@@ -213,6 +213,12 @@ def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
     if config["sys"].get("sntp"):
         config["sys"]["sntp"]["server"] = values["sntp_server"]
 
+    config_prefixes = ("switch:", "input:", "em:", "script:")
+    for key in config:
+        if key.startswith(config_prefixes):
+            key_name, id_ = key.split(":")
+            config[key]["name"] = f"{key_name} {id_}"
+
     for id_ in range(5):
         if config.get(f"thermostat:{id_}"):
             config[f"thermostat:{id_}"]["sensor"] = config[f"thermostat:{id_}"][
@@ -221,18 +227,6 @@ def _normalize_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
             config[f"thermostat:{id_}"]["actuator"] = config[f"thermostat:{id_}"][
                 "actuator"
             ].replace(real_mac.lower(), values["device_mac"].lower())
-
-        if config.get(f"switch:{id_}"):
-            config[f"switch:{id_}"]["name"] = f"{values['switch_name']} {id_}"
-
-        if config.get(f"input:{id_}"):
-            config[f"input:{id_}"]["name"] = f"{values['input_name']} {id_}"
-
-        if config.get(f"em:{id_}"):
-            config[f"em:{id_}"]["name"] = f"{values['em_name']} {id_}"
-
-        if config.get(f"script:{id_}"):
-            config[f"script:{id_}"]["name"] = f"{values['script_name']} {id_}"
 
     if config.get("wifi"):
         config["wifi"] = values["wifi"]
