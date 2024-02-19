@@ -1,0 +1,335 @@
+{
+  "config": {
+    "ble": {
+      "enable": true,
+      "observer": {
+        "enable": false
+      },
+      "rpc": {
+        "enable": true
+      }
+    },
+    "cloud": {
+      "enable": true,
+      "server": "shelly-91-eu.shelly.cloud:6022/jrpc"
+    },
+    "eth": {
+      "enable": true,
+      "gw": null,
+      "ip": null,
+      "ipv4mode": "dhcp",
+      "nameserver": null,
+      "netmask": null
+    },
+    "input:0": {
+      "id": 0,
+      "invert": false,
+      "name": "input 0",
+      "type": "switch"
+    },
+    "input:1": {
+      "id": 1,
+      "invert": false,
+      "name": "input 1",
+      "type": "switch"
+    },
+    "input:2": {
+      "id": 2,
+      "invert": false,
+      "name": "input 2",
+      "type": "switch"
+    },
+    "input:3": {
+      "id": 3,
+      "invert": false,
+      "name": "input 3",
+      "type": "switch"
+    },
+    "mqtt": {
+      "client_id": "shellypro4pm-aabbccddeeff",
+      "enable": false,
+      "enable_control": true,
+      "enable_rpc": true,
+      "rpc_ntf": true,
+      "server": "mqtt.test.server",
+      "status_ntf": false,
+      "topic_prefix": null,
+      "use_client_cert": false,
+      "user": null
+    },
+    "script:1": {
+      "enable": false,
+      "id": 1,
+      "name": "script 1"
+    },
+    "switch:0": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "autorecover_voltage_errors": false,
+      "current_limit": 16.0,
+      "id": 0,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "switch 0",
+      "power_limit": 4480,
+      "undervoltage_limit": 0,
+      "voltage_limit": 280
+    },
+    "switch:1": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "autorecover_voltage_errors": false,
+      "current_limit": 16.0,
+      "id": 1,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "switch 1",
+      "power_limit": 4480,
+      "undervoltage_limit": 0,
+      "voltage_limit": 280
+    },
+    "switch:2": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "autorecover_voltage_errors": false,
+      "current_limit": 16.0,
+      "id": 2,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "switch 2",
+      "power_limit": 4480,
+      "undervoltage_limit": 0,
+      "voltage_limit": 280
+    },
+    "switch:3": {
+      "auto_off": false,
+      "auto_off_delay": 60.0,
+      "auto_on": false,
+      "auto_on_delay": 60.0,
+      "autorecover_voltage_errors": false,
+      "current_limit": 16.0,
+      "id": 3,
+      "in_mode": "follow",
+      "initial_state": "match_input",
+      "name": "switch 3",
+      "power_limit": 4480,
+      "undervoltage_limit": 0,
+      "voltage_limit": 280
+    },
+    "sys": {
+      "cfg_rev": 7,
+      "debug": {
+        "file_level": null,
+        "level": 2,
+        "mqtt": {
+          "enable": false
+        },
+        "udp": {
+          "addr": null
+        },
+        "websocket": {
+          "enable": false
+        }
+      },
+      "device": {
+        "discoverable": true,
+        "eco_mode": false,
+        "fw_id": "20230912-082358/1.0.3-g6176478",
+        "mac": "AABBCCDDEEFF",
+        "name": "Test Name"
+      },
+      "location": {
+        "lat": 29.76078,
+        "lon": -95.36952,
+        "tz": "America/Chicago"
+      },
+      "rpc_udp": {
+        "dst_addr": null,
+        "listen_port": null
+      },
+      "sntp": {
+        "server": "sntp.test.server"
+      },
+      "ui_data": {}
+    },
+    "ui": {
+      "idle_brightness": 30
+    },
+    "wifi": "Wifi-Network-Name",
+    "ws": {
+      "enable": false,
+      "server": null,
+      "ssl_ca": "ca.pem"
+    }
+  },
+  "shelly": {
+    "app": "Pro4PM",
+    "auth_domain": null,
+    "auth_en": false,
+    "fw_id": "20230912-082358/1.0.3-g6176478",
+    "gen": 2,
+    "id": "shellypro4pm-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "model": "SPSW-004PE16EU",
+    "name": "Test Name",
+    "slot": 0,
+    "ver": "1.0.3"
+  },
+  "status": {
+    "ble": {},
+    "cloud": {
+      "connected": true
+    },
+    "eth": {
+      "ip": null
+    },
+    "input:0": {
+      "id": 0,
+      "state": false
+    },
+    "input:1": {
+      "id": 1,
+      "state": false
+    },
+    "input:2": {
+      "id": 2,
+      "state": false
+    },
+    "input:3": {
+      "id": 3,
+      "state": false
+    },
+    "mqtt": {
+      "connected": false
+    },
+    "script:1": {
+      "id": 1,
+      "mem_free": 25200,
+      "running": false
+    },
+    "switch:0": {
+      "aenergy": {
+        "by_minute": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minute_ts": 1708381882,
+        "total": 0.0
+      },
+      "apower": 0.0,
+      "current": 0.0,
+      "freq": 60.0,
+      "id": 0,
+      "output": false,
+      "pf": 0.0,
+      "source": "init",
+      "temperature": {
+        "tC": 25.6,
+        "tF": 78.0
+      },
+      "voltage": 121.7
+    },
+    "switch:1": {
+      "aenergy": {
+        "by_minute": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minute_ts": 1708381882,
+        "total": 0.0
+      },
+      "apower": 0.0,
+      "current": 0.0,
+      "freq": 60.0,
+      "id": 1,
+      "output": false,
+      "pf": 0.0,
+      "source": "SHC",
+      "temperature": {
+        "tC": 25.6,
+        "tF": 78.0
+      },
+      "voltage": 121.8
+    },
+    "switch:2": {
+      "aenergy": {
+        "by_minute": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minute_ts": 1708381882,
+        "total": 0.0
+      },
+      "apower": 0.0,
+      "current": 0.0,
+      "freq": 60.0,
+      "id": 2,
+      "output": false,
+      "pf": 0.0,
+      "source": "init",
+      "temperature": {
+        "tC": 25.6,
+        "tF": 78.0
+      },
+      "voltage": 121.8
+    },
+    "switch:3": {
+      "aenergy": {
+        "by_minute": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "minute_ts": 1708381882,
+        "total": 0.0
+      },
+      "apower": 0.0,
+      "current": 0.0,
+      "freq": 60.0,
+      "id": 3,
+      "output": false,
+      "pf": 0.0,
+      "source": "init",
+      "temperature": {
+        "tC": 25.6,
+        "tF": 78.0
+      },
+      "voltage": 121.8
+    },
+    "sys": {
+      "available_updates": {},
+      "cfg_rev": 7,
+      "fs_free": 204800,
+      "fs_size": 524288,
+      "kvs_rev": 0,
+      "mac": "AABBCCDDEEFF",
+      "ram_free": 80320,
+      "ram_size": 256388,
+      "restart_required": false,
+      "schedule_rev": 0,
+      "time": "16:31",
+      "unixtime": 1708381883,
+      "uptime": 522703,
+      "webhook_rev": 0
+    },
+    "ui": {},
+    "wifi": {
+      "rssi": -71,
+      "ssid": "Wifi-Network-Name",
+      "sta_ip": "192.168.212.172",
+      "status": "got ip"
+    },
+    "ws": {
+      "connected": false
+    }
+  }
+}

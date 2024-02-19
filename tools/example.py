@@ -12,6 +12,16 @@ from functools import partial
 from types import FrameType
 
 import aiohttp
+from common import (
+    close_connections,
+    coap_context,
+    connect_and_print_device,
+    create_device,
+    device_updated,
+    print_device,
+    update_outbound_ws,
+    ws_context,
+)
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import WS_API_URL
@@ -21,16 +31,6 @@ from aioshelly.exceptions import (
     InvalidAuthError,
     MacAddressMismatchError,
     WrongShellyGen,
-)
-from tools.common import (
-    close_connections,
-    coap_context,
-    connect_and_print_device,
-    create_device,
-    device_updated,
-    print_device,
-    update_outbound_ws,
-    ws_context,
 )
 
 

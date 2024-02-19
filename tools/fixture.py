@@ -14,6 +14,7 @@ from typing import Any
 
 import aiohttp
 import orjson
+from common import close_connections, create_device, device_updated
 
 from aioshelly.block_device import COAP, BlockDevice
 from aioshelly.common import ConnectionOptions
@@ -26,7 +27,6 @@ from aioshelly.exceptions import (
     WrongShellyGen,
 )
 from aioshelly.rpc_device import RpcDevice, WsServer
-from tools.common import close_connections, create_device, device_updated
 
 coap_context = COAP()
 ws_context = WsServer()
@@ -78,7 +78,11 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
     model = device.model
     name = MODEL_NAMES.get(model, "Unknown")
     version = device.firmware_version.replace("/", "-")
-    fixture_path = Path("../fixtures") / f"gen{gen}_{name}_{model}_{version}.json"
+    current_path = Path(__file__)
+    fixture_path = (
+        current_path.parent.parent.joinpath("fixtures")
+        / f"gen{gen}_{name}_{model}_{version}.json"
+    )
 
     print(f"Saving fixture to {fixture_path}")
 
@@ -95,11 +99,13 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
     close_connections()
 
 
-NORMALIZE_VALUES = {
+REDACTED_VALUES = {
     "wifi": "Wifi-Network-Name",
     "wifi_mac": "11:22:33:44:55:66",
     "device_mac": "AABBCCDDEEFF",
+    "device_mac_lower": "aabbccddeeff",
     "device_short_mac": "DDEEFF",
+    "device_short_mac_lower": "ddeeff",
     "device_name": "Test Name",
     "switch_name": "Switch Test Name",
     "input_name": "Input Test Name",
@@ -115,100 +121,89 @@ def _redact_block_data(data: dict[str, Any]) -> dict[str, Any]:
     """Redact data for BLOCK devices."""
     status: dict[str, Any] = data["status"]
     shelly: dict[str, Any] = data["shelly"]
-    settings: dict[str, Any] = data["settings"]
+    settings: dict[str, dict[str, dict[str, Any] | str]] = data["settings"]
 
     real_mac: str = status["mac"]
     short_mac: str = status["mac"][6:12]
 
     # Shelly endpoint
-    shelly["name"] = NORMALIZE_VALUES["device_name"]
-    shelly["mac"] = NORMALIZE_VALUES["device_mac"]
+    shelly["name"] = REDACTED_VALUES["device_name"]
+    shelly["mac"] = REDACTED_VALUES["device_mac"]
 
     # Status endpoint
-    status["mac"] = NORMALIZE_VALUES["device_mac"]
+    status["mac"] = REDACTED_VALUES["device_mac"]
 
-    if status["wifi_sta"].get("ssid"):
-        status["wifi_sta"]["ssid"] = NORMALIZE_VALUES["wifi"]
+    if "ssid" in status["wifi_sta"]:
+        status["wifi_sta"]["ssid"] = REDACTED_VALUES["wifi"]
 
     # Config endpoint
 
-    if settings["coiot"].get("peer"):
-        settings["coiot"]["peer"] = NORMALIZE_VALUES["coiot_peer"]
+    if "peer" in settings["coiot"]:
+        settings["coiot"]["peer"] = REDACTED_VALUES["coiot_peer"]
 
     # Some devices use short MAC (uppercase/lowercase)
-    settings["device"]["hostname"] = settings["device"]["hostname"].replace(
-        real_mac, NORMALIZE_VALUES["device_mac"]
+    device = settings["device"]
+    device["hostname"] = (
+        device["hostname"]
+        .replace(real_mac, REDACTED_VALUES["device_mac"])
+        .replace(short_mac, REDACTED_VALUES["device_short_mac"])
     )
-    settings["device"]["hostname"] = settings["device"]["hostname"].replace(
-        short_mac, NORMALIZE_VALUES["device_short_mac"]
-    )
-    settings["device"]["mac"] = NORMALIZE_VALUES["device_mac"]
+    device["mac"] = REDACTED_VALUES["device_mac"]
 
     # Some devices use MAC and short MAC (uppercase/lowercase)
-    settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
-        real_mac, NORMALIZE_VALUES["device_mac"]
-    )
-    settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
-        real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower()
-    )
-    settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
-        short_mac, NORMALIZE_VALUES["device_short_mac"]
-    )
-    settings["mqtt"]["id"] = settings["mqtt"]["id"].replace(
-        short_mac.lower(), NORMALIZE_VALUES["device_short_mac"].lower()
+    mqtt = settings["mqtt"]
+    mqtt["id"] = (
+        mqtt["id"]
+        .replace(real_mac, REDACTED_VALUES["device_mac"])
+        .replace(real_mac.lower(), REDACTED_VALUES["device_mac_lower"])
+        .replace(short_mac, REDACTED_VALUES["device_short_mac"])
+        .replace(short_mac.lower(), REDACTED_VALUES["device_short_mac"].lower())
     )
 
-    settings["name"] = NORMALIZE_VALUES["device_name"]
+    settings["name"] = REDACTED_VALUES["device_name"]
     # Some devices use MAC and short MAC (uppercase/lowercase)
-    settings["wifi_ap"]["ssid"] = settings["wifi_ap"]["ssid"].replace(
-        real_mac, NORMALIZE_VALUES["device_mac"]
+    settings["wifi_ap"]["ssid"] = (
+        settings["wifi_ap"]["ssid"]
+        .replace(real_mac, REDACTED_VALUES["device_mac"])
+        .replace(short_mac, REDACTED_VALUES["device_short_mac"])
     )
-    settings["wifi_ap"]["ssid"] = settings["wifi_ap"]["ssid"].replace(
-        short_mac, NORMALIZE_VALUES["device_short_mac"]
-    )
-    settings["wifi_sta"]["ssid"] = NORMALIZE_VALUES["wifi"]
-
-    # Updata dataset
-    data.update({"settings": settings})
-    data.update({"shelly": shelly})
-    data.update({"status": status})
+    settings["wifi_sta"]["ssid"] = REDACTED_VALUES["wifi"]
 
     return data
 
 
 def _redact_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
     """Redact data for RPC devices."""
-    config: dict[str, Any] = data["config"]
-    status: dict[str, Any] = data["status"]
-    shelly: dict[str, Any] = data["shelly"]
+    config: dict[str, dict[str, Any] | str] = data["config"]
+    status: dict[str, dict[str, dict[str, Any] | str] | str] = data["status"]
+    shelly: dict[str, dict[str, Any] | str] = data["shelly"]
 
     real_mac: str = status["sys"]["mac"]
     device = config["sys"]["device"]
 
     # Config endpoint
-    device["name"] = NORMALIZE_VALUES["device_name"]
-    device["mac"] = NORMALIZE_VALUES["device_mac"]
+    device["name"] = REDACTED_VALUES["device_name"]
+    device["mac"] = REDACTED_VALUES["device_mac"]
 
     # Some devices use MAC uppercase, others lowercase
-    config["mqtt"]["client_id"] = config["mqtt"]["client_id"].replace(
-        real_mac, NORMALIZE_VALUES["device_mac"]
+    mqtt = config["mqtt"]
+    mqtt["client_id"] = (
+        mqtt["client_id"]
+        .replace(real_mac, REDACTED_VALUES["device_mac"])
+        .replace(real_mac.lower(), REDACTED_VALUES["device_mac_lower"])
     )
-    config["mqtt"]["client_id"] = config["mqtt"]["client_id"].replace(
-        real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower()
-    )
-    config["mqtt"]["server"] = NORMALIZE_VALUES["mqtt_server"]
+    mqtt["server"] = REDACTED_VALUES["mqtt_server"]
 
-    if config["mqtt"].get("topic_prefix"):
+    if mqtt.get("topic_prefix"):
         # Some devices use MAC uppercase, others lowercase
-        config["mqtt"]["topic_prefix"] = config["mqtt"]["topic_prefix"].replace(
-            real_mac, NORMALIZE_VALUES["device_mac"]
-        )
-        config["mqtt"]["topic_prefix"] = config["mqtt"]["topic_prefix"].replace(
-            real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower()
+        mqtt["topic_prefix"] = (
+            mqtt["topic_prefix"]
+            .replace(real_mac, REDACTED_VALUES["device_mac"])
+            .replace(real_mac.lower(), REDACTED_VALUES["device_mac_lower"])
         )
 
-    if config["sys"].get("sntp"):
-        config["sys"]["sntp"]["server"] = NORMALIZE_VALUES["sntp_server"]
+    if sntp := config["sys"].get("sntp"):
+        sntp["server"] = REDACTED_VALUES["sntp_server"]
 
     config_prefixes = ("switch:", "input:", "em:", "script:")
     for key in config:
@@ -217,56 +212,46 @@ def _redact_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
             config[key]["name"] = f"{key_name} {id_}"
 
     for id_ in range(5):
-        if config.get(f"thermostat:{id_}"):
-            config[f"thermostat:{id_}"]["sensor"] = config[f"thermostat:{id_}"][
-                "sensor"
-            ].replace(real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower())
-            config[f"thermostat:{id_}"]["actuator"] = config[f"thermostat:{id_}"][
-                "actuator"
-            ].replace(real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower())
+        if thermostat := config.get(f"thermostat:{id_}"):
+            thermostat["sensor"] = thermostat["sensor"].replace(
+                real_mac.lower(), REDACTED_VALUES["device_mac_lower"]
+            )
+            thermostat["actuator"] = thermostat["actuator"].replace(
+                real_mac.lower(), REDACTED_VALUES["device_mac_lower"]
+            )
 
-    if config.get("wifi"):
-        config["wifi"] = NORMALIZE_VALUES["wifi"]
+    if "wifi" in config:
+        config["wifi"] = REDACTED_VALUES["wifi"]
 
     # Shelly endpoint
-    shelly["name"] = NORMALIZE_VALUES["device_name"]
+    shelly["name"] = REDACTED_VALUES["device_name"]
     # Some devices use MAC uppercase, others lowercase
-    shelly["id"] = shelly["id"].replace(real_mac, NORMALIZE_VALUES["device_mac"])
-    shelly["id"] = shelly["id"].replace(
-        real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower()
+    shelly["id"] = (
+        shelly["id"]
+        .replace(real_mac, REDACTED_VALUES["device_mac"])
+        .replace(real_mac.lower(), REDACTED_VALUES["device_mac_lower"])
     )
-    shelly["mac"] = NORMALIZE_VALUES["device_mac"]
+    shelly["mac"] = REDACTED_VALUES["device_mac"]
 
-    if shelly.get("auth_domain"):
-        shelly["auth_domain"] = shelly["auth_domain"].replace(
-            real_mac, NORMALIZE_VALUES["device_mac"]
-        )
-        shelly["auth_domain"] = shelly["auth_domain"].replace(
-            real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower()
-        )
+    if auth_domain := shelly.get("auth_domain"):
+        shelly["auth_domain"] = auth_domain.replace(
+            real_mac, REDACTED_VALUES["device_mac"]
+        ).replace(real_mac.lower(), REDACTED_VALUES["device_mac_lower"])
 
     # Status endpoint
-    status["sys"]["mac"] = NORMALIZE_VALUES["device_mac"]
+    status["sys"]["mac"] = REDACTED_VALUES["device_mac"]
 
     if status["wifi"].get("ssid"):
-        status["wifi"]["ssid"] = NORMALIZE_VALUES["wifi"]
+        status["wifi"]["ssid"] = REDACTED_VALUES["wifi"]
 
     if status["wifi"].get("mac"):
-        status["wifi"]["mac"] = NORMALIZE_VALUES["wifi_mac"]
+        status["wifi"]["mac"] = REDACTED_VALUES["wifi_mac"]
 
-    if status["sys"].get("id"):
+    if id_ := status["sys"].get("id"):
         # Some devices use MAC uppercase, others lowercase
-        status["sys"]["id"] = status["sys"]["id"].replace(
-            real_mac, NORMALIZE_VALUES["device_mac"]
-        )
-        status["sys"]["id"] = status["sys"]["id"].replace(
-            real_mac.lower(), NORMALIZE_VALUES["device_mac"].lower()
-        )
-
-    # Updata dataset
-    data.update({"config": config})
-    data.update({"shelly": shelly})
-    data.update({"status": status})
+        status["sys"]["id"] = id_.replace(
+            real_mac, REDACTED_VALUES["device_mac"]
+        ).replace(real_mac.lower(), REDACTED_VALUES["device_mac_lower"])
 
     return data
 
