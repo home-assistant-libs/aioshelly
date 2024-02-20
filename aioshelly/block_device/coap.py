@@ -6,10 +6,12 @@ import asyncio
 import logging
 import socket
 import struct
+from collections.abc import Callable
 from enum import Enum, auto
 from types import TracebackType
-from typing import Callable, cast
+from typing import cast
 
+from ..const import DEFAULT_COAP_PORT, DEFAULT_IP_ADDRESS
 from ..json import JSONDecodeError, json_loads
 
 COAP_OPTION_DEVICE_ID = 3332
@@ -111,12 +113,12 @@ class CoapMessage:
         raise InvalidMessage("Option contained partial payload marker.")
 
 
-def socket_init(socket_port: int) -> socket.socket:
+def socket_init(socket_ip: str, socket_port: int) -> socket.socket:
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("", socket_port))
-    _LOGGER.debug("Socket initialized on port %s", socket_port)
+    sock.bind((socket_ip, socket_port))
+    _LOGGER.debug("Socket initialized on %s:%s", socket_ip, socket_port)
     mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     sock.setblocking(False)
@@ -134,10 +136,12 @@ class COAP(asyncio.DatagramProtocol):
         self.subscriptions: dict[str, Callable] = {}
         self.transport: asyncio.DatagramTransport | None = None
 
-    async def initialize(self, socket_port: int = 5683) -> None:
+    async def initialize(
+        self, socket_ip: str = DEFAULT_IP_ADDRESS, socket_port: int = DEFAULT_COAP_PORT
+    ) -> None:
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
-        self.sock = socket_init(socket_port)
+        self.sock = socket_init(socket_ip, socket_port)
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
 
     async def request(self, ip: str, path: str) -> None:

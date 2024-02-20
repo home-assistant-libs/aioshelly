@@ -235,6 +235,10 @@ GEN3_MIN_FIRMWARE_DATE = 20231102
 
 WS_HEARTBEAT = 55
 
+# Default network settings for gen1 devices ( CoAP )
+DEFAULT_COAP_PORT = 5683
+DEFAULT_IP_ADDRESS = "0.0.0.0"
+
 # Default Gen2 outbound websocket API URL
 WS_API_URL = "/api/shelly/ws"
 
