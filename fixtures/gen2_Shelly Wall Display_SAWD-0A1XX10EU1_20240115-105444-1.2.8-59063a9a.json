@@ -30,12 +30,13 @@
       "factory_reset": true,
       "id": 0,
       "invert": false,
-      "name": "Input Test Name 0",
+      "name": "input 0",
       "type": "switch"
     },
     "mqtt": {
       "client_id": "ShellyWallDisplay-AABBCCDDEEFF",
       "enable": false,
+      "server": "mqtt.test.server",
       "topic_prefix": "ShellyWallDisplay-AABBCCDDEEFF"
     },
     "switch:0": {
@@ -44,7 +45,7 @@
       "id": 0,
       "in_mode": "follow",
       "initial_state": "off",
-      "name": "Switch Test Name 0"
+      "name": "switch 0"
     },
     "sys": {
       "cfg_rev": 32,
@@ -82,7 +83,7 @@
         "tz": "Europe/Rome"
       },
       "sntp": {
-        "server": "192.168.1.10"
+        "server": "sntp.test.server"
       }
     },
     "temperature:0": {
@@ -138,7 +139,7 @@
   },
   "shelly": {
     "app": "WallDisplay",
-    "app_uptime": 559980,
+    "app_uptime": 104783,
     "auth_en": false,
     "available_updates": {
       "stable": {
@@ -159,8 +160,8 @@
     "restart_required": false,
     "schedule_rev": 0,
     "sensor_in_thermostat": true,
-    "unixtime": 1707326926,
-    "uptime": 1938369,
+    "unixtime": 1708507954,
+    "uptime": 3119412,
     "ver": "1.2.8",
     "webhook_rev": 0
   },
@@ -172,7 +173,7 @@
     },
     "humidity:0": {
       "id": 0,
-      "rh": 46
+      "rh": 43.8
     },
     "illuminance:0": {
       "id": 0,
@@ -193,7 +194,7 @@
     },
     "sys": {
       "app": "WallDisplay",
-      "app_uptime": 559980,
+      "app_uptime": 104783,
       "auth_en": false,
       "available_updates": {
         "stable": {
@@ -213,18 +214,18 @@
       "restart_required": false,
       "schedule_rev": 0,
       "sensor_in_thermostat": true,
-      "unixtime": 1707326926,
-      "uptime": 1938369,
+      "unixtime": 1708507954,
+      "uptime": 3119412,
       "ver": "1.2.8",
       "webhook_rev": 0
     },
     "temperature:0": {
       "id": 0,
-      "tC": 21.6,
-      "tF": 70.9
+      "tC": 21.3,
+      "tF": 70.4
     },
     "thermostat:0": {
-      "current_C": 21.6,
+      "current_C": 21.3,
       "enable": true,
       "id": 0,
       "output": false,
@@ -238,7 +239,7 @@
       "mac": "11:22:33:44:55:66",
       "nameserver": "192.168.1.10",
       "netmask": "255.255.255.0",
-      "rssi": -65,
+      "rssi": -59,
       "ssid": "Wifi-Network-Name",
       "sta_ip": "192.168.1.78",
       "status": "got ip"
