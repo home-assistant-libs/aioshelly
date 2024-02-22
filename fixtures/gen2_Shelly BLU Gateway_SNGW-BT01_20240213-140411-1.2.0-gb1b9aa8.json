@@ -1,0 +1,137 @@
+{
+  "config": {
+    "ble": {
+      "enable": true,
+      "observer": {
+        "enable": true
+      },
+      "rpc": {
+        "enable": true
+      }
+    },
+    "cloud": {
+      "enable": true,
+      "server": "shelly-9-eu.shelly.cloud:6022/jrpc"
+    },
+    "mqtt": {
+      "client_id": "shellyblugw-aabbccddeeff",
+      "enable": false,
+      "enable_control": true,
+      "enable_rpc": true,
+      "rpc_ntf": true,
+      "server": "mqtt.test.server",
+      "ssl_ca": null,
+      "status_ntf": false,
+      "topic_prefix": "shellyblugw-aabbccddeeff",
+      "use_client_cert": false,
+      "user": null
+    },
+    "script:1": {
+      "enable": false,
+      "id": 1,
+      "name": "script 1"
+    },
+    "sys": {
+      "cfg_rev": 20,
+      "debug": {
+        "file_level": null,
+        "level": 2,
+        "mqtt": {
+          "enable": false
+        },
+        "udp": {
+          "addr": null
+        },
+        "websocket": {
+          "enable": false
+        }
+      },
+      "device": {
+        "discoverable": true,
+        "eco_mode": false,
+        "fw_id": "20240213-140411/1.2.0-gb1b9aa8",
+        "mac": "AABBCCDDEEFF",
+        "name": "Test Name"
+      },
+      "location": {
+        "lat": 45.4722,
+        "lon": 9.1922,
+        "tz": "Europe/Rome"
+      },
+      "rpc_udp": {
+        "dst_addr": null,
+        "listen_port": null
+      },
+      "sntp": {
+        "server": "sntp.test.server"
+      },
+      "ui_data": {}
+    },
+    "wifi": "Wifi-Network-Name",
+    "ws": {
+      "enable": false,
+      "server": null,
+      "ssl_ca": "ca.pem"
+    }
+  },
+  "shelly": {
+    "app": "BluGw",
+    "auth_domain": null,
+    "auth_en": false,
+    "fw_id": "20240213-140411/1.2.0-gb1b9aa8",
+    "gen": 2,
+    "id": "shellyblugw-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "model": "SNGW-BT01",
+    "name": "Test Name",
+    "slot": 1,
+    "ver": "1.2.0"
+  },
+  "status": {
+    "ble": {},
+    "cloud": {
+      "connected": true
+    },
+    "mqtt": {
+      "connected": false
+    },
+    "script:1": {
+      "id": 1,
+      "mem_free": 24472,
+      "mem_peak": 2842,
+      "mem_used": 728,
+      "running": true
+    },
+    "sys": {
+      "available_updates": {
+        "stable": {
+          "version": "1.1.0"
+        }
+      },
+      "cfg_rev": 20,
+      "fs_free": 167936,
+      "fs_size": 458752,
+      "kvs_rev": 0,
+      "mac": "AABBCCDDEEFF",
+      "ram_free": 115116,
+      "ram_size": 261524,
+      "reset_reason": 1,
+      "restart_required": false,
+      "schedule_rev": 0,
+      "time": "10:32",
+      "unixtime": 1708507962,
+      "uptime": 247876,
+      "webhook_rev": 0
+    },
+    "wifi": {
+      "ap_client_count": 1,
+      "rssi": -83,
+      "ssid": "Wifi-Network-Name",
+      "sta_ip": "192.168.1.94",
+      "status": "got ip"
+    },
+    "ws": {
+      "connected": false
+    }
+  }
+}

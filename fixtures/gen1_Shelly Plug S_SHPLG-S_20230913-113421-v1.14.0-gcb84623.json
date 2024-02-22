@@ -1,0 +1,198 @@
+{
+  "settings": {
+    "actions": {
+      "active": false,
+      "names": [
+        "btn_on_url",
+        "out_on_url",
+        "out_off_url"
+      ]
+    },
+    "allow_cross_origin": false,
+    "ap_roaming": {
+      "enabled": false,
+      "threshold": -70
+    },
+    "build_info": {
+      "build_id": "20230913-113421/v1.14.0-gcb84623",
+      "build_timestamp": "2023-09-13T11:34:21Z",
+      "build_version": "1.0"
+    },
+    "cloud": {
+      "connected": false,
+      "enabled": false
+    },
+    "coiot": {
+      "enabled": true,
+      "peer": "192.168.1.10:5683",
+      "update_period": 15
+    },
+    "debug_enable": false,
+    "device": {
+      "hostname": "shellyplug-s-DDEEFF",
+      "mac": "AABBCCDDEEFF",
+      "num_meters": 1,
+      "num_outputs": 1,
+      "type": "SHPLG-S"
+    },
+    "discoverable": true,
+    "eco_mode_enabled": true,
+    "fw": "20230913-113421/v1.14.0-gcb84623",
+    "hwinfo": {
+      "batch_id": 1,
+      "hw_revision": "prod-190516"
+    },
+    "lat": 45.472198,
+    "led_power_disable": false,
+    "led_status_disable": false,
+    "lng": 9.1922,
+    "login": {
+      "enabled": false,
+      "unprotected": false,
+      "username": "admin"
+    },
+    "max_power": 1800,
+    "mqtt": {
+      "clean_session": true,
+      "enable": false,
+      "id": "shellyplug-s-DDEEFF",
+      "keep_alive": 60,
+      "max_qos": 0,
+      "reconnect_timeout_max": 60.0,
+      "reconnect_timeout_min": 2.0,
+      "retain": false,
+      "server": "192.168.33.3:1883",
+      "update_period": 30,
+      "user": ""
+    },
+    "name": "Test Name",
+    "pin_code": "",
+    "pon_wifi_reset": false,
+    "relays": [
+      {
+        "appliance_type": "Light",
+        "auto_off": 0.0,
+        "auto_on": 0.0,
+        "default_state": "off",
+        "has_timer": false,
+        "ison": false,
+        "max_power": 1800,
+        "name": null,
+        "schedule": false,
+        "schedule_rules": []
+      }
+    ],
+    "sntp": {
+      "enabled": true,
+      "server": "192.168.1.10"
+    },
+    "time": "19:57",
+    "timezone": "Europe/Rome",
+    "tz_dst": false,
+    "tz_dst_auto": true,
+    "tz_utc_offset": 3600,
+    "tzautodetect": true,
+    "unixtime": 1707332241,
+    "wifi_ap": {
+      "enabled": false,
+      "key": "",
+      "ssid": "shellyplug-s-DDEEFF"
+    },
+    "wifi_sta": {
+      "dns": null,
+      "enabled": true,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": "Wifi-Network-Name"
+    },
+    "wifi_sta1": {
+      "dns": null,
+      "enabled": false,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": null
+    }
+  },
+  "shelly": {
+    "auth": false,
+    "discoverable": true,
+    "fw": "20230913-113421/v1.14.0-gcb84623",
+    "mac": "AABBCCDDEEFF",
+    "name": "Test Name",
+    "num_meters": 1,
+    "num_outputs": 1,
+    "type": "SHPLG-S"
+  },
+  "status": {
+    "actions_stats": {
+      "skipped": 0
+    },
+    "cfg_changed_cnt": 0,
+    "cloud": {
+      "connected": false,
+      "enabled": false
+    },
+    "fs_free": 166915,
+    "fs_size": 233681,
+    "has_update": false,
+    "mac": "AABBCCDDEEFF",
+    "meters": [
+      {
+        "counters": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_valid": true,
+        "overpower": 0.0,
+        "power": 0.0,
+        "timestamp": 1707335841,
+        "total": 2632
+      }
+    ],
+    "mqtt": {
+      "connected": false
+    },
+    "overtemperature": false,
+    "ram_free": 40428,
+    "ram_total": 52056,
+    "relays": [
+      {
+        "has_timer": false,
+        "ison": false,
+        "overpower": false,
+        "source": "http",
+        "timer_duration": 0,
+        "timer_remaining": 0,
+        "timer_started": 0
+      }
+    ],
+    "serial": 16,
+    "temperature": 24.14,
+    "time": "19:57",
+    "tmp": {
+      "is_valid": true,
+      "tC": 24.14,
+      "tF": 75.45
+    },
+    "unixtime": 1707332241,
+    "update": {
+      "beta_version": "20231107-164219/v1.14.1-rc1-g0617c15",
+      "has_update": false,
+      "new_version": "20230913-113421/v1.14.0-gcb84623",
+      "old_version": "20230913-113421/v1.14.0-gcb84623",
+      "status": "idle"
+    },
+    "uptime": 2589909,
+    "wifi_sta": {
+      "connected": true,
+      "ip": "192.168.1.91",
+      "rssi": -76,
+      "ssid": "Wifi-Network-Name"
+    }
+  }
+}

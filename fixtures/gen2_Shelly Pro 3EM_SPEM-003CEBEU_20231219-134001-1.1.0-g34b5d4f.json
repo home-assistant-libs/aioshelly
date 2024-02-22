@@ -1,0 +1,199 @@
+{
+  "config": {
+    "ble": {
+      "enable": false,
+      "observer": {
+        "enable": false
+      },
+      "rpc": {
+        "enable": false
+      }
+    },
+    "cloud": {
+      "enable": true,
+      "server": "shelly-9-eu.shelly.cloud:6022/jrpc"
+    },
+    "em:0": {
+      "blink_mode_selector": "active_energy",
+      "id": 0,
+      "monitor_phase_sequence": false,
+      "name": "Energy Monitor Test Name 0",
+      "phase_selector": "all",
+      "reverse": {}
+    },
+    "emdata:0": {},
+    "eth": {
+      "enable": true,
+      "gw": null,
+      "ip": null,
+      "ipv4mode": "dhcp",
+      "nameserver": null,
+      "netmask": null
+    },
+    "modbus": {
+      "enable": true
+    },
+    "mqtt": {
+      "client_id": "shellypro3em-aabbccddeeff",
+      "enable": false,
+      "enable_control": true,
+      "enable_rpc": true,
+      "rpc_ntf": true,
+      "server": null,
+      "ssl_ca": null,
+      "status_ntf": false,
+      "topic_prefix": "shellypro3em-aabbccddeeff",
+      "use_client_cert": false,
+      "user": null
+    },
+    "sys": {
+      "cfg_rev": 29,
+      "debug": {
+        "file_level": null,
+        "level": 2,
+        "mqtt": {
+          "enable": false
+        },
+        "udp": {
+          "addr": null
+        },
+        "websocket": {
+          "enable": false
+        }
+      },
+      "device": {
+        "addon_type": null,
+        "discoverable": true,
+        "eco_mode": true,
+        "fw_id": "20231219-134001/1.1.0-g34b5d4f",
+        "mac": "AABBCCDDEEFF",
+        "name": "Test Name",
+        "profile": "triphase"
+      },
+      "location": {
+        "lat": 45.45803,
+        "lon": 7.87121,
+        "tz": "Europe/Rome"
+      },
+      "rpc_udp": {
+        "dst_addr": null,
+        "listen_port": null
+      },
+      "sntp": {
+        "server": "192.168.1.10"
+      },
+      "ui_data": {}
+    },
+    "temperature:0": {
+      "id": 0,
+      "name": null,
+      "offset_C": 0.0,
+      "report_thr_C": 5.0
+    },
+    "wifi": "Wifi-Network-Name",
+    "ws": {
+      "enable": false,
+      "server": "ws://192.168.1.10:8123/api/shelly/ws",
+      "ssl_ca": "*"
+    }
+  },
+  "shelly": {
+    "app": "Pro3EM",
+    "auth_domain": null,
+    "auth_en": false,
+    "fw_id": "20231219-134001/1.1.0-g34b5d4f",
+    "gen": 2,
+    "id": "shellypro3em-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "model": "SPEM-003CEBEU",
+    "name": "Test Name",
+    "profile": "triphase",
+    "slot": 0,
+    "ver": "1.1.0"
+  },
+  "status": {
+    "ble": {},
+    "cloud": {
+      "connected": true
+    },
+    "em:0": {
+      "a_act_power": 375.5,
+      "a_aprt_power": 547.4,
+      "a_current": 2.392,
+      "a_freq": 50.0,
+      "a_pf": 0.76,
+      "a_voltage": 229.0,
+      "b_act_power": 170.8,
+      "b_aprt_power": 237.2,
+      "b_current": 1.037,
+      "b_freq": 50.0,
+      "b_pf": 0.78,
+      "b_voltage": 229.0,
+      "c_act_power": 12.7,
+      "c_aprt_power": 97.8,
+      "c_current": 0.428,
+      "c_freq": 50.0,
+      "c_pf": 0.53,
+      "c_voltage": 229.2,
+      "id": 0,
+      "n_current": null,
+      "total_act_power": 558.965,
+      "total_aprt_power": 882.413,
+      "total_current": 3.856,
+      "user_calibrated_phase": []
+    },
+    "emdata:0": {
+      "a_total_act_energy": 2034616.71,
+      "a_total_act_ret_energy": 0.0,
+      "b_total_act_energy": 185686.89,
+      "b_total_act_ret_energy": 40.7,
+      "c_total_act_energy": 369469.8,
+      "c_total_act_ret_energy": 985.91,
+      "id": 0,
+      "total_act": 2589773.39,
+      "total_act_ret": 1026.61
+    },
+    "eth": {
+      "ip": "192.168.1.105"
+    },
+    "modbus": {},
+    "mqtt": {
+      "connected": false
+    },
+    "sys": {
+      "available_updates": {
+        "beta": {
+          "version": "1.2.0-beta1"
+        }
+      },
+      "cfg_rev": 29,
+      "fs_free": 184320,
+      "fs_size": 524288,
+      "kvs_rev": 0,
+      "mac": "AABBCCDDEEFF",
+      "ram_free": 125084,
+      "ram_size": 241568,
+      "reset_reason": 1,
+      "restart_required": false,
+      "schedule_rev": 0,
+      "time": "18:28",
+      "unixtime": 1707326927,
+      "uptime": 2085615,
+      "webhook_rev": 0
+    },
+    "temperature:0": {
+      "id": 0,
+      "tC": 46.6,
+      "tF": 115.9
+    },
+    "wifi": {
+      "rssi": 0,
+      "ssid": null,
+      "sta_ip": null,
+      "status": "disconnected"
+    },
+    "ws": {
+      "connected": false
+    }
+  }
+}

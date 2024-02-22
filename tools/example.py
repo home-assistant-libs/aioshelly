@@ -7,10 +7,21 @@ import asyncio
 import json
 import logging
 import signal
-import sys
 import traceback
+from functools import partial
+from types import FrameType
 
 import aiohttp
+from common import (
+    close_connections,
+    coap_context,
+    connect_and_print_device,
+    create_device,
+    device_updated,
+    print_device,
+    update_outbound_ws,
+    ws_context,
+)
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import WS_API_URL
@@ -20,15 +31,6 @@ from aioshelly.exceptions import (
     InvalidAuthError,
     MacAddressMismatchError,
     WrongShellyGen,
-)
-from tools.common import (
-    coap_context,
-    connect_and_print_device,
-    create_device,
-    device_updated,
-    print_device,
-    update_outbound_ws,
-    ws_context,
 )
 
 
@@ -55,7 +57,7 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
 
         print_device(device)
 
-        device.subscribe_updates(device_updated)
+        device.subscribe_updates(partial(device_updated, action=print_device))
 
         while True:
             await asyncio.sleep(0.1)
@@ -199,11 +201,9 @@ async def main() -> None:
     if args.debug:
         logging.basicConfig(level="DEBUG", force=True)
 
-    def handle_sigint(_exit_code: int) -> None:
+    def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
         """Handle Keyboard signal interrupt (ctrl-c)."""
-        coap_context.close()
-        ws_context.close()
-        sys.exit(_exit_code)
+        close_connections(_exit_code)
 
     signal.signal(signal.SIGINT, handle_sigint)  # type: ignore [func-returns-value]
 

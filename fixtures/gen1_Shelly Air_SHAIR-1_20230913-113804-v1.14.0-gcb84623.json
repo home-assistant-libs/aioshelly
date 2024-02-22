@@ -1,0 +1,238 @@
+{
+  "settings": {
+    "actions": {
+      "active": false,
+      "names": [
+        "btn_on_url",
+        "btn_off_url",
+        "longpush_url",
+        "shortpush_url",
+        "out_on_url",
+        "out_off_url"
+      ]
+    },
+    "allow_cross_origin": false,
+    "ap_roaming": {
+      "enabled": false,
+      "threshold": -70
+    },
+    "build_info": {
+      "build_id": "20230913-113804/v1.14.0-gcb84623",
+      "build_timestamp": "2023-09-13T11:38:04Z",
+      "build_version": "1.0"
+    },
+    "cloud": {
+      "connected": true,
+      "enabled": true
+    },
+    "coiot": {
+      "enabled": true,
+      "peer": "192.168.1.10:5683",
+      "update_period": 15
+    },
+    "debug_enable": false,
+    "device": {
+      "hostname": "shellyair-AABBCCDDEEFF",
+      "mac": "AABBCCDDEEFF",
+      "num_meters": 1,
+      "num_outputs": 1,
+      "type": "SHAIR-1"
+    },
+    "discoverable": false,
+    "eco_mode_enabled": true,
+    "ext_humidity": {},
+    "ext_sensors": {
+      "temperature_unit": "C"
+    },
+    "ext_temperature": {
+      "0": {
+        "offset_tC": 0.0,
+        "offset_tF": 0.0,
+        "overtemp_act": "disabled",
+        "overtemp_threshold_tC": 0.0,
+        "overtemp_threshold_tF": 32.0,
+        "undertemp_act": "disabled",
+        "undertemp_threshold_tC": 0.0,
+        "undertemp_threshold_tF": 32.0
+      }
+    },
+    "factory_reset_from_switch": true,
+    "fw": "20230913-113804/v1.14.0-gcb84623",
+    "hwinfo": {
+      "batch_id": 0,
+      "hw_revision": "dev-prototype"
+    },
+    "lat": 45.472198,
+    "lng": 9.1922,
+    "login": {
+      "enabled": false,
+      "unprotected": false,
+      "username": "admin"
+    },
+    "longpush_time": 800,
+    "mode": "relay",
+    "mqtt": {
+      "clean_session": true,
+      "enable": false,
+      "id": "shellyair-AABBCCDDEEFF",
+      "keep_alive": 60,
+      "max_qos": 0,
+      "reconnect_timeout_max": 60.0,
+      "reconnect_timeout_min": 2.0,
+      "retain": false,
+      "server": "192.168.33.3:1883",
+      "update_period": 30,
+      "user": ""
+    },
+    "name": "Test Name",
+    "pin_code": "",
+    "pon_wifi_reset": false,
+    "power_correction": 1.0,
+    "relays": [
+      {
+        "auto_off": 1800.0,
+        "auto_on": 0.0,
+        "btn_reverse": 0,
+        "btn_type": "toggle",
+        "default_state": "off",
+        "has_timer": false,
+        "ison": false,
+        "name": null,
+        "schedule": false,
+        "schedule_rules": []
+      }
+    ],
+    "sntp": {
+      "enabled": true,
+      "server": "192.168.1.10"
+    },
+    "time": "18:28",
+    "timezone": "Europe/Rome",
+    "tz_dst": false,
+    "tz_dst_auto": true,
+    "tz_utc_offset": 3600,
+    "tzautodetect": true,
+    "unixtime": 1707326928,
+    "wifi_ap": {
+      "enabled": false,
+      "key": "",
+      "ssid": "shellyair-AABBCCDDEEFF"
+    },
+    "wifi_sta": {
+      "dns": null,
+      "enabled": true,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": "Wifi-Network-Name"
+    },
+    "wifi_sta1": {
+      "dns": null,
+      "enabled": false,
+      "gw": null,
+      "ip": null,
+      "ipv4_method": "dhcp",
+      "mask": null,
+      "ssid": null
+    }
+  },
+  "shelly": {
+    "auth": false,
+    "discoverable": false,
+    "fw": "20230913-113804/v1.14.0-gcb84623",
+    "longid": 1,
+    "mac": "AABBCCDDEEFF",
+    "name": "Test Name",
+    "num_meters": 1,
+    "num_outputs": 1,
+    "type": "SHAIR-1"
+  },
+  "status": {
+    "actions_stats": {
+      "skipped": 0
+    },
+    "cfg_changed_cnt": 0,
+    "cloud": {
+      "connected": true,
+      "enabled": true
+    },
+    "ext_humidity": {},
+    "ext_sensors": {
+      "temperature_unit": "C"
+    },
+    "ext_temperature": {
+      "0": {
+        "hwID": "2843db970a000011",
+        "tC": 23.06,
+        "tF": 73.51
+      }
+    },
+    "fs_free": 145831,
+    "fs_size": 233681,
+    "has_update": false,
+    "inputs": [
+      {
+        "event": "",
+        "event_cnt": 0,
+        "input": 0
+      }
+    ],
+    "mac": "AABBCCDDEEFF",
+    "meters": [
+      {
+        "counters": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "is_valid": true,
+        "overpower": 0.0,
+        "power": 0.0,
+        "timestamp": 1707330528,
+        "total": 0
+      }
+    ],
+    "mqtt": {
+      "connected": false
+    },
+    "overtemperature": false,
+    "ram_free": 38656,
+    "ram_total": 51536,
+    "relays": [
+      {
+        "has_timer": false,
+        "ison": false,
+        "overpower": false,
+        "source": "input",
+        "timer_duration": 0,
+        "timer_remaining": 0,
+        "timer_started": 0
+      }
+    ],
+    "serial": 34491,
+    "temperature": 33.89,
+    "time": "18:28",
+    "tmp": {
+      "is_valid": true,
+      "tC": 33.89,
+      "tF": 93.0
+    },
+    "total_work_time": 55697,
+    "unixtime": 1707326928,
+    "update": {
+      "beta_version": "20231107-164540/v1.14.1-rc1-g0617c15",
+      "has_update": false,
+      "new_version": "20230913-113804/v1.14.0-gcb84623",
+      "old_version": "20230913-113804/v1.14.0-gcb84623",
+      "status": "idle"
+    },
+    "uptime": 4572455,
+    "wifi_sta": {
+      "connected": true,
+      "ip": "192.168.1.64",
+      "rssi": -65,
+      "ssid": "Wifi-Network-Name"
+    }
+  }
+}

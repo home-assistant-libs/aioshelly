@@ -2,7 +2,10 @@
 """Methods for aioshelly cmdline tools."""
 from __future__ import annotations
 
+import sys
+from collections.abc import Callable
 from datetime import datetime
+from functools import partial
 from typing import Any, cast
 
 import aiohttp
@@ -48,18 +51,19 @@ async def connect_and_print_device(
     """Connect and print device data."""
     device = await create_device(aiohttp_session, options, init, gen)
     print_device(device)
-    device.subscribe_updates(device_updated)
+    device.subscribe_updates(partial(device_updated, action=print_device))
 
 
 def device_updated(
     cb_device: BlockDevice | RpcDevice,
     update_type: BlockUpdateType | RpcUpdateType,
+    action: Callable[[BlockDevice | RpcDevice], None],
 ) -> None:
     """Device updated callback."""
     print()
     print(f"{datetime.now().strftime('%H:%M:%S')} Device updated! ({update_type})")
     try:
-        print_device(cb_device)
+        action(cb_device)
     except InvalidAuthError:
         print("Invalid or missing authorization (from async init)")
 
@@ -108,6 +112,13 @@ def print_rpc_device(device: RpcDevice) -> None:
     print(f"Status: {device.status}")
     print(f"Event: {device.event}")
     print(f"Connected: {device.connected}")
+
+
+def close_connections(_exit_code: int = 0) -> None:
+    """Close all connections before exiting."""
+    coap_context.close()
+    ws_context.close()
+    sys.exit(_exit_code)
 
 
 async def update_outbound_ws(
