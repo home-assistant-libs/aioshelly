@@ -122,7 +122,7 @@ def socket_init(
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", socket_port))
-    _LOGGER.debug("Socket initialized on %s:%s", socket_ip, socket_port)
+    _LOGGER.debug("Socket initialized on port %s", socket_port)
     if socket_ip:
         for ip in socket_ip:
             mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), ip)
