@@ -115,19 +115,24 @@ class CoapMessage:
 
 
 def socket_init(
-    socket_ip: list[IPv4Address] | None = None,
+    socket_ips: list[IPv4Address] | None = None,
     socket_port: int = DEFAULT_COAP_PORT,
 ) -> socket.socket:
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", socket_port))
-    _LOGGER.debug("Socket initialized on port %s", socket_port)
-    if socket_ip:
-        for ip in socket_ip:
-            mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), ip)
+    if socket_ips:
+        for address in socket_ips:
+            _LOGGER.debug("Socket initialized on %s:%s", address, socket_port)
+            mreq = struct.pack(
+                "=4sl",
+                socket.inet_aton("224.0.1.187"),
+                socket.inet_aton(address.exploded),
+            )
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     else:
+        _LOGGER.debug("Socket initialized on port %s (default interface)", socket_port)
         # INADDR_ANY indicates that the OS will chose an interface to join the given multicast group.
         mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
@@ -148,12 +153,12 @@ class COAP(asyncio.DatagramProtocol):
 
     async def initialize(
         self,
-        socket_ip: list[IPv4Address] | None = None,
+        socket_ips: list[IPv4Address] | None = None,
         socket_port: int = DEFAULT_COAP_PORT,
     ) -> None:
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
-        self.sock = socket_init(socket_ip, socket_port)
+        self.sock = socket_init(socket_ips, socket_port)
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
 
     async def request(self, ip: str, path: str) -> None:
