@@ -153,6 +153,7 @@ class RpcDevice:
         self._initializing = True
         self.initialized = False
         ip = self.options.ip_address
+        port = self.options.port
         try:
             self._shelly = await get_info(
                 self.aiohttp_session,
@@ -181,7 +182,7 @@ class RpcDevice:
             self.initialized = True
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
-            _LOGGER.debug("host %s:%s: error: %r", ip, self.port, self._last_error)
+            _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
             # Auth error during async init, used by sleeping devices
             # Will raise 'invalidAuthError' on next property read
             if not async_init:
@@ -190,13 +191,13 @@ class RpcDevice:
             self.initialized = True
         except (MacAddressMismatchError, FirmwareUnsupported) as err:
             self._last_error = err
-            _LOGGER.debug("host %s:%s: error: %r", ip, self.port, err)
+            _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
             if not async_init:
                 await self._disconnect_websocket()
                 raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
-            _LOGGER.debug("host %s:%s: error: %r", ip, self.port, self._last_error)
+            _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
             if not async_init:
                 await self._disconnect_websocket()
                 raise DeviceConnectionError(err) from err
