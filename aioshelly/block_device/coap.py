@@ -115,8 +115,8 @@ class CoapMessage:
 
 
 def socket_init(
-    socket_ips: list[IPv4Address] | None = None,
     socket_port: int = DEFAULT_COAP_PORT,
+    socket_ips: list[IPv4Address] | None = None,
 ) -> socket.socket:
     """Init UDP socket to send/receive data with Shelly devices."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -168,7 +168,7 @@ class COAP(asyncio.DatagramProtocol):
     ) -> None:
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
-        self.sock = socket_init(socket_ips, socket_port)
+        self.sock = socket_init(socket_port, socket_ips)
         await loop.create_datagram_endpoint(lambda: self, sock=self.sock)
 
     async def request(self, ip: str, path: str) -> None:
