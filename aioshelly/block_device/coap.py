@@ -123,10 +123,10 @@ def socket_init(
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", socket_port))
     if socket_ips:
-        mreq = socket.inet_aton("224.0.1.187")
         for address in socket_ips:
-            _LOGGER.debug("Socket initialized on %s:%s", address, socket_port)
-            mreq += socket.inet_aton(address.exploded)
+            ip = address.exploded
+            _LOGGER.debug("Socket initialized on %s:%s", ip, socket_port)
+            mreq = socket.inet_aton("224.0.1.187") + socket.inet_aton(ip)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     else:
         _LOGGER.debug("Socket initialized on port %s (default interface)", socket_port)
