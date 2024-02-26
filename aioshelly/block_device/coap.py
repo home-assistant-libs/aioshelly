@@ -122,18 +122,31 @@ def socket_init(
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("", socket_port))
-    if socket_ips:
-        for address in socket_ips:
-            ip = address.exploded
-            _LOGGER.debug("Socket initialized on %s:%s", ip, socket_port)
-            mreq = socket.inet_aton("224.0.1.187") + socket.inet_aton(ip)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    else:
+    sock.setblocking(False)
+    multicast_ip_bytes = socket.inet_aton("224.0.1.187")
+
+    if not socket_ips:
         _LOGGER.debug("Socket initialized on port %s (default interface)", socket_port)
         # INADDR_ANY indicates that the OS will chose an interface to join the given multicast group.
-        mreq = struct.pack("=4sl", socket.inet_aton("224.0.1.187"), socket.INADDR_ANY)
+        mreq = struct.pack("=4sl", multicast_ip_bytes, socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    sock.setblocking(False)
+        return sock
+
+    had_successful_joins = False
+    last_exception: OSError | None = None
+    for address in socket_ips:
+        _LOGGER.debug("Socket initialized on %s:%s", address, socket_port)
+        mreq = multicast_ip_bytes + address.packed
+        try:
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+            had_successful_joins = True
+        except OSError as ex:
+            _LOGGER.warning("Failed to join multicast group on %s", address)
+            last_exception = ex
+
+    if not had_successful_joins and last_exception is not None:
+        raise last_exception
+
     return sock
 
 
