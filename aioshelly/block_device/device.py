@@ -18,6 +18,7 @@ from yarl import URL
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT, MODEL_RGBW2
 from ..exceptions import (
+    CustomPortNotSupported,
     DeviceConnectionError,
     FirmwareUnsupported,
     InvalidAuthError,
@@ -117,6 +118,10 @@ class BlockDevice:
         """Device initialization."""
         if self._initializing:
             raise RuntimeError("Already initializing")
+
+        # GEN1 cannot be configured behind a range extender as CoAP port cannot be natted
+        if self.options.port != 80:
+            raise CustomPortNotSupported
 
         self._initializing = True
         self.initialized = False

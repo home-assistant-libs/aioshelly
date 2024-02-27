@@ -47,6 +47,10 @@ class MacAddressMismatchError(ShellyError):
     """Raised if input MAC address does not match the device MAC address."""
 
 
+class CustomPortNotSupported(ShellyError):
+    """Raise if GEN1 devices are access with custom port."""
+
+
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 

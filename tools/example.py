@@ -26,6 +26,7 @@ from common import (
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import WS_API_URL
 from aioshelly.exceptions import (
+    CustomPortNotSupported,
     DeviceConnectionError,
     FirmwareUnsupported,
     InvalidAuthError,
@@ -55,6 +56,9 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
             return
         except WrongShellyGen:
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
+            return
+        except CustomPortNotSupported:
+            print(f"Custom port ({options.port}) not supported for Gen1")
             return
 
         print_device(device)
