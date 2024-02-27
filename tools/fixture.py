@@ -40,16 +40,16 @@ async def connect_and_save(
         try:
             device = await create_device(aiohttp_session, options, init, gen)
         except FirmwareUnsupported as err:
-            print(f"Device firmware not supported, error: {repr(err)}")
+            print(f"Device firmware not supported, error: {err!r}")
             return
         except InvalidAuthError as err:
-            print(f"Invalid or missing authorization, error: {repr(err)}")
+            print(f"Invalid or missing authorization, error: {err!r}")
             return
         except DeviceConnectionError as err:
-            print(f"Error connecting to {options.ip_address}, error: {repr(err)}")
+            print(f"Error connecting to {options.ip_address}, error: {err!r}")
             return
         except MacAddressMismatchError as err:
-            print(f"MAC address mismatch, error: {repr(err)}")
+            print(f"MAC address mismatch, error: {err!r}")
             return
         except WrongShellyGen:
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
@@ -88,10 +88,9 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
 
     with open(fixture_path, "wb") as file:
         file.write(
-            orjson.dumps(  # pylint: disable=no-member
+            orjson.dumps(
                 data_normalized,
-                option=orjson.OPT_INDENT_2  # pylint: disable=no-member
-                | orjson.OPT_SORT_KEYS,  # pylint: disable=no-member
+                option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS,
             )
         )
         file.write(b"\n")

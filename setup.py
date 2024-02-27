@@ -24,7 +24,7 @@ setup(
     package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
     platforms="any",
-    install_requires=list(val.strip() for val in open("requirements.txt")),
+    install_requires=[val.strip() for val in open("requirements.txt")],
     classifiers=[
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",

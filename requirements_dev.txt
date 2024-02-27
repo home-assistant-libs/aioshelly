@@ -1,6 +1,7 @@
 -r requirements.txt
 -r requirements_lint.txt
 requests
+types-orjson
 types-requests
 pre-commit==3.6.2
 tox==4.13.0

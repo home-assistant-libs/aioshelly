@@ -8,7 +8,7 @@ import logging
 import re
 from dataclasses import dataclass
 from socket import gethostbyname
-from typing import Any, Union
+from typing import Any
 
 import aiohttp
 from yarl import URL
@@ -57,7 +57,7 @@ class ConnectionOptions:
             )
 
 
-IpOrOptionsType = Union[str, ConnectionOptions]
+IpOrOptionsType = str | ConnectionOptions
 
 
 async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOptions:
@@ -127,7 +127,7 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     else:
         fw_str = result["fw_id"]
         fw_ver = (
-            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE
+            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE  # noqa: PLR2004
         )
 
     match = FIRMWARE_PATTERN.search(fw_str)

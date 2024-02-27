@@ -11,7 +11,8 @@ import time
 from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, cast
+from http import HTTPStatus
+from typing import TYPE_CHECKING, Any, cast
 
 import aiohttp
 import async_timeout
@@ -115,7 +116,7 @@ class RPCCall:
 
     __slots__ = ("auth", "call_id", "params", "method", "src", "dst", "resolve")
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # noqa: PLR0913
         self,
         call_id: int,
         method: str,
@@ -241,7 +242,10 @@ class WsRPC:
         )
 
     def _maybe_send_heartbeat(self) -> None:
-        """Send heartbeat if no messages have been received in the last WS_HEARTBEAT seconds."""
+        """Send heartbeat if no messages have been received.
+
+        Heartbeat will be sent if there are no messages for WS_HEARTBEAT seconds.
+        """
         if not self._client or self._client.closed:
             return
         if time.time() - self._last_time < WS_HEARTBEAT:
@@ -286,7 +290,8 @@ class WsRPC:
         self._session.auth = self._auth_data.get_auth()
 
     async def _handle_call(self, frame_id: str) -> None:
-        assert self._client
+        if TYPE_CHECKING:
+            assert self._client
 
         await self._send_json(
             {
@@ -333,7 +338,8 @@ class WsRPC:
             _LOGGER.warning("Invalid frame: %s", frame)
 
     async def _rx_msgs(self) -> None:
-        assert self._client
+        if TYPE_CHECKING:
+            assert self._client
 
         try:
             while not self._client.closed:
@@ -359,7 +365,7 @@ class WsRPC:
                     )
                 except ConnectionClosed:
                     break
-                except Exception:  # pylint: disable=broad-except
+                except Exception:
                     _LOGGER.exception("Unexpected error while receiving message")
                     raise
 
@@ -377,7 +383,7 @@ class WsRPC:
             # as it leaks before this version (and has for
             # a long time)
             with contextlib.suppress(Exception):
-                self._client._response.close()  # pylint: disable=protected-access
+                self._client._response.close()  # noqa: SLF001
 
             for call_item in self._calls.values():
                 if not call_item.resolve.done():
@@ -417,7 +423,7 @@ class WsRPC:
         except KeyError as err:
             raise RpcCallError(0, f"bad response: {resp}") from err
 
-        if code != 401:
+        if code != HTTPStatus.UNAUTHORIZED.value:
             raise RpcCallError(code, msg)
         if not handle_auth or self._auth_data is None:
             raise InvalidAuthError(msg)
@@ -454,7 +460,10 @@ class WsRPC:
     async def _send_json(self, data: dict[str, Any]) -> None:
         """Send json frame to device."""
         _LOGGER.debug("send(%s:%s): %s", self._ip_address, self._port, data)
-        assert self._client
+
+        if TYPE_CHECKING:
+            assert self._client
+
         await self._client.send_json(data, dumps=json_dumps)
 
     def _create_and_track_task(self, func: Coroutine) -> None:
@@ -485,7 +494,7 @@ class WsServer:
         """Stop the websocket server."""
         if self._runner is not None:
             loop = asyncio.get_running_loop()
-            loop.create_task(self._runner.cleanup())
+            loop.create_task(self._runner.cleanup())  # noqa: RUF006
 
     async def websocket_handler(self, request: BaseRequest) -> WebSocketResponse:
         """Handle connections from sleeping devices."""

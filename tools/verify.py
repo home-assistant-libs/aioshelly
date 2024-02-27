@@ -1,10 +1,11 @@
-"""Verify script that downloads all Coiot examples from the Shelly website and checks to make sure that we can parse them."""
+"""Download and verify all Coiot examples from the Shelly website."""
 
 import json
 import logging
 import re
 import urllib.parse
 from dataclasses import dataclass, field
+from typing import Any
 from unittest.mock import Mock
 
 import requests
@@ -31,22 +32,22 @@ class CoiotExample:
     _cache: dict = field(default_factory=dict)
 
     @reify
-    def name(self):
+    def name(self) -> str:
         """Get filename."""
         return urllib.parse.unquote(self.filename)
 
     @reify
-    def url(self):
+    def url(self) -> str:
         """Get file URL."""
         return BASE_URL + self.filename
 
     @reify
-    def content(self):
+    def content(self) -> str:
         """Get file content."""
-        return requests.get(self.url, timeout=DEVICE_IO_TIMEOUT, verify=False).text
+        return requests.get(self.url, timeout=DEVICE_IO_TIMEOUT, verify=False).text  # noqa: S501
 
     @reify
-    def content_parsed(self):
+    def content_parsed(self) -> list[dict[str, Any]]:
         """Parse file."""
         lines = self.content.split("\n")
         parsed = []
@@ -59,7 +60,7 @@ class CoiotExample:
             elif line.rstrip() == "}":
                 parsed.append(lines[start : i + 1])
 
-        if len(parsed) != 2:
+        if len(parsed) != 2:  # noqa: PLR2004
             raise ValueError("Uuh, not length 2")
 
         processed = []
@@ -76,31 +77,31 @@ class CoiotExample:
         return processed
 
     @reify
-    def cit_s(self):
+    def cit_s(self) -> dict[str, Any]:
         """Return parsed cit/s."""
         return self.content_parsed[0]
 
     @reify
-    def cit_d(self):
+    def cit_d(self) -> dict[str, Any]:
         """Return parsed cit/d."""
         return self.content_parsed[1]
 
     @reify
-    def device(self):
+    def device(self) -> BlockDevice:
         """Create mocked device."""
         device = BlockDevice(Mock(), None, ConnectionOptions("mock-ip"))
-        device._update_d(self.cit_d)  # pylint: disable=protected-access
-        device._update_s(self.cit_s, CoapType.REPLY)  # pylint: disable=protected-access
+        device._update_d(self.cit_d)  # noqa: SLF001
+        device._update_s(self.cit_s, CoapType.REPLY)  # noqa: SLF001
         return device
 
 
-def coiot_examples():
+def coiot_examples() -> list[CoiotExample]:
     """Get coiot examples."""
     index = requests.get(
         BASE_URL,
         # Not sure, local machine barfs on their cert
         timeout=DEVICE_IO_TIMEOUT,
-        verify=False,
+        verify=False,  # noqa: S501
     ).text
     return [
         CoiotExample(match)
@@ -109,7 +110,7 @@ def coiot_examples():
     ]
 
 
-def print_example(example):
+def print_example(example: CoiotExample) -> None:
     """Print example."""
     print(example.name)
     print()
@@ -120,12 +121,9 @@ def print_example(example):
             info = block.info(attr)
 
             if value is None:
-                value = "None"
+                value = "None"  # noqa: PLW2901
 
-            if BLOCK_VALUE_UNIT in info:
-                unit = " " + info[BLOCK_VALUE_UNIT]
-            else:
-                unit = ""
+            unit = " " + info[BLOCK_VALUE_UNIT] if BLOCK_VALUE_UNIT in info else ""
 
             print(f"{attr.ljust(16)}{value}{unit}")
         print()
@@ -134,13 +132,13 @@ def print_example(example):
     print()
 
 
-def run():
+def run() -> None:
     """Run coiot_examples and print errors."""
     errors = []
     for example in coiot_examples():
         try:
             print_example(example)
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:  # noqa: BLE001 PERF203
             errors.append((example, err))
             break
 

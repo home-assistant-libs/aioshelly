@@ -10,7 +10,9 @@ from collections.abc import Callable
 from enum import Enum, auto
 from ipaddress import IPv4Address
 from types import TracebackType
-from typing import cast
+from typing import TYPE_CHECKING, cast
+
+from typing_extensions import Self
 
 from ..const import DEFAULT_COAP_PORT
 from ..json import JSONDecodeError, json_loads
@@ -59,7 +61,7 @@ class CoapMessage:
 
         # parse options
         while raw_data:
-            if raw_data[0] == 0xFF:  # end of options marker
+            if raw_data[0] == 0xFF:  # end of options marker  # noqa: PLR2004
                 data = raw_data[1:]
                 break
 
@@ -82,10 +84,10 @@ class CoapMessage:
             self.payload = json_loads(data.decode())
         except (JSONDecodeError, UnicodeDecodeError) as err:
             raise InvalidMessage(
-                f"Message type {self.code} is not a valid JSON format: {str(payload)}"
+                f"Message type {self.code} is not a valid JSON format: {payload!s}"
             ) from err
 
-        if self.code == 30:
+        if self.code == 30:  # noqa: PLR2004
             self.coap_type = CoapType.PERIODIC
 
         _LOGGER.debug(
@@ -100,14 +102,14 @@ class CoapMessage:
     @staticmethod
     def _read_extended_field_value(value: int, raw_data: bytes) -> tuple[int, bytes]:
         """Decode large values of option delta and option length."""
-        if 0 <= value < 13:
+        if 0 <= value < 13:  # noqa: PLR2004
             return (value, raw_data)
-        if value == 13:
+        if value == 13:  # noqa: PLR2004
             if len(raw_data) < 1:
                 raise InvalidMessage("Option ended prematurely")
             return (raw_data[0] + 13, raw_data[1:])
-        if value == 14:
-            if len(raw_data) < 2:
+        if value == 14:  # noqa: PLR2004
+            if len(raw_data) < 2:  # noqa: PLR2004
                 raise InvalidMessage("Option ended prematurely")
             return (int.from_bytes(raw_data[:2], "big") + 269, raw_data[2:])
 
@@ -176,7 +178,9 @@ class COAP(asyncio.DatagramProtocol):
 
         Subscribe with `subscribe_updates` to receive answer.
         """
-        assert self.transport is not None
+        if TYPE_CHECKING:
+            assert self.transport is not None
+
         msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF\x00"
         _LOGGER.debug("Sending request 'cit/%s' to device %s", path, ip)
         self.transport.sendto(msg, (ip, 5683))
@@ -229,13 +233,16 @@ class COAP(asyncio.DatagramProtocol):
         self.subscriptions[ip_or_device_id] = message_received
         return lambda: self.subscriptions.pop(ip_or_device_id)
 
-    async def __aenter__(self) -> "COAP":
+    async def __aenter__(self) -> Self:
         """Entering async context manager."""
         await self.initialize()
         return self
 
     async def __aexit__(
-        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         """Leaving async context manager."""
         self.close()
@@ -243,13 +250,13 @@ class COAP(asyncio.DatagramProtocol):
 
 async def discovery_dump() -> None:
     """Dump all discovery data as it comes in."""
-    async with COAP(lambda msg: print(msg.ip, msg.payload)):
+    async with COAP(lambda msg: print(msg.ip, msg.payload)):  # noqa: T201
         while True:
             await asyncio.sleep(0.1)
 
 
 if __name__ == "__main__":
-    try:
+    try:  # noqa: SIM105
         asyncio.run(discovery_dump())
     except KeyboardInterrupt:
         pass

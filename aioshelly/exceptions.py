@@ -54,7 +54,7 @@ class CustomPortNotSupported(ShellyError):
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 
-    def __init__(self, code: int, message: str = ""):
+    def __init__(self, code: int, message: str = "") -> None:
         """Initialize JSON RPC errors."""
         self.code = code
         self.message = message

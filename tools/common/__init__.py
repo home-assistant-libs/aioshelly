@@ -6,7 +6,7 @@ import sys
 from collections.abc import Callable
 from datetime import datetime
 from functools import partial
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import aiohttp
 
@@ -91,7 +91,8 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
 
 def print_block_device(device: BlockDevice) -> None:
     """Print block (GEN1) device data."""
-    assert device.blocks
+    if TYPE_CHECKING:
+        assert device.blocks
 
     for block in device.blocks:
         print(block)
@@ -99,12 +100,9 @@ def print_block_device(device: BlockDevice) -> None:
             info = block.info(attr)
 
             if value is None:
-                value = "-"
+                value = "-"  # noqa: PLW2901
 
-            if BLOCK_VALUE_UNIT in info:
-                unit = " " + info[BLOCK_VALUE_UNIT]
-            else:
-                unit = ""
+            unit = " " + info[BLOCK_VALUE_UNIT] if BLOCK_VALUE_UNIT in info else ""
 
             print(f"{attr.ljust(16)}{value}{unit}")
         print()
