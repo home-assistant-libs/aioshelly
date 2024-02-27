@@ -163,8 +163,8 @@ class COAP(asyncio.DatagramProtocol):
 
     async def initialize(
         self,
-        socket_ips: list[IPv4Address] | None = None,
         socket_port: int = DEFAULT_COAP_PORT,
+        socket_ips: list[IPv4Address] | None = None,
     ) -> None:
         """Initialize the COAP manager."""
         loop = asyncio.get_running_loop()
