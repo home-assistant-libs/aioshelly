@@ -1,45 +1,39 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.177.0/containers/python-3
 {
-	"name": "Python 3",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": "..",
-		"args": {
-			// Update 'VARIANT' to pick a Python version: 3, 3.10, 3.11
-			"VARIANT": "3.10",
-			// Options
-			"INSTALL_NODE": "false",
-			"NODE_VERSION": "lts/*"
-		}
-	},
-	"customizations": {
-		"vscode": {
-		"settings": {
-				"terminal.integrated.shell.linux": "/bin/bash",
-				"python.pythonPath": "/usr/local/bin/python",
-				"python.languageServer": "Pylance",
-				"[python]": {
+    "name": "Python 3",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "..",
+        "args": {
+            // Update 'VARIANT' to pick a Python version: 3, 3.10, 3.11
+            "VARIANT": "3.10",
+            // Options
+            "INSTALL_NODE": "false",
+            "NODE_VERSION": "lts/*"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash",
+                "python.pythonPath": "/usr/local/bin/python",
+                "python.languageServer": "Pylance",
+                "[python]": {
                     "editor.defaultFormatter": "charliermarsh.ruff"
                 }
-			},
-		  "extensions":
-		   [
-			"ms-python.python",
-			"ms-python.vscode-pylance",
-			"charliermarsh.ruff"
-		   ]
-		}
-	},
-
-
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "script/environment.sh",
-
-	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "charliermarsh.ruff"
+            ]
+        }
+    },
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    // "forwardPorts": [],
+    // Use 'postCreateCommand' to run commands after the container is created.
+    "postCreateCommand": "script/environment.sh",
+    // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "remoteUser": "vscode"
 }
