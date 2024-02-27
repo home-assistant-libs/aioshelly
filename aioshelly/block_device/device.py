@@ -88,6 +88,7 @@ class BlockDevice:
         self.initialized = False
         self._initializing = False
         self._last_error: ShellyError | None = None
+        self._init_task: asyncio.Task[None] | None = None
 
     @classmethod
     async def create(
@@ -189,7 +190,12 @@ class BlockDevice:
         """COAP message received."""
         if not self._initializing and not self.initialized:
             loop = asyncio.get_running_loop()
-            loop.create_task(self._async_init())
+            self._init_task = loop.create_task(self._async_init())
+
+            def _clear_init_task(_: Any) -> None:
+                self._init_task = None
+
+            self._init_task.add_done_callback(_clear_init_task)
 
         if not msg.payload:
             return
