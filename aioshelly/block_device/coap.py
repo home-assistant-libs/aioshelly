@@ -129,7 +129,8 @@ def socket_init(
 
     if not socket_ips:
         _LOGGER.debug("Socket initialized on port %s (default interface)", socket_port)
-        # INADDR_ANY indicates that the OS will chose an interface to join the given multicast group.
+        # INADDR_ANY indicates that the OS will chose an interface to join the given
+        # multicast group.
         mreq = struct.pack("=4sl", multicast_ip_bytes, socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return sock
