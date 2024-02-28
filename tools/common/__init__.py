@@ -28,7 +28,9 @@ async def create_device(
 ) -> Any:
     """Create a Gen1/Gen2/Gen3 device."""
     if gen is None:
-        if info := await get_info(aiohttp_session, options.ip_address):
+        if info := await get_info(
+            aiohttp_session, options.ip_address, port=options.port
+        ):
             gen = info.get("gen", 1)
         else:
             raise ShellyError("Unknown Gen")
@@ -70,14 +72,15 @@ def device_updated(
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
     """Print device data."""
+    port = getattr(device, "port", 80)
     if not device.initialized:
         print()
-        print(f"** Device @ {device.ip_address} not initialized **")
+        print(f"** Device @ {device.ip_address}:{port} not initialized **")
         print()
         return
 
     model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
-    print(f"** {device.name} - {model_name}  @ {device.ip_address} **")
+    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
     print()
 
     if device.gen in BLOCK_GENERATIONS:

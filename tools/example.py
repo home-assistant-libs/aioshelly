@@ -26,6 +26,7 @@ from common import (
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import WS_API_URL
 from aioshelly.exceptions import (
+    CustomPortNotSupported,
     DeviceConnectionError,
     FirmwareUnsupported,
     InvalidAuthError,
@@ -46,13 +47,18 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
             print(f"Invalid or missing authorization, error: {repr(err)}")
             return
         except DeviceConnectionError as err:
-            print(f"Error connecting to {options.ip_address}, error: {repr(err)}")
+            print(
+                f"Error connecting to {options.ip_address}:{options.port}, error: {repr(err)}"
+            )
             return
         except MacAddressMismatchError as err:
             print(f"MAC address mismatch, error: {repr(err)}")
             return
         except WrongShellyGen:
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
+            return
+        except CustomPortNotSupported:
+            print(f"Custom port ({options.port}) not supported for Gen1")
             return
 
         print_device(device)
@@ -65,6 +71,8 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
 
 async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
+    options: ConnectionOptions
+
     device_options = []
     with open("devices.json", encoding="utf8") as fp:
         for line in fp:
@@ -86,7 +94,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
                 continue
 
             print()
-            print(f"Error printing device @ {options.ip_address}")
+            print(f"Error printing device @ {options.ip_address}:{options.port}")
 
             if isinstance(result, FirmwareUnsupported):
                 print("Device firmware not supported")
@@ -112,6 +120,13 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser = argparse.ArgumentParser(description="aioshelly example")
     parser.add_argument(
         "--ip_address", "-ip", type=str, help="Test single device by IP address"
+    )
+    parser.add_argument(
+        "--device_port",
+        "-dp",
+        type=int,
+        default=80,
+        help="Port to use when testing single device",
     )
     parser.add_argument(
         "--coap_port",
@@ -161,7 +176,6 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument(
         "--mac", "-m", type=str, help="Optional device MAC to subscribe for updates"
     )
-
     parser.add_argument(
         "--update_ws",
         "-uw",
@@ -213,7 +227,11 @@ async def main() -> None:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         options = ConnectionOptions(
-            args.ip_address, args.username, args.password, device_mac=args.mac
+            args.ip_address,
+            args.username,
+            args.password,
+            device_mac=args.mac,
+            port=args.device_port,
         )
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)

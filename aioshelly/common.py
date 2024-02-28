@@ -44,6 +44,7 @@ class ConnectionOptions:
     temperature_unit: str = "C"
     auth: aiohttp.BasicAuth | None = None
     device_mac: str | None = None
+    port: int = 80
 
     def __post_init__(self) -> None:
         """Call after initialization."""
@@ -81,29 +82,30 @@ async def get_info(
     aiohttp_session: aiohttp.ClientSession,
     ip_address: str,
     device_mac: str | None = None,
+    port: int = 80,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
     try:
         async with aiohttp_session.get(
-            URL.build(scheme="http", host=ip_address, path="/shelly"),
+            URL.build(scheme="http", host=ip_address, port=port, path="/shelly"),
             raise_for_status=True,
             timeout=DEVICE_IO_TIMEOUT,
         ) as resp:
             result: dict[str, Any] = await resp.json()
     except CONNECT_ERRORS as err:
         error = DeviceConnectionError(err)
-        _LOGGER.debug("host %s: error: %r", ip_address, error)
+        _LOGGER.debug("host %s:%s: error: %r", ip_address, port, error)
         raise error from err
 
     mac = result["mac"]
     if device_mac and device_mac != mac:
         mac_err = MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
-        _LOGGER.debug("host %s: error: %r", ip_address, mac_err)
+        _LOGGER.debug("host %s:%s: error: %r", ip_address, port, mac_err)
         raise mac_err
 
     if not shelly_supported_firmware(result):
         fw_error = FirmwareUnsupported(result)
-        _LOGGER.debug("host %s: error: %r", ip_address, fw_error)
+        _LOGGER.debug("host %s:%s: error: %r", ip_address, port, fw_error)
         raise fw_error
 
     return result

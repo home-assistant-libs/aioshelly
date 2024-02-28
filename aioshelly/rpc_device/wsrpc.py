@@ -149,10 +149,13 @@ class RPCCall:
 class WsRPC:
     """WsRPC class."""
 
-    def __init__(self, ip_address: str, on_notification: Callable) -> None:
+    def __init__(
+        self, ip_address: str, on_notification: Callable, port: int = 80
+    ) -> None:
         """Initialize WsRPC class."""
         self._auth_data: AuthData | None = None
         self._ip_address = ip_address
+        self._port = port
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
@@ -178,7 +181,9 @@ class WsRPC:
         _LOGGER.debug("Trying to connect to device at %s", self._ip_address)
         try:
             self._client = await aiohttp_session.ws_connect(
-                URL.build(scheme="http", host=self._ip_address, path="/rpc"),
+                URL.build(
+                    scheme="http", host=self._ip_address, port=self._port, path="/rpc"
+                ),
                 autoping=False,
             )
         except (
@@ -194,8 +199,9 @@ class WsRPC:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFFER_SIZE)
         except OSError as err:
             _LOGGER.warning(
-                "%s: Failed to set socket receive buffer size: %s",
+                "%s:%s: Failed to set socket receive buffer size: %s",
                 self._ip_address,
+                self._port,
                 err,
             )
 
@@ -255,8 +261,9 @@ class WsRPC:
     def _pong_not_received(self) -> None:
         """Pong not received."""
         _LOGGER.error(
-            "%s: Pong not received, device is likely unresponsive; disconnecting",
+            "%s:%s: Pong not received, device is likely unresponsive; disconnecting",
             self._ip_address,
+            self._port,
         )
         self._create_and_track_task(self.disconnect())
 
@@ -340,10 +347,15 @@ class WsRPC:
                         await self._client.pong(msg.data)
                         continue
                     frame = _receive_json_or_raise(msg)
-                    _LOGGER.debug("recv(%s): %s", self._ip_address, frame)
+                    _LOGGER.debug(
+                        "recv(%s:%s): %s", self._ip_address, self._port, frame
+                    )
                 except InvalidMessage as err:
                     _LOGGER.error(
-                        "Invalid Message from host %s: %s", self._ip_address, err
+                        "Invalid Message from host %s:%s: %s",
+                        self._ip_address,
+                        self._port,
+                        err,
                     )
                 except ConnectionClosed:
                     break
@@ -355,7 +367,9 @@ class WsRPC:
                     self.handle_frame(frame)
         finally:
             _LOGGER.debug(
-                "Websocket client connection from %s closed", self._ip_address
+                "Websocket client connection from %s:%s closed",
+                self._ip_address,
+                self._port,
             )
             self._cancel_heatbeat_and_pong_response_cb()
             # Ensure the underlying transport is closed
@@ -439,7 +453,7 @@ class WsRPC:
 
     async def _send_json(self, data: dict[str, Any]) -> None:
         """Send json frame to device."""
-        _LOGGER.debug("send(%s): %s", self._ip_address, data)
+        _LOGGER.debug("send(%s:%s): %s", self._ip_address, self._port, data)
         assert self._client
         await self._client.send_json(data, dumps=json_dumps)
 
