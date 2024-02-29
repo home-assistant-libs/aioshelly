@@ -200,6 +200,7 @@ async def main() -> None:
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
+        # if gen is in args reduce logging for other gens
         if args.gen1:
             logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
         else:
