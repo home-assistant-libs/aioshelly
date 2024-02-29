@@ -203,7 +203,7 @@ async def main() -> None:
         # if gen is in args reduce logging for other gens
         if args.gen1:
             logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
-        else:
+        elif args.gen2 or args.gen3:
             logging.getLogger("aioshelly.block_device").setLevel(logging.INFO)
 
     def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
