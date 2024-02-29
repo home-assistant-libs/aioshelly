@@ -213,7 +213,12 @@ async def main() -> None:
         gen = 3
 
     if args.debug:
-        logging.basicConfig(level="DEBUG", force=True)
+        logging.basicConfig(level=logging.DEBUG)
+        # if gen is in args reduce logging for other gens
+        if args.gen1:
+            logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
+        elif args.gen2 or args.gen3:
+            logging.getLogger("aioshelly.block_device").setLevel(logging.INFO)
 
     def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
         """Handle Keyboard signal interrupt (ctrl-c)."""
