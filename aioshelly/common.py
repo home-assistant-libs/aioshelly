@@ -127,7 +127,7 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     else:
         fw_str = result["fw_id"]
         fw_ver = (
-            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE  # noqa: PLR2004
+            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE
         )
 
     match = FIRMWARE_PATTERN.search(fw_str)

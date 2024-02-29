@@ -61,7 +61,7 @@ class CoapMessage:
 
         # parse options
         while raw_data:
-            if raw_data[0] == 0xFF:  # end of options marker  # noqa: PLR2004
+            if raw_data[0] == 0xFF:  # end of options marker
                 data = raw_data[1:]
                 break
 
@@ -87,7 +87,7 @@ class CoapMessage:
                 f"Message type {self.code} is not a valid JSON format: {payload!s}"
             ) from err
 
-        if self.code == 30:  # noqa: PLR2004
+        if self.code == 30:
             self.coap_type = CoapType.PERIODIC
 
         _LOGGER.debug(
@@ -102,14 +102,14 @@ class CoapMessage:
     @staticmethod
     def _read_extended_field_value(value: int, raw_data: bytes) -> tuple[int, bytes]:
         """Decode large values of option delta and option length."""
-        if 0 <= value < 13:  # noqa: PLR2004
+        if 0 <= value < 13:
             return (value, raw_data)
-        if value == 13:  # noqa: PLR2004
+        if value == 13:
             if len(raw_data) < 1:
                 raise InvalidMessage("Option ended prematurely")
             return (raw_data[0] + 13, raw_data[1:])
-        if value == 14:  # noqa: PLR2004
-            if len(raw_data) < 2:  # noqa: PLR2004
+        if value == 14:
+            if len(raw_data) < 2:
                 raise InvalidMessage("Option ended prematurely")
             return (int.from_bytes(raw_data[:2], "big") + 269, raw_data[2:])
 

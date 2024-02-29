@@ -22,7 +22,7 @@ def parse_ble_scan_result_event(
     version: int = data[0]
     if version == 1:
         return _parse_v1(data)
-    if version == 2:  # noqa: PLR2004
+    if version == 2:
         return _parse_v2(data[1])
     raise ValueError(f"Unsupported BLE scan result version: {version}")
 

@@ -122,7 +122,7 @@ class BlockDevice:
 
         # GEN1 cannot be configured behind a range extender as CoAP port cannot be
         # natted
-        if self.options.port != 80:  # noqa: PLR2004
+        if self.options.port != 80:
             raise CustomPortNotSupported
 
         self._initializing = True
