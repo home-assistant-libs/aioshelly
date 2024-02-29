@@ -48,7 +48,8 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
             return
         except DeviceConnectionError as err:
             print(
-                f"Error connecting to {options.ip_address}:{options.port}, error: {err!r}"
+                f"Error connecting to {options.ip_address}:{options.port}, "
+                f"error: {err!r}"
             )
             return
         except MacAddressMismatchError as err:

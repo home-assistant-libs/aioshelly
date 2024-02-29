@@ -120,8 +120,9 @@ class BlockDevice:
         if self._initializing:
             raise RuntimeError("Already initializing")
 
-        # GEN1 cannot be configured behind a range extender as CoAP port cannot be natted
-        if self.options.port != 80:
+        # GEN1 cannot be configured behind a range extender as CoAP port cannot be
+        # natted
+        if self.options.port != 80:  # noqa: PLR2004
             raise CustomPortNotSupported
 
         self._initializing = True
