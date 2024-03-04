@@ -103,8 +103,7 @@ def print_block_device(device: BlockDevice) -> None:
         for attr, value in block.current_values().items():
             info = block.info(attr)
 
-            if value is None:
-                _value = value if value is not None else "-"
+            _value = value if value is not None else "-"
 
             unit = " " + info[BLOCK_VALUE_UNIT] if BLOCK_VALUE_UNIT in info else ""
 
