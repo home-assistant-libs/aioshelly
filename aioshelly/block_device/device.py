@@ -18,9 +18,9 @@ from yarl import URL
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import (
     CONNECT_ERRORS,
+    DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
     HTTP_CALL_TIMEOUT,
-    HTTP_PORT,
     MODEL_RGBW2,
 )
 from ..exceptions import (
@@ -128,7 +128,7 @@ class BlockDevice:
 
         # GEN1 cannot be configured behind a range extender as CoAP port cannot be
         # natted
-        if self.options.port != HTTP_PORT:
+        if self.options.port != DEFAULT_HTTP_PORT:
             raise CustomPortNotSupported
 
         self._initializing = True
