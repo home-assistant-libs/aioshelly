@@ -1,5 +1,6 @@
 # Common tools methods
 """Methods for aioshelly cmdline tools."""
+
 from __future__ import annotations
 
 import sys

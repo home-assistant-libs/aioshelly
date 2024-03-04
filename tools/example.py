@@ -1,5 +1,6 @@
 # Run with python3 example.py -h for help
 """aioshelly usage example."""
+
 from __future__ import annotations
 
 import argparse
