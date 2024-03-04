@@ -15,6 +15,7 @@ from yarl import URL
 
 from .const import (
     CONNECT_ERRORS,
+    DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
     GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
     GEN1_MIN_FIRMWARE_DATE,
@@ -45,7 +46,7 @@ class ConnectionOptions:
     temperature_unit: str = "C"
     auth: aiohttp.BasicAuth | None = None
     device_mac: str | None = None
-    port: int = 80
+    port: int = DEFAULT_HTTP_PORT
 
     def __post_init__(self) -> None:
         """Call after initialization."""
@@ -83,7 +84,7 @@ async def get_info(
     aiohttp_session: aiohttp.ClientSession,
     ip_address: str,
     device_mac: str | None = None,
-    port: int = 80,
+    port: int = DEFAULT_HTTP_PORT,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
     try:

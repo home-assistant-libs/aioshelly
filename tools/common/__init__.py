@@ -13,7 +13,12 @@ import aiohttp
 
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
-from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, RPC_GENERATIONS
+from aioshelly.const import (
+    BLOCK_GENERATIONS,
+    DEFAULT_HTTP_PORT,
+    MODEL_NAMES,
+    RPC_GENERATIONS,
+)
 from aioshelly.exceptions import InvalidAuthError, ShellyError
 from aioshelly.rpc_device import RpcDevice, RpcUpdateType, WsServer
 
@@ -76,7 +81,7 @@ def device_updated(
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
     """Print device data."""
-    port = getattr(device, "port", 80)
+    port = getattr(device, "port", DEFAULT_HTTP_PORT)
     if not device.initialized:
         print()
         print(f"** Device @ {device.ip_address}:{port} not initialized **")

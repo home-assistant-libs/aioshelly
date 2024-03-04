@@ -27,7 +27,7 @@ from aiohttp.web import (
 )
 from yarl import URL
 
-from ..const import NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
+from ..const import DEFAULT_HTTP_PORT, NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
 from ..exceptions import (
     ConnectionClosed,
     DeviceConnectionError,
@@ -151,7 +151,7 @@ class WsRPC:
     """WsRPC class."""
 
     def __init__(
-        self, ip_address: str, on_notification: Callable, port: int = 80
+        self, ip_address: str, on_notification: Callable, port: int = DEFAULT_HTTP_PORT
     ) -> None:
         """Initialize WsRPC class."""
         self._auth_data: AuthData | None = None

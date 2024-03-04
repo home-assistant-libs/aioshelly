@@ -26,7 +26,7 @@ from common import (
 )
 
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import WS_API_URL
+from aioshelly.const import DEFAULT_HTTP_PORT, WS_API_URL
 from aioshelly.exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
@@ -126,7 +126,7 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--device_port",
         "-dp",
         type=int,
-        default=80,
+        default=DEFAULT_HTTP_PORT,
         help="Port to use when testing single device",
     )
     parser.add_argument(
