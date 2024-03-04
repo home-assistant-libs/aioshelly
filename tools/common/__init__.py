@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
@@ -70,7 +70,7 @@ def device_updated(
     """Device updated callback."""
     print()
     print(
-        f"{datetime.now(tz=datetime.timezone.utc).strftime('%H:%M:%S')} "
+        f"{datetime.now(tz=timezone.utc).strftime('%H:%M:%S')} "
         f"Device updated! ({update_type})"
     )
     try:
