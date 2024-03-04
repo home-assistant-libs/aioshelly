@@ -10,10 +10,10 @@ import logging
 import signal
 import traceback
 from functools import partial
+from pathlib import Path
 from types import FrameType
 
 import aiohttp
-import Path
 from common import (
     close_connections,
     coap_context,
