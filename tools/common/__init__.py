@@ -104,11 +104,11 @@ def print_block_device(device: BlockDevice) -> None:
             info = block.info(attr)
 
             if value is None:
-                value = "-"  # noqa: PLW2901
+                _value = value if value is not None else "-"
 
             unit = " " + info[BLOCK_VALUE_UNIT] if BLOCK_VALUE_UNIT in info else ""
 
-            print(f"{attr.ljust(16)}{value}{unit}")
+            print(f"{attr.ljust(16)}{_value}{unit}")
         print()
 
 
