@@ -8,7 +8,7 @@ PROJECT_DIR = Path(__file__).parent.resolve()
 README_FILE = PROJECT_DIR / "README.md"
 VERSION = "8.1.1"
 
-with Path.open("requirements.txt", encoding="utf-8") as file:
+with open("requirements.txt", encoding="utf-8") as file:  # noqa: PTH123
     requirements = file.read().splitlines()
 
 setup(
