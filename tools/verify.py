@@ -60,7 +60,7 @@ class CoiotExample:
             elif line.rstrip() == "}":
                 parsed.append(lines[start : i + 1])
 
-        if len(parsed) != 2:
+        if len(parsed) != 2:  # noqa: PLR2004
             raise ValueError("Uuh, not length 2")
 
         processed = []

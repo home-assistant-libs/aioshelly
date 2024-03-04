@@ -13,6 +13,7 @@ from functools import partial
 from types import FrameType
 
 import aiohttp
+import Path
 from common import (
     close_connections,
     coap_context,
@@ -75,7 +76,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     options: ConnectionOptions
 
-    with open("devices.json", encoding="utf8") as fp:  # noqa: ASYNC101
+    with Path.open("devices.json", encoding="utf8") as fp:
         device_options = [ConnectionOptions(**json.loads(line)) for line in fp]
 
     async with aiohttp.ClientSession() as aiohttp_session:

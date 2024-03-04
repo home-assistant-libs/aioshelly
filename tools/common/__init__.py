@@ -64,7 +64,10 @@ def device_updated(
 ) -> None:
     """Device updated callback."""
     print()
-    print(f"{datetime.now().strftime('%H:%M:%S')} Device updated! ({update_type})")
+    print(
+        f"{datetime.now(tz=datetime.timezone.utc).strftime('%H:%M:%S')} "
+        f"Device updated! ({update_type})"
+    )
     try:
         action(cb_device)
     except InvalidAuthError:

@@ -18,7 +18,6 @@ lint.ignore = [
     "N818",     # Exception name should be named with an Error suffix
     "PLR0912",  # Too many branches
     "PLR0915",  # Too many statements
-    "PLR2004",  # Magic value used
     "TCH001",   # Move application import into a type-checking block
     "TCH002",   # Move third-party import into a type-checking block
     "TCH003",   # Move standard library import into a type-checking block
@@ -27,18 +26,8 @@ lint.ignore = [
     "TRY400",   # Use `logging.exception` instead of `logging.error`
 ]
 [lint.per-file-ignores]
-"aioshelly/block_device/device.py" = [
-    "ERA001",   # Found commented-out code
-]
 "tools/*" = [
-    "DTZ005",    # The use of `datetime.datetime.now()` without `tz` argument is not allowed
-    "INP001",    # Add an `__init__.py`
-    "PTH123",    # `open()` should be replaced by `Path.open()`
     "T201",      # `print` found
-]
-"setup.py" = [
-    "PTH123",    # `open()` should be replaced by `Path.open()`
-    "SIM115",    # Use context handler for opening files
 ]
 
 [lint.mccabe]

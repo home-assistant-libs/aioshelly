@@ -87,7 +87,7 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
 
     print(f"Saving fixture to {fixture_path}")
 
-    with open(fixture_path, "wb") as file:
+    with Path.open(fixture_path, "wb") as file:
         file.write(
             orjson.dumps(
                 data_normalized,

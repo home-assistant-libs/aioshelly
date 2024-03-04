@@ -82,4 +82,4 @@ if (!BLE.Scanner.isRunning()) {
 }
 
 BLE.Scanner.Subscribe(bleCallback);
-"""  # noqa: E501
+"""  # noqa: E501``

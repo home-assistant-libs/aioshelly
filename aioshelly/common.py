@@ -20,6 +20,7 @@ from .const import (
     GEN1_MIN_FIRMWARE_DATE,
     GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN1_MODELS_UNSUPPORTED,
+    GEN2,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
 )
@@ -127,7 +128,7 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     else:
         fw_str = result["fw_id"]
         fw_ver = (
-            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE
+            GEN2_MIN_FIRMWARE_DATE if result["gen"] == GEN2 else GEN3_MIN_FIRMWARE_DATE
         )
 
     match = FIRMWARE_PATTERN.search(fw_str)

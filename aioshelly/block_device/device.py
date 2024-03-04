@@ -16,7 +16,13 @@ from aiohttp.client import ClientResponse
 from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT, MODEL_RGBW2
+from ..const import (
+    CONNECT_ERRORS,
+    DEVICE_IO_TIMEOUT,
+    HTTP_CALL_TIMEOUT,
+    HTTP_PORT,
+    MODEL_RGBW2,
+)
 from ..exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
@@ -122,7 +128,7 @@ class BlockDevice:
 
         # GEN1 cannot be configured behind a range extender as CoAP port cannot be
         # natted
-        if self.options.port != 80:
+        if self.options.port != HTTP_PORT:
             raise CustomPortNotSupported
 
         self._initializing = True
@@ -465,22 +471,7 @@ class Block:
         """Block initialize."""
         self.type = blk_type
         self.device = device
-        # https://shelly-api-docs.shelly.cloud/#coiot-device-description-cit-d
-        # blk
-        # {
-        #     "I": id,
-        #     "D": description
-        # }
         self.blk = blk
-        # Sensors:
-        # {
-        #     "I": id,
-        #     "T": type,
-        #     "D": description,
-        #     "U": unit,
-        #     "R": range,
-        #     "L": links
-        # }
         self.sensors = sensors
         sensor_ids = {}
         for sensor in sensors.values():

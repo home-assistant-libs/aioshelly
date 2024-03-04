@@ -246,5 +246,13 @@ WS_API_URL = "/api/shelly/ws"
 # Notification sent by RPC device in case of WebSocket close
 NOTIFY_WS_CLOSED = "NotifyWebSocketClosed"
 
-BLOCK_GENERATIONS = (1,)
-RPC_GENERATIONS = (2, 3)
+GEN1 = 1
+GEN2 = 2
+GEN3 = 3
+
+BLOCK_GENERATIONS = (GEN1,)
+RPC_GENERATIONS = (GEN2, GEN3)
+
+HTTP_PORT = 80
+PERIODIC_COAP_TYPE_CODE = 30
+END_OF_OPTIONS_MARKER = 0xFF
