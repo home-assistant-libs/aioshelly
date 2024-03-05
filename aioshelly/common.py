@@ -8,18 +8,20 @@ import logging
 import re
 from dataclasses import dataclass
 from socket import gethostbyname
-from typing import Any, Union
+from typing import Any
 
 import aiohttp
 from yarl import URL
 
 from .const import (
     CONNECT_ERRORS,
+    DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
     GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
     GEN1_MIN_FIRMWARE_DATE,
     GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN1_MODELS_UNSUPPORTED,
+    GEN2,
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
 )
@@ -44,7 +46,7 @@ class ConnectionOptions:
     temperature_unit: str = "C"
     auth: aiohttp.BasicAuth | None = None
     device_mac: str | None = None
-    port: int = 80
+    port: int = DEFAULT_HTTP_PORT
 
     def __post_init__(self) -> None:
         """Call after initialization."""
@@ -57,7 +59,7 @@ class ConnectionOptions:
             )
 
 
-IpOrOptionsType = Union[str, ConnectionOptions]
+IpOrOptionsType = str | ConnectionOptions
 
 
 async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOptions:
@@ -82,7 +84,7 @@ async def get_info(
     aiohttp_session: aiohttp.ClientSession,
     ip_address: str,
     device_mac: str | None = None,
-    port: int = 80,
+    port: int = DEFAULT_HTTP_PORT,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
     try:
@@ -127,7 +129,7 @@ def shelly_supported_firmware(result: dict[str, Any]) -> bool:
     else:
         fw_str = result["fw_id"]
         fw_ver = (
-            GEN2_MIN_FIRMWARE_DATE if result["gen"] == 2 else GEN3_MIN_FIRMWARE_DATE
+            GEN2_MIN_FIRMWARE_DATE if result["gen"] == GEN2 else GEN3_MIN_FIRMWARE_DATE
         )
 
     match = FIRMWARE_PATTERN.search(fw_str)

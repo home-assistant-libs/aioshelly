@@ -1,0 +1,34 @@
+target-version = "py310"
+
+lint.select = ["ALL"]
+
+lint.ignore = [
+    "ANN101",   # Missing type annotation for `self` in method
+    "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
+    "COM812",   # Trailing comma missing
+    "D203",     # 1 blank line required before class docstring
+    "D213",     # Multi-line docstring summary should start at the second line
+    "EM101",    # Exception must not use a string literal, assign to variable first
+    "EM102",    # Exception must not use an f-string literal, assign to variable first
+    "FBT001",   # Boolean-typed positional argument in function definition
+    "FBT002",   # Boolean default positional argument in function definition
+    "FBT003",   # Boolean positional value in function call
+    "G201",     # Logging `.exception(...)` should be used instead of `.error(..., exc_info=True)`
+    "ISC001",   # Single line implicit string concatenation
+    "N818",     # Exception name should be named with an Error suffix
+    "PLR0912",  # Too many branches
+    "PLR0915",  # Too many statements
+    "TCH001",   # Move application import into a type-checking block
+    "TCH002",   # Move third-party import into a type-checking block
+    "TCH003",   # Move standard library import into a type-checking block
+    "TID252",   # Prefer absolute imports over relative imports from parent modules
+    "TRY003",   # Avoid specifying long messages outside the exception class
+    "TRY400",   # Use `logging.exception` instead of `logging.error`
+]
+[lint.per-file-ignores]
+"tools/*" = [
+    "T201",      # `print` found
+]
+
+[lint.mccabe]
+max-complexity = 18

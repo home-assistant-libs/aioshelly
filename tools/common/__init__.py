@@ -1,18 +1,24 @@
 # Common tools methods
 """Methods for aioshelly cmdline tools."""
+
 from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import aiohttp
 
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
-from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, RPC_GENERATIONS
+from aioshelly.const import (
+    BLOCK_GENERATIONS,
+    DEFAULT_HTTP_PORT,
+    MODEL_NAMES,
+    RPC_GENERATIONS,
+)
 from aioshelly.exceptions import InvalidAuthError, ShellyError
 from aioshelly.rpc_device import RpcDevice, RpcUpdateType, WsServer
 
@@ -63,7 +69,10 @@ def device_updated(
 ) -> None:
     """Device updated callback."""
     print()
-    print(f"{datetime.now().strftime('%H:%M:%S')} Device updated! ({update_type})")
+    print(
+        f"{datetime.now(tz=timezone.utc).strftime('%H:%M:%S')} "
+        f"Device updated! ({update_type})"
+    )
     try:
         action(cb_device)
     except InvalidAuthError:
@@ -72,7 +81,7 @@ def device_updated(
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
     """Print device data."""
-    port = getattr(device, "port", 80)
+    port = getattr(device, "port", DEFAULT_HTTP_PORT)
     if not device.initialized:
         print()
         print(f"** Device @ {device.ip_address}:{port} not initialized **")
@@ -91,22 +100,19 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
 
 def print_block_device(device: BlockDevice) -> None:
     """Print block (GEN1) device data."""
-    assert device.blocks
+    if TYPE_CHECKING:
+        assert device.blocks
 
     for block in device.blocks:
         print(block)
         for attr, value in block.current_values().items():
             info = block.info(attr)
 
-            if value is None:
-                value = "-"
+            _value = value if value is not None else "-"
 
-            if BLOCK_VALUE_UNIT in info:
-                unit = " " + info[BLOCK_VALUE_UNIT]
-            else:
-                unit = ""
+            unit = " " + info[BLOCK_VALUE_UNIT] if BLOCK_VALUE_UNIT in info else ""
 
-            print(f"{attr.ljust(16)}{value}{unit}")
+            print(f"{attr.ljust(16)}{_value}{unit}")
         print()
 
 

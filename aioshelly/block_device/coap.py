@@ -10,9 +10,11 @@ from collections.abc import Callable
 from enum import Enum, auto
 from ipaddress import IPv4Address
 from types import TracebackType
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
-from ..const import DEFAULT_COAP_PORT
+from typing_extensions import Self
+
+from ..const import DEFAULT_COAP_PORT, END_OF_OPTIONS_MARKER, PERIODIC_COAP_TYPE_CODE
 from ..json import JSONDecodeError, json_loads
 
 COAP_OPTION_DEVICE_ID = 3332
@@ -59,7 +61,7 @@ class CoapMessage:
 
         # parse options
         while raw_data:
-            if raw_data[0] == 0xFF:  # end of options marker
+            if raw_data[0] == END_OF_OPTIONS_MARKER:
                 data = raw_data[1:]
                 break
 
@@ -82,10 +84,10 @@ class CoapMessage:
             self.payload = json_loads(data.decode())
         except (JSONDecodeError, UnicodeDecodeError) as err:
             raise InvalidMessage(
-                f"Message type {self.code} is not a valid JSON format: {str(payload)}"
+                f"Message type {self.code} is not a valid JSON format: {payload!s}"
             ) from err
 
-        if self.code == 30:
+        if self.code == PERIODIC_COAP_TYPE_CODE:
             self.coap_type = CoapType.PERIODIC
 
         _LOGGER.debug(
@@ -100,14 +102,14 @@ class CoapMessage:
     @staticmethod
     def _read_extended_field_value(value: int, raw_data: bytes) -> tuple[int, bytes]:
         """Decode large values of option delta and option length."""
-        if 0 <= value < 13:
+        if 0 <= value < 13:  # noqa: PLR2004
             return (value, raw_data)
-        if value == 13:
+        if value == 13:  # noqa: PLR2004
             if len(raw_data) < 1:
                 raise InvalidMessage("Option ended prematurely")
             return (raw_data[0] + 13, raw_data[1:])
-        if value == 14:
-            if len(raw_data) < 2:
+        if value == 14:  # noqa: PLR2004
+            if len(raw_data) < 2:  # noqa: PLR2004
                 raise InvalidMessage("Option ended prematurely")
             return (int.from_bytes(raw_data[:2], "big") + 269, raw_data[2:])
 
@@ -127,7 +129,8 @@ def socket_init(
 
     if not socket_ips:
         _LOGGER.debug("Socket initialized on port %s (default interface)", socket_port)
-        # INADDR_ANY indicates that the OS will chose an interface to join the given multicast group.
+        # INADDR_ANY indicates that the OS will chose an interface to join the given
+        # multicast group.
         mreq = struct.pack("=4sl", multicast_ip_bytes, socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return sock
@@ -176,8 +179,10 @@ class COAP(asyncio.DatagramProtocol):
 
         Subscribe with `subscribe_updates` to receive answer.
         """
-        assert self.transport is not None
-        msg = b"\x50\x01\x00\x0A\xb3cit\x01" + path.encode() + b"\xFF\x00"
+        if TYPE_CHECKING:
+            assert self.transport is not None
+
+        msg = b"\x50\x01\x00\x0a\xb3cit\x01" + path.encode() + b"\xff\x00"
         _LOGGER.debug("Sending request 'cit/%s' to device %s", path, ip)
         self.transport.sendto(msg, (ip, 5683))
 
@@ -229,13 +234,16 @@ class COAP(asyncio.DatagramProtocol):
         self.subscriptions[ip_or_device_id] = message_received
         return lambda: self.subscriptions.pop(ip_or_device_id)
 
-    async def __aenter__(self) -> "COAP":
+    async def __aenter__(self) -> Self:
         """Entering async context manager."""
         await self.initialize()
         return self
 
     async def __aexit__(
-        self, exc_type: Exception, exc_value: str, traceback: TracebackType
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         """Leaving async context manager."""
         self.close()
@@ -243,13 +251,13 @@ class COAP(asyncio.DatagramProtocol):
 
 async def discovery_dump() -> None:
     """Dump all discovery data as it comes in."""
-    async with COAP(lambda msg: print(msg.ip, msg.payload)):
+    async with COAP(lambda msg: print(msg.ip, msg.payload)):  # noqa: T201
         while True:
             await asyncio.sleep(0.1)
 
 
 if __name__ == "__main__":
-    try:
+    try:  # noqa: SIM105
         asyncio.run(discovery_dump())
     except KeyboardInterrupt:
         pass

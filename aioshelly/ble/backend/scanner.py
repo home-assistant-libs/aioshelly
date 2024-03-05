@@ -24,7 +24,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
 
         try:
             parsed_advs = parse_ble_scan_result_event(event["data"])
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:
             # Broad exception catch because we have no
             # control over the data that is coming in.
             LOGGER.error("Failed to parse BLE event: %s", err, exc_info=True)

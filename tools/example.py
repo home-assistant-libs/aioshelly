@@ -1,5 +1,6 @@
 # Run with python3 example.py -h for help
 """aioshelly usage example."""
+
 from __future__ import annotations
 
 import argparse
@@ -10,6 +11,7 @@ import signal
 import traceback
 from functools import partial
 from ipaddress import IPv4Address
+from pathlib import Path
 from types import FrameType
 
 import aiohttp
@@ -25,7 +27,7 @@ from common import (
 )
 
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import WS_API_URL
+from aioshelly.const import DEFAULT_HTTP_PORT, WS_API_URL
 from aioshelly.exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
@@ -42,18 +44,19 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
         try:
             device = await create_device(aiohttp_session, options, init, gen)
         except FirmwareUnsupported as err:
-            print(f"Device firmware not supported, error: {repr(err)}")
+            print(f"Device firmware not supported, error: {err!r}")
             return
         except InvalidAuthError as err:
-            print(f"Invalid or missing authorization, error: {repr(err)}")
+            print(f"Invalid or missing authorization, error: {err!r}")
             return
         except DeviceConnectionError as err:
             print(
-                f"Error connecting to {options.ip_address}:{options.port}, error: {repr(err)}"
+                f"Error connecting to {options.ip_address}:{options.port}, "
+                f"error: {err!r}"
             )
             return
         except MacAddressMismatchError as err:
-            print(f"MAC address mismatch, error: {repr(err)}")
+            print(f"MAC address mismatch, error: {err!r}")
             return
         except WrongShellyGen:
             print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
@@ -74,10 +77,8 @@ async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     options: ConnectionOptions
 
-    device_options = []
-    with open("devices.json", encoding="utf8") as fp:
-        for line in fp:
-            device_options.append(ConnectionOptions(**json.loads(line)))
+    with Path.open("devices.json", encoding="utf8") as fp:
+        device_options = [ConnectionOptions(**json.loads(line)) for line in fp]
 
     async with aiohttp.ClientSession() as aiohttp_session:
         results = await asyncio.gather(
@@ -90,7 +91,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
             return_exceptions=True,
         )
 
-        for options, result in zip(device_options, results):
+        for options, result in zip(device_options, results, strict=False):
             if not isinstance(result, Exception):
                 continue
 
@@ -126,7 +127,7 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--device_port",
         "-dp",
         type=int,
-        default=80,
+        default=DEFAULT_HTTP_PORT,
         help="Port to use when testing single device",
     )
     parser.add_argument(
@@ -154,7 +155,10 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--devices",
         "-d",
         action="store_true",
-        help='Connect to all the devices in "devices.json" at once and print their status',
+        help=(
+            'Connect to all the devices in "devices.json" '
+            "at once and print their status"
+        ),
     )
     parser.add_argument(
         "--init", "-i", action="store_true", help="Init device(s) at startup"

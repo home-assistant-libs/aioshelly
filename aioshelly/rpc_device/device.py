@@ -65,7 +65,7 @@ class RpcDevice:
         ws_context: WsServer,
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
-    ):
+    ) -> None:
         """Device init."""
         self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
@@ -90,7 +90,7 @@ class RpcDevice:
 
     @classmethod
     async def create(
-        cls,
+        cls: type[RpcDevice],
         aiohttp_session: aiohttp.ClientSession,
         ws_context: WsServer,
         ip_or_options: IpOrOptionsType,
@@ -170,7 +170,7 @@ class RpcDevice:
 
             if self.requires_auth:
                 if self.options.username is None or self.options.password is None:
-                    raise InvalidAuthError("auth missing and required")
+                    raise InvalidAuthError("auth missing and required")  # noqa: TRY301
 
                 self._wsrpc.set_auth_data(
                     self.shelly["auth_domain"],
@@ -190,7 +190,7 @@ class RpcDevice:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
             # Auth error during async init, used by sleeping devices
-            # Will raise 'invalidAuthError' on next property read
+            # Will raise 'InvalidAuthError' on next property read
             if not async_init:
                 await self._disconnect_websocket()
                 raise
@@ -260,10 +260,9 @@ class RpcDevice:
 
     async def script_getcode(self, script_id: int) -> ShellyScriptCode:
         """Get script code from 'Script.GetCode'."""
-        code_response = cast(
+        return cast(
             ShellyScriptCode, await self.call_rpc("Script.GetCode", {"id": script_id})
         )
-        return code_response
 
     async def script_putcode(self, script_id: int, code: str) -> None:
         """Set script code from 'Script.PutCode'."""

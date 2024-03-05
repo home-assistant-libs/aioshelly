@@ -4,21 +4,21 @@ from typing import Any
 
 import orjson
 
-JSONDecodeError = orjson.JSONDecodeError  # pylint: disable=no-member
-json_loads = orjson.loads  # pylint: disable=no-member
+JSONDecodeError = orjson.JSONDecodeError
+json_loads = orjson.loads
 
 
 def json_encoder_default(obj: Any) -> Any:
     """Convert objects."""
-    if isinstance(obj, (set, tuple)):
+    if isinstance(obj, set | tuple):
         return list(obj)
     raise TypeError
 
 
 def json_dumps(data: Any) -> str:
     """Dump json string."""
-    return orjson.dumps(  # pylint: disable=no-member
+    return orjson.dumps(
         data,
-        option=orjson.OPT_NON_STR_KEYS,  # pylint: disable=no-member
+        option=orjson.OPT_NON_STR_KEYS,
         default=json_encoder_default,
     ).decode("utf-8")
