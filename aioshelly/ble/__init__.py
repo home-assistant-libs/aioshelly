@@ -36,7 +36,7 @@ async def async_stop_scanner(device: RpcDevice) -> None:
         await device.script_stop(script_id)
 
 
-async def async_start_scanner(  # pylint: disable=too-many-arguments
+async def async_start_scanner(  # noqa: PLR0913
     device: RpcDevice,
     active: bool,
     event_type: str,

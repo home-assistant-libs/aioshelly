@@ -8,6 +8,8 @@ PROJECT_DIR = Path(__file__).parent.resolve()
 README_FILE = PROJECT_DIR / "README.md"
 VERSION = "8.1.1"
 
+with open("requirements.txt", encoding="utf-8") as file:  # noqa: PTH123
+    requirements = file.read().splitlines()
 
 setup(
     name="aioshelly",
@@ -24,7 +26,7 @@ setup(
     package_data={"aioshelly": ["py.typed"]},
     zip_safe=True,
     platforms="any",
-    install_requires=list(val.strip() for val in open("requirements.txt")),
+    install_requires=requirements,
     classifiers=[
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",

@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable
 from enum import Enum, auto
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import aiohttp
 import async_timeout
@@ -16,7 +16,13 @@ from aiohttp.client import ClientResponse
 from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, HTTP_CALL_TIMEOUT, MODEL_RGBW2
+from ..const import (
+    CONNECT_ERRORS,
+    DEFAULT_HTTP_PORT,
+    DEVICE_IO_TIMEOUT,
+    HTTP_CALL_TIMEOUT,
+    MODEL_RGBW2,
+)
 from ..exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
@@ -67,7 +73,7 @@ class BlockDevice:
         coap_context: COAP,
         aiohttp_session: aiohttp.ClientSession,
         options: ConnectionOptions,
-    ):
+    ) -> None:
         """Device init."""
         self.coap_context: COAP = coap_context
         self.aiohttp_session: aiohttp.ClientSession = aiohttp_session
@@ -93,7 +99,7 @@ class BlockDevice:
 
     @classmethod
     async def create(
-        cls,
+        cls: type[BlockDevice],
         aiohttp_session: aiohttp.ClientSession,
         coap_context: COAP,
         ip_or_options: IpOrOptionsType,
@@ -106,7 +112,7 @@ class BlockDevice:
         if initialize:
             await instance.initialize()
         else:
-            await instance._coap_request("s")
+            await instance._coap_request("s")  # noqa: SLF001
 
         return instance
 
@@ -120,8 +126,9 @@ class BlockDevice:
         if self._initializing:
             raise RuntimeError("Already initializing")
 
-        # GEN1 cannot be configured behind a range extender as CoAP port cannot be natted
-        if self.options.port != 80:
+        # GEN1 cannot be configured behind a range extender as CoAP port cannot be
+        # natted
+        if self.options.port != DEFAULT_HTTP_PORT:
             raise CustomPortNotSupported
 
         self._initializing = True
@@ -443,7 +450,7 @@ class BlockDevice:
 class Block:
     """Shelly CoAP block."""
 
-    TYPES: dict = {}
+    TYPES: ClassVar[dict] = {}
     type = None
 
     def __init_subclass__(cls, blk_type: str = "", **kwargs: Any) -> None:
@@ -460,26 +467,11 @@ class Block:
 
     def __init__(
         self, device: BlockDevice, blk_type: str, blk: dict, sensors: dict[str, dict]
-    ):
+    ) -> None:
         """Block initialize."""
         self.type = blk_type
         self.device = device
-        # https://shelly-api-docs.shelly.cloud/#coiot-device-description-cit-d
-        # blk
-        # {
-        #     "I": id,
-        #     "D": description
-        # }
         self.blk = blk
-        # Sensors:
-        # {
-        #     "I": id,
-        #     "T": type,
-        #     "D": description,
-        #     "U": unit,
-        #     "R": range,
-        #     "L": links
-        # }
         self.sensors = sensors
         sensor_ids = {}
         for sensor in sensors.values():
@@ -539,9 +531,12 @@ class Block:
     def __getattr__(self, attr: str) -> str | None:
         """Get attribute."""
         if attr not in self.sensor_ids:
-            raise AttributeError(
-                f"Device {self.device.model} with firmware {self.device.firmware_version} has no attribute '{attr}' in block {self.type}"
+            msg = (
+                f"Device {self.device.model} with firmware "
+                f"{self.device.firmware_version} has no attribute '{attr}' "
+                f"in block {self.type}"
             )
+            raise AttributeError(msg)
 
         if self.device.coap_s is None:
             return None
