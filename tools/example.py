@@ -205,10 +205,7 @@ async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
 
-    listen_ip_address = (
-        [IPv4Address(args.listen_ip_address)] if args.listen_ip_address else None
-    )
-    await coap_context.initialize(args.coap_port, listen_ip_address)
+    await coap_context.initialize(args.coap_port, args.listen_ip_address)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
     if not args.init and not (args.gen1 or args.gen2 or args.gen3):
