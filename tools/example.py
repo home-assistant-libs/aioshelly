@@ -10,7 +10,6 @@ import logging
 import signal
 import traceback
 from functools import partial
-from ipaddress import IPv4Address
 from pathlib import Path
 from types import FrameType
 
@@ -191,8 +190,8 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--listen_ip_address",
         "-lip",
         type=str,
-        nargs='*',
-        default=None,        
+        nargs="*",
+        default=None,
         help="Listen ip address for incoming CoAP packets",
     )
 
