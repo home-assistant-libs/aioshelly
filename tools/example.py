@@ -191,6 +191,8 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--listen_ip_address",
         "-lip",
         type=str,
+        nargs='*',
+        default=None,        
         help="Listen ip address for incoming CoAP packets",
     )
 
