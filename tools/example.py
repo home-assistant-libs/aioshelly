@@ -186,6 +186,14 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         type=str,
         help="Update outbound WebSocket (Gen2/3) and exit",
     )
+    parser.add_argument(
+        "--listen_ip_address",
+        "-lip",
+        type=str,
+        nargs="*",
+        default=None,
+        help="Listen ip address for incoming CoAP packets",
+    )
 
     arguments = parser.parse_args()
 
@@ -196,7 +204,7 @@ async def main() -> None:
     """Run main."""
     parser, args = get_arguments()
 
-    await coap_context.initialize(args.coap_port)
+    await coap_context.initialize(args.coap_port, args.listen_ip_address)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
     if not args.init and not (args.gen1 or args.gen2 or args.gen3):
