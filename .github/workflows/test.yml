@@ -28,7 +28,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install tox tox-gh-actions
+          pip install uv tox tox-gh-actions tox-uv
       - name: Test with tox
         run: tox
