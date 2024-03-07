@@ -1,4 +1,4 @@
-# Run with python3 example.py -h for help
+# Run with python3 fixture.py -h for help
 """aioshelly usage example."""
 
 from __future__ import annotations
