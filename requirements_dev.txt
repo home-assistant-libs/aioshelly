@@ -4,5 +4,5 @@ requests
 types-orjson
 types-requests
 pre-commit==3.6.2
-tox==4.13.0
+tox==4.14.1
 wheel==0.42.0
