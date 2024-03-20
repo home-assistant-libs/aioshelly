@@ -60,6 +60,7 @@ class BlockUpdateType(Enum):
     COAP_PERIODIC = auto()
     COAP_REPLY = auto()
     INITIALIZED = auto()
+    ONLINE = auto()
 
 
 class BlockDevice:
@@ -92,7 +93,6 @@ class BlockDevice:
         self.initialized = False
         self._initializing = False
         self._last_error: ShellyError | None = None
-        self._init_task: asyncio.Task[None] | None = None
 
     @classmethod
     async def create(
@@ -118,7 +118,7 @@ class BlockDevice:
         """Device ip address."""
         return self.options.ip_address
 
-    async def initialize(self, async_init: bool = False) -> None:
+    async def initialize(self) -> None:
         """Device initialization."""
         if self._initializing:
             raise RuntimeError("Already initializing")
@@ -148,7 +148,7 @@ class BlockDevice:
                 # Or else we might miss the answer to D
                 await event_d.wait()
 
-                if not async_init:
+                if self.coap_s is None:
                     event_s = await self._coap_request("s")
                     await event_s.wait()
 
@@ -156,27 +156,20 @@ class BlockDevice:
         except ClientResponseError as err:
             if err.status == HTTPStatus.UNAUTHORIZED:
                 self._last_error = InvalidAuthError(err)
-                # Auth error during async init, used by sleeping devices
-                # Will raise 'invalidAuthError; on next property read
-                self.initialized = True
             else:
                 self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            if not async_init:
-                self.shutdown()
-                raise self._last_error from err
+            self.shutdown()
+            raise self._last_error from err
         except (MacAddressMismatchError, FirmwareUnsupported) as err:
             self._last_error = err
             _LOGGER.debug("host %s: error: %r", ip, err)
-            if not async_init:
-                self.shutdown()
-                raise
+            self.shutdown()
+            raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            if not async_init:
-                self.shutdown()
-                raise DeviceConnectionError(err) from err
+            raise
         finally:
             self._initializing = False
 
@@ -191,20 +184,10 @@ class BlockDevice:
             self._unsub_coap()
             self._unsub_coap = None
 
-    async def _async_init(self) -> None:
-        """Async init upon CoAP message event."""
-        await self.initialize(True)
-
     def _coap_message_received(self, msg: CoapMessage) -> None:
         """COAP message received."""
-        if not self._initializing and not self.initialized:
-            loop = asyncio.get_running_loop()
-            self._init_task = loop.create_task(self._async_init())
-
-            def _clear_init_task(_: Any) -> None:
-                self._init_task = None
-
-            self._init_task.add_done_callback(_clear_init_task)
+        if not self._initializing and not self.initialized and self._update_listener:
+            self._update_listener(self, BlockUpdateType.ONLINE)
 
         if not msg.payload:
             return

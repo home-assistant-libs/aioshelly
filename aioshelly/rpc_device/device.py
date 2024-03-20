@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from collections.abc import Callable
 from enum import Enum, auto
@@ -53,6 +52,7 @@ class RpcUpdateType(Enum):
     INITIALIZED = auto()
     DISCONNECTED = auto()
     UNKNOWN = auto()
+    ONLINE = auto()
 
 
 class RpcDevice:
@@ -84,7 +84,6 @@ class RpcDevice:
         self.initialized: bool = False
         self._initializing: bool = False
         self._last_error: ShellyError | None = None
-        self._init_task: asyncio.Task[None] | None = None
 
     @classmethod
     async def create(
@@ -102,11 +101,6 @@ class RpcDevice:
             await instance.initialize()
 
         return instance
-
-    async def _async_init(self) -> None:
-        """Async init upon WsRPC message event."""
-        await self.initialize(True)
-        await self._wsrpc.disconnect()
 
     def _on_notification(
         self, method: str, params: dict[str, Any] | None = None
@@ -126,18 +120,14 @@ class RpcDevice:
         elif method == NOTIFY_WS_CLOSED:
             update_type = RpcUpdateType.DISCONNECTED
 
-        if not self._initializing and not self.initialized:
-            loop = asyncio.get_running_loop()
-            self._init_task = loop.create_task(self._async_init())
-
-            def _clear_init_task(_: Any) -> None:
-                self._init_task = None
-
-            self._init_task.add_done_callback(_clear_init_task)
+        if not self._update_listener or self._initializing:
             return
 
-        if self._update_listener and self.initialized:
-            self._update_listener(self, update_type)
+        if not self.initialized:
+            self._update_listener(self, RpcUpdateType.ONLINE)
+            return
+
+        self._update_listener(self, update_type)
 
     @property
     def ip_address(self) -> str:
@@ -149,7 +139,7 @@ class RpcDevice:
         """Device port."""
         return self.options.port
 
-    async def initialize(self, async_init: bool = False) -> None:
+    async def initialize(self) -> None:
         """Device initialization."""
         if self._initializing:
             raise RuntimeError("Already initializing")
@@ -180,31 +170,25 @@ class RpcDevice:
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
 
-                if not async_init or self._status is None:
+                if self._status is None:
                     await self.update_status()
 
             self.initialized = True
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
-            # Auth error during async init, used by sleeping devices
-            # Will raise 'InvalidAuthError' on next property read
-            if not async_init:
-                await self._disconnect_websocket()
-                raise
-            self.initialized = True
+            await self._disconnect_websocket()
+            raise
         except (MacAddressMismatchError, FirmwareUnsupported) as err:
             self._last_error = err
             _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
-            if not async_init:
-                await self._disconnect_websocket()
-                raise
+            await self._disconnect_websocket()
+            raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
-            if not async_init:
-                await self._disconnect_websocket()
-                raise DeviceConnectionError(err) from err
+            await self._disconnect_websocket()
+            raise DeviceConnectionError(err) from err
         finally:
             self._initializing = False
 

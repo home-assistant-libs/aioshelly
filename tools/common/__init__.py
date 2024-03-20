@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -19,11 +20,12 @@ from aioshelly.const import (
     MODEL_NAMES,
     RPC_GENERATIONS,
 )
-from aioshelly.exceptions import InvalidAuthError, ShellyError
+from aioshelly.exceptions import ShellyError
 from aioshelly.rpc_device import RpcDevice, RpcUpdateType, WsServer
 
 coap_context = COAP()
 ws_context = WsServer()
+init_tasks_ref = set()
 
 
 async def create_device(
@@ -73,10 +75,15 @@ def device_updated(
         f"{datetime.now(tz=UTC).strftime('%H:%M:%S')} "
         f"Device updated! ({update_type})"
     )
-    try:
-        action(cb_device)
-    except InvalidAuthError:
-        print("Invalid or missing authorization (from async init)")
+
+    if update_type in (BlockUpdateType.ONLINE, RpcUpdateType.ONLINE):
+        loop = asyncio.get_running_loop()
+        init_task = loop.create_task(cb_device.initialize())
+        init_tasks_ref.add(init_task)
+        init_task.add_done_callback(init_tasks_ref.remove)
+        return
+
+    action(cb_device)
 
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
