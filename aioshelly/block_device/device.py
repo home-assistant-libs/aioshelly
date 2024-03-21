@@ -9,7 +9,6 @@ from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, ClassVar, cast
 
-import async_timeout
 from aiohttp import ClientResponse, ClientResponseError, ClientSession
 from yarl import URL
 
@@ -140,7 +139,7 @@ class BlockDevice:
             if self.requires_auth and not self.options.auth:
                 raise InvalidAuthError("auth missing and required")
 
-            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+            async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self.update_settings()
                 await self.update_status()
 
@@ -226,7 +225,7 @@ class BlockDevice:
     async def update(self) -> None:
         """Device update."""
         try:
-            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+            async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 event = await self._coap_request("s")
                 await event.wait()
         except CONNECT_ERRORS as err:

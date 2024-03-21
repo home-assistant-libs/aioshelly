@@ -8,7 +8,6 @@ from collections.abc import Callable
 from enum import Enum, auto
 from typing import Any, cast
 
-import async_timeout
 from aiohttp import ClientSession
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
@@ -177,7 +176,7 @@ class RpcDevice:
                     self.options.password,
                 )
 
-            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+            async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
                 await self.update_config()
 
@@ -341,7 +340,7 @@ class RpcDevice:
     ) -> dict[str, Any]:
         """Call RPC method."""
         try:
-            async with async_timeout.timeout(DEVICE_IO_TIMEOUT):
+            async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 return await self._wsrpc.call(method, params)
         except (InvalidAuthError, RpcCallError) as err:
             self._last_error = err

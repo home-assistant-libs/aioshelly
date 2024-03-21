@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 
-import async_timeout
 from aiohttp import (
     ClientSession,
     ClientWebSocketResponse,
@@ -450,7 +449,7 @@ class WsRPC:
         self._calls[call.call_id] = call
 
         try:
-            async with async_timeout.timeout(timeout):
+            async with asyncio.timeout(timeout):
                 await self._send_json(call.request_frame)
                 resp = await future
         except TimeoutError as exc:
