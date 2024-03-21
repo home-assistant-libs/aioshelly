@@ -100,23 +100,25 @@ class BlockDevice:
         aiohttp_session: ClientSession,
         coap_context: COAP,
         ip_or_options: IpOrOptionsType,
-        initialize: bool = True,
     ) -> BlockDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
-        instance = cls(coap_context, aiohttp_session, options)
-
-        if initialize:
-            await instance.initialize()
-        else:
-            await instance._coap_request("s")  # noqa: SLF001
-
-        return instance
+        # Try sending cit/s request to trigger a sleeping device
+        try:
+            await coap_context.request(options.ip_address, "s")
+        except OSError as err:
+            _LOGGER.debug("host %s: error: %r", options.ip_address, err)
+        return cls(coap_context, aiohttp_session, options)
 
     @property
     def ip_address(self) -> str:
         """Device ip address."""
         return self.options.ip_address
+
+    @property
+    def port(self) -> int:
+        """Device port."""
+        return DEFAULT_HTTP_PORT
 
     async def initialize(self) -> None:
         """Device initialization."""

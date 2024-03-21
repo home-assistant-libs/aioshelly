@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable
 from enum import Enum, auto
@@ -91,16 +92,10 @@ class RpcDevice:
         aiohttp_session: ClientSession,
         ws_context: WsServer,
         ip_or_options: IpOrOptionsType,
-        initialize: bool = True,
     ) -> RpcDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
-        instance = cls(ws_context, aiohttp_session, options)
-
-        if initialize:
-            await instance.initialize()
-
-        return instance
+        return cls(ws_context, aiohttp_session, options)
 
     def _on_notification(
         self, method: str, params: dict[str, Any] | None = None
