@@ -10,9 +10,7 @@ from collections.abc import Callable
 from enum import Enum, auto
 from ipaddress import IPv4Address
 from types import TracebackType
-from typing import TYPE_CHECKING, cast
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Self, cast
 
 from ..const import DEFAULT_COAP_PORT, END_OF_OPTIONS_MARKER, PERIODIC_COAP_TYPE_CODE
 from ..json import JSONDecodeError, json_loads
