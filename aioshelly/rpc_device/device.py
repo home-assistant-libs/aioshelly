@@ -8,9 +8,8 @@ from collections.abc import Callable
 from enum import Enum, auto
 from typing import Any, cast
 
-import aiohttp
 import async_timeout
-from aiohttp.client import ClientSession
+from aiohttp import ClientSession
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
@@ -63,7 +62,7 @@ class RpcDevice:
     def __init__(
         self,
         ws_context: WsServer,
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         options: ConnectionOptions,
     ) -> None:
         """Device init."""
@@ -91,7 +90,7 @@ class RpcDevice:
     @classmethod
     async def create(
         cls: type[RpcDevice],
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         ws_context: WsServer,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,

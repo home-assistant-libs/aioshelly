@@ -9,10 +9,8 @@ from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, ClassVar, cast
 
-import aiohttp
 import async_timeout
-from aiohttp import ClientResponseError
-from aiohttp.client import ClientResponse
+from aiohttp import ClientResponse, ClientResponseError, ClientSession
 from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
@@ -71,12 +69,12 @@ class BlockDevice:
     def __init__(
         self,
         coap_context: COAP,
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         options: ConnectionOptions,
     ) -> None:
         """Device init."""
         self.coap_context: COAP = coap_context
-        self.aiohttp_session: aiohttp.ClientSession = aiohttp_session
+        self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
         self.coap_d: dict[str, Any] | None = None
         self.blocks: list | None = None
@@ -100,7 +98,7 @@ class BlockDevice:
     @classmethod
     async def create(
         cls: type[BlockDevice],
-        aiohttp_session: aiohttp.ClientSession,
+        aiohttp_session: ClientSession,
         coap_context: COAP,
         ip_or_options: IpOrOptionsType,
         initialize: bool = True,

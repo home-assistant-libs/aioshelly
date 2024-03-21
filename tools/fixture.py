@@ -13,8 +13,8 @@ from pathlib import Path
 from types import FrameType
 from typing import Any
 
-import aiohttp
 import orjson
+from aiohttp import ClientSession
 from common import close_connections, create_device, device_updated
 
 from aioshelly.block_device import COAP, BlockDevice
@@ -37,7 +37,7 @@ async def connect_and_save(
     options: ConnectionOptions, init: bool, gen: int | None
 ) -> None:
     """Save fixture single device."""
-    async with aiohttp.ClientSession() as aiohttp_session:
+    async with ClientSession() as aiohttp_session:
         try:
             device = await create_device(aiohttp_session, options, init, gen)
         except FirmwareUnsupported as err:

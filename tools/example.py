@@ -13,7 +13,7 @@ from functools import partial
 from pathlib import Path
 from types import FrameType
 
-import aiohttp
+from aiohttp import ClientSession
 from common import (
     close_connections,
     coap_context,
@@ -39,7 +39,7 @@ from aioshelly.exceptions import (
 
 async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -> None:
     """Test single device."""
-    async with aiohttp.ClientSession() as aiohttp_session:
+    async with ClientSession() as aiohttp_session:
         try:
             device = await create_device(aiohttp_session, options, init, gen)
         except FirmwareUnsupported as err:
@@ -79,7 +79,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
     with Path.open("devices.json", encoding="utf8") as fp:
         device_options = [ConnectionOptions(**json.loads(line)) for line in fp]
 
-    async with aiohttp.ClientSession() as aiohttp_session:
+    async with ClientSession() as aiohttp_session:
         results = await asyncio.gather(
             *[
                 asyncio.gather(
