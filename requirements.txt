@@ -3,3 +3,4 @@ aiohttp
 habluetooth>=2.1.0
 yarl
 orjson>=3.8.1
+typing_extensions
