@@ -7,7 +7,7 @@
         "context": "..",
         "args": {
             // Update 'VARIANT' to pick a Python version: 3, 3.10, 3.11
-            "VARIANT": "3.10",
+            "VARIANT": "3.11",
             // Options
             "INSTALL_NODE": "false",
             "NODE_VERSION": "lts/*"
