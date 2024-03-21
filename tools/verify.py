@@ -137,7 +137,7 @@ def run() -> None:
     for example in coiot_examples():
         try:
             print_example(example)
-        except Exception as err:  # noqa: BLE001 PERF203
+        except Exception as err:  # noqa: BLE001
             errors.append((example, err))
             break
 

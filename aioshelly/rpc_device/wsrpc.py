@@ -448,7 +448,7 @@ class WsRPC:
             async with async_timeout.timeout(timeout):
                 await self._send_json(call.request_frame)
                 resp = await future
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             with contextlib.suppress(asyncio.CancelledError):
                 future.cancel()
                 await future
