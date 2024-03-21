@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
-import aiohttp
+from aiohttp import ClientSession
 
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
@@ -27,7 +27,7 @@ ws_context = WsServer()
 
 
 async def create_device(
-    aiohttp_session: aiohttp.ClientSession,
+    aiohttp_session: ClientSession,
     options: ConnectionOptions,
     init: bool,
     gen: int | None,
@@ -51,7 +51,7 @@ async def create_device(
 
 
 async def connect_and_print_device(
-    aiohttp_session: aiohttp.ClientSession,
+    aiohttp_session: ClientSession,
     options: ConnectionOptions,
     init: bool,
     gen: int | None,
@@ -134,7 +134,7 @@ async def update_outbound_ws(
     options: ConnectionOptions, init: bool, ws_url: str
 ) -> None:
     """Update outbound WebSocket URL (Gen2/3)."""
-    async with aiohttp.ClientSession() as aiohttp_session:
+    async with ClientSession() as aiohttp_session:
         device: RpcDevice = await create_device(aiohttp_session, options, init, 2)
         print(f"Updating outbound weboskcet URL to {ws_url}")
         print(f"Restart required: {await device.update_outbound_websocket(ws_url)}")

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any
 
-import aiohttp
+from aiohttp import BasicAuth, ClientSession
 from yarl import URL
 
 from .const import (
@@ -44,7 +44,7 @@ class ConnectionOptions:
     username: str | None = None
     password: str | None = None
     temperature_unit: str = "C"
-    auth: aiohttp.BasicAuth | None = None
+    auth: BasicAuth | None = None
     device_mac: str | None = None
     port: int = DEFAULT_HTTP_PORT
 
@@ -54,9 +54,7 @@ class ConnectionOptions:
             if self.password is None:
                 raise ValueError("Supply both username and password")
 
-            object.__setattr__(
-                self, "auth", aiohttp.BasicAuth(self.username, self.password)
-            )
+            object.__setattr__(self, "auth", BasicAuth(self.username, self.password))
 
 
 IpOrOptionsType = str | ConnectionOptions
@@ -81,7 +79,7 @@ async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOpt
 
 
 async def get_info(
-    aiohttp_session: aiohttp.ClientSession,
+    aiohttp_session: ClientSession,
     ip_address: str,
     device_mac: str | None = None,
     port: int = DEFAULT_HTTP_PORT,

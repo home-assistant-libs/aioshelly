@@ -14,9 +14,14 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 
-import aiohttp
 import async_timeout
-from aiohttp import ClientWebSocketResponse, WSMessage, WSMsgType, client_exceptions
+from aiohttp import (
+    ClientSession,
+    ClientWebSocketResponse,
+    WSMessage,
+    WSMsgType,
+    client_exceptions,
+)
 from aiohttp.web import (
     Application,
     AppRunner,
@@ -174,7 +179,7 @@ class WsRPC:
         self._call_id += 1
         return self._call_id
 
-    async def connect(self, aiohttp_session: aiohttp.ClientSession) -> None:
+    async def connect(self, aiohttp_session: ClientSession) -> None:
         """Connect to device."""
         if self.connected:
             raise RuntimeError("Already connected")
