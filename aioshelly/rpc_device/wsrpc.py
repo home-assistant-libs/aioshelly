@@ -16,16 +16,18 @@ from typing import TYPE_CHECKING, Any, cast
 
 import async_timeout
 from aiohttp import (
-    Application,
-    AppRunner,
-    BaseRequest,
     ClientSession,
     ClientWebSocketResponse,
-    TCPSite,
-    WebSocketResponse,
     WSMessage,
     WSMsgType,
     client_exceptions,
+)
+from aiohttp.web import (
+    Application,
+    AppRunner,
+    BaseRequest,
+    TCPSite,
+    WebSocketResponse,
     get,
 )
 from yarl import URL
