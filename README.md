@@ -10,6 +10,7 @@ Asynchronous library to control Shelly devices
 - bluetooth-data-tools
 - aiohttp
 - orjson
+- typing_extensions
 
 ## Install
 ```bash
