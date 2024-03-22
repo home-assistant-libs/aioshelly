@@ -21,6 +21,8 @@ DEFAULT_DURATION_MS = -1
 
 BLE_CODE = """
 // aioshelly BLE script 2.0
+// Script automatically installed by Home Assistant for Bluetooth proxy support
+// https://www.home-assistant.io/integrations/bluetooth/#remote-adapters-bluetooth-proxies
 const queueServeTimer = 100; // in ms, timer for events emitting
 const burstSendCount =  5; // number if events, emitted on timer event
 const maxQueue =  32; // if the queue exceeds the limit, all new events are ignored until it empties
