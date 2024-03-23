@@ -216,7 +216,6 @@ class RpcDevice:
 
         This method will unsubscribe the update listener and disconnect the websocket.
 
-        To fully reverse a shutdown, call initialize() and subscribe_updates() again.
         """
         self._update_listener = None
         await self._disconnect_websocket()
