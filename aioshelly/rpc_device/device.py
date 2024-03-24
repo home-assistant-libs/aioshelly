@@ -223,7 +223,12 @@ class RpcDevice:
     async def _disconnect_websocket(self) -> None:
         """Disconnect websocket."""
         if self._unsub_ws:
-            self._unsub_ws()
+            try:
+                self._unsub_ws()
+            except KeyError as err:
+                _LOGGER.error(
+                    "host %s: error during shutdown: %r", self.options.ip_address, err
+                )
             self._unsub_ws = None
 
         await self._wsrpc.disconnect()

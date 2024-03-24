@@ -230,7 +230,7 @@ class COAP(asyncio.DatagramProtocol):
         """Subscribe to received updates."""
         _LOGGER.debug("Adding device %s to CoAP message subscriptions", ip_or_device_id)
         self.subscriptions[ip_or_device_id] = message_received
-        return lambda: self.subscriptions.pop(ip_or_device_id, None)
+        return lambda: self.subscriptions.pop(ip_or_device_id)
 
     async def __aenter__(self) -> Self:
         """Entering async context manager."""
