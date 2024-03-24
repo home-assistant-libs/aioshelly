@@ -541,4 +541,4 @@ class WsServer:
         """Subscribe to received updates."""
         _LOGGER.debug("Adding device %s to WsServer message subscriptions", ip)
         self.subscriptions[ip] = message_received
-        return lambda: self.subscriptions.pop(ip)
+        return lambda: self.subscriptions.pop(ip, None)
