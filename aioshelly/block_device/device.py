@@ -188,7 +188,12 @@ class BlockDevice:
         self._update_listener = None
 
         if self._unsub_coap:
-            self._unsub_coap()
+            try:
+                self._unsub_coap()
+            except KeyError as err:
+                _LOGGER.error(
+                    "host %s: error during shutdown: %r", self.options.ip_address, err
+                )
             self._unsub_coap = None
 
     async def _async_init(self) -> None:
