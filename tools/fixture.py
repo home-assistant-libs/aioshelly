@@ -15,22 +15,19 @@ from typing import Any
 
 import orjson
 from aiohttp import ClientSession
-from common import close_connections, create_device, device_updated
+from common import (
+    close_connections,
+    coap_context,
+    create_device,
+    device_updated,
+    init_device,
+    ws_context,
+)
 
-from aioshelly.block_device import COAP, BlockDevice
+from aioshelly.block_device import BlockDevice
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, WS_API_URL
-from aioshelly.exceptions import (
-    DeviceConnectionError,
-    FirmwareUnsupported,
-    InvalidAuthError,
-    MacAddressMismatchError,
-    WrongShellyGen,
-)
-from aioshelly.rpc_device import RpcDevice, WsServer
-
-coap_context = COAP()
-ws_context = WsServer()
+from aioshelly.rpc_device import RpcDevice
 
 
 async def connect_and_save(
@@ -38,25 +35,13 @@ async def connect_and_save(
 ) -> None:
     """Save fixture single device."""
     async with ClientSession() as aiohttp_session:
-        try:
-            device = await create_device(aiohttp_session, options, init, gen)
-        except FirmwareUnsupported as err:
-            print(f"Device firmware not supported, error: {err!r}")
-            return
-        except InvalidAuthError as err:
-            print(f"Invalid or missing authorization, error: {err!r}")
-            return
-        except DeviceConnectionError as err:
-            print(f"Error connecting to {options.ip_address}, error: {err!r}")
-            return
-        except MacAddressMismatchError as err:
-            print(f"MAC address mismatch, error: {err!r}")
-            return
-        except WrongShellyGen:
-            print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
-            return
+        device = await create_device(aiohttp_session, options, gen)
 
-        save_endpoints(device)
+        if init:
+            if not await init_device(device):
+                return
+
+            save_endpoints(device)
 
         device.subscribe_updates(partial(device_updated, action=save_endpoints))
 

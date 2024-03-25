@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -13,23 +14,26 @@ from aiohttp import ClientSession
 
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
-from aioshelly.const import (
-    BLOCK_GENERATIONS,
-    DEFAULT_HTTP_PORT,
-    MODEL_NAMES,
-    RPC_GENERATIONS,
+from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, RPC_GENERATIONS
+from aioshelly.exceptions import (
+    CustomPortNotSupported,
+    DeviceConnectionError,
+    FirmwareUnsupported,
+    InvalidAuthError,
+    MacAddressMismatchError,
+    ShellyError,
+    WrongShellyGen,
 )
-from aioshelly.exceptions import InvalidAuthError, ShellyError
 from aioshelly.rpc_device import RpcDevice, RpcUpdateType, WsServer
 
 coap_context = COAP()
 ws_context = WsServer()
+init_tasks_ref = set()
 
 
 async def create_device(
     aiohttp_session: ClientSession,
     options: ConnectionOptions,
-    init: bool,
     gen: int | None,
 ) -> Any:
     """Create a Gen1/Gen2/Gen3 device."""
@@ -42,12 +46,36 @@ async def create_device(
             raise ShellyError("Unknown Gen")
 
     if gen in BLOCK_GENERATIONS:
-        return await BlockDevice.create(aiohttp_session, coap_context, options, init)
+        return await BlockDevice.create(aiohttp_session, coap_context, options)
 
     if gen in RPC_GENERATIONS:
-        return await RpcDevice.create(aiohttp_session, ws_context, options, init)
+        return await RpcDevice.create(aiohttp_session, ws_context, options)
 
     raise ShellyError("Unknown Gen")
+
+
+async def init_device(device: BlockDevice | RpcDevice) -> bool:
+    """Initialize Shelly device."""
+    try:
+        await device.initialize()
+    except FirmwareUnsupported as err:
+        print(f"Device firmware not supported, error: {err!r}")
+    except InvalidAuthError as err:
+        print(f"Invalid or missing authorization, error: {err!r}")
+    except DeviceConnectionError as err:
+        print(
+            f"Error connecting to {device.ip_address}:{device.port}, " f"error: {err!r}"
+        )
+    except MacAddressMismatchError as err:
+        print(f"MAC address mismatch, error: {err!r}")
+    except WrongShellyGen:
+        print(f"Wrong Shelly generation for device {device.ip_address}:{device.port}")
+    except CustomPortNotSupported:
+        print("Custom port not supported for Gen1")
+    else:
+        return True
+
+    return False
 
 
 async def connect_and_print_device(
@@ -55,11 +83,17 @@ async def connect_and_print_device(
     options: ConnectionOptions,
     init: bool,
     gen: int | None,
-) -> None:
+) -> bool:
     """Connect and print device data."""
-    device = await create_device(aiohttp_session, options, init, gen)
+    device = await create_device(aiohttp_session, options, gen)
+
+    if init and not await init_device(device):
+        return False
+
     print_device(device)
     device.subscribe_updates(partial(device_updated, action=print_device))
+
+    return True
 
 
 def device_updated(
@@ -73,23 +107,27 @@ def device_updated(
         f"{datetime.now(tz=UTC).strftime('%H:%M:%S')} "
         f"Device updated! ({update_type})"
     )
-    try:
-        action(cb_device)
-    except InvalidAuthError:
-        print("Invalid or missing authorization (from async init)")
+
+    if update_type in (BlockUpdateType.ONLINE, RpcUpdateType.ONLINE):
+        loop = asyncio.get_running_loop()
+        init_task = loop.create_task(init_device(cb_device))
+        init_tasks_ref.add(init_task)
+        init_task.add_done_callback(init_tasks_ref.remove)
+        return
+
+    action(cb_device)
 
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
     """Print device data."""
-    port = getattr(device, "port", DEFAULT_HTTP_PORT)
     if not device.initialized:
         print()
-        print(f"** Device @ {device.ip_address}:{port} not initialized **")
+        print(f"** Device @ {device.ip_address}:{device.port} not initialized **")
         print()
         return
 
     model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
-    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
+    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{device.port} **")
     print()
 
     if device.gen in BLOCK_GENERATIONS:
