@@ -169,7 +169,7 @@ MODEL_NAMES = {
     MODEL_PLUS_I4DC: "Shelly Plus I4DC",
     MODEL_PLUS_PLUG_IT: "Shelly Plus Plug IT",
     MODEL_PLUS_PLUG_S: "Shelly Plus Plug S",
-    MODEL_PLUS_PLUG_S_V2: "Shelly Plus Plug S",
+    MODEL_PLUS_PLUG_S_V2: "Shelly Plus Plug S",  # hw v2
     MODEL_PLUS_PLUG_UK: "Shelly Plus Plug UK",
     MODEL_PLUS_PLUG_US: "Shelly Plus Plug US",
     MODEL_PLUS_PM_MINI: "Shelly Plus PM Mini",
