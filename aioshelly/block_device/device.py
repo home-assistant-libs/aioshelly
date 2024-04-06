@@ -171,6 +171,7 @@ class BlockDevice:
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+            self.shutdown()
             raise DeviceConnectionError(err) from err
         finally:
             self._initializing = False
