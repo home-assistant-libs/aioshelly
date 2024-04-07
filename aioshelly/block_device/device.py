@@ -115,11 +115,6 @@ class BlockDevice:
         """Device ip address."""
         return self.options.ip_address
 
-    @property
-    def port(self) -> int:
-        """Device port."""
-        return DEFAULT_HTTP_PORT
-
     async def initialize(self) -> None:
         """Device initialization."""
         if self._initializing:

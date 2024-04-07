@@ -14,7 +14,12 @@ from aiohttp import ClientSession
 
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
-from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, RPC_GENERATIONS
+from aioshelly.const import (
+    BLOCK_GENERATIONS,
+    DEFAULT_HTTP_PORT,
+    MODEL_NAMES,
+    RPC_GENERATIONS,
+)
 from aioshelly.exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
@@ -56,6 +61,7 @@ async def create_device(
 
 async def init_device(device: BlockDevice | RpcDevice) -> bool:
     """Initialize Shelly device."""
+    port = getattr(device, "port", DEFAULT_HTTP_PORT)
     try:
         await device.initialize()
     except FirmwareUnsupported as err:
@@ -63,13 +69,11 @@ async def init_device(device: BlockDevice | RpcDevice) -> bool:
     except InvalidAuthError as err:
         print(f"Invalid or missing authorization, error: {err!r}")
     except DeviceConnectionError as err:
-        print(
-            f"Error connecting to {device.ip_address}:{device.port}, " f"error: {err!r}"
-        )
+        print(f"Error connecting to {device.ip_address}:{port}, " f"error: {err!r}")
     except MacAddressMismatchError as err:
         print(f"MAC address mismatch, error: {err!r}")
     except WrongShellyGen:
-        print(f"Wrong Shelly generation for device {device.ip_address}:{device.port}")
+        print(f"Wrong Shelly generation for device {device.ip_address}:{port}")
     except CustomPortNotSupported:
         print("Custom port not supported for Gen1")
     else:
@@ -120,14 +124,15 @@ def device_updated(
 
 def print_device(device: BlockDevice | RpcDevice) -> None:
     """Print device data."""
+    port = getattr(device, "port", DEFAULT_HTTP_PORT)
     if not device.initialized:
         print()
-        print(f"** Device @ {device.ip_address}:{device.port} not initialized **")
+        print(f"** Device @ {device.ip_address}:{port} not initialized **")
         print()
         return
 
     model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
-    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{device.port} **")
+    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
     print()
 
     if device.gen in BLOCK_GENERATIONS:
