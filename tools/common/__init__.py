@@ -23,7 +23,6 @@ from aioshelly.const import (
 from aioshelly.exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
-    FirmwareUnsupported,
     InvalidAuthError,
     MacAddressMismatchError,
     ShellyError,
@@ -64,8 +63,6 @@ async def init_device(device: BlockDevice | RpcDevice) -> bool:
     port = getattr(device, "port", DEFAULT_HTTP_PORT)
     try:
         await device.initialize()
-    except FirmwareUnsupported as err:
-        print(f"Device firmware not supported, error: {err!r}")
     except InvalidAuthError as err:
         print(f"Invalid or missing authorization, error: {err!r}")
     except DeviceConnectionError as err:
@@ -132,8 +129,11 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
         return
 
     model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
-    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
+    print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port}**")
     print()
+
+    if not device.firmware_supported:
+        print(f"Device firmware not supported: {device.firmware_version}")
 
     if device.gen in BLOCK_GENERATIONS:
         print_block_device(cast(BlockDevice, device))

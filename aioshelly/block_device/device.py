@@ -17,13 +17,17 @@ from ..const import (
     CONNECT_ERRORS,
     DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
+    FIRMWARE_PATTERN,
+    GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+    GEN1_MIN_FIRMWARE_DATE,
+    GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
+    GEN1_MODELS_UNSUPPORTED,
     HTTP_CALL_TIMEOUT,
     MODEL_RGBW2,
 )
 from ..exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
-    FirmwareUnsupported,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -77,7 +81,7 @@ class BlockDevice:
         self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
         self.coap_d: dict[str, Any] | None = None
-        self.blocks: list | None = None
+        self.blocks: list = []
         self.coap_s: dict[str, Any] | None = None
         self._settings: dict[str, Any] | None = None
         self._shelly: dict[str, Any] | None = None
@@ -140,14 +144,17 @@ class BlockDevice:
                 await self.update_settings()
                 await self.update_status()
 
-                event_d: asyncio.Event = await self._coap_request("d")
-                # We need to wait for D to come in before we request S
-                # Or else we might miss the answer to D
-                await event_d.wait()
+                # Older devices has incompatible CoAP protocol (v1)
+                # Skip CoAP to avoid parsing errors
+                if self.firmware_supported:
+                    event_d: asyncio.Event = await self._coap_request("d")
+                    # We need to wait for D to come in before we request S
+                    # Or else we might miss the answer to D
+                    await event_d.wait()
 
-                if self.coap_s is None:
-                    event_s = await self._coap_request("s")
-                    await event_s.wait()
+                    if self.coap_s is None:
+                        event_s = await self._coap_request("s")
+                        await event_s.wait()
 
             self.initialized = True
         except ClientResponseError as err:
@@ -158,7 +165,7 @@ class BlockDevice:
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
             self.shutdown()
             raise self._last_error from err
-        except (MacAddressMismatchError, FirmwareUnsupported) as err:
+        except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s: error: %r", ip, err)
             self.shutdown()
@@ -428,6 +435,26 @@ class BlockDevice:
     def last_error(self) -> ShellyError | None:
         """Return the last error during async device init."""
         return self._last_error
+
+    @property
+    def firmware_supported(self) -> bool:
+        """Return True if device firmware version is supported."""
+        if self.model in GEN1_MODELS_UNSUPPORTED:
+            return False
+
+        if self.model in GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION:
+            fw_ver = GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE
+        else:
+            fw_ver = GEN1_MIN_FIRMWARE_DATE
+
+        match = FIRMWARE_PATTERN.search(self.firmware_version)
+
+        if match is None:
+            return False
+
+        # We compare firmware release dates because Shelly version numbering is
+        # inconsistent, sometimes the word is used as the version number.
+        return int(match[0]) >= fw_ver
 
 
 class Block:

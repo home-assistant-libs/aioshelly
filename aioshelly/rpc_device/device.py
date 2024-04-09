@@ -11,10 +11,17 @@ from typing import Any, cast
 from aiohttp import ClientSession
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
-from ..const import CONNECT_ERRORS, DEVICE_IO_TIMEOUT, NOTIFY_WS_CLOSED
+from ..const import (
+    CONNECT_ERRORS,
+    DEVICE_IO_TIMEOUT,
+    FIRMWARE_PATTERN,
+    GEN2,
+    GEN2_MIN_FIRMWARE_DATE,
+    GEN3_MIN_FIRMWARE_DATE,
+    NOTIFY_WS_CLOSED,
+)
 from ..exceptions import (
     DeviceConnectionError,
-    FirmwareUnsupported,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -174,7 +181,7 @@ class RpcDevice:
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
             await self._disconnect_websocket()
             raise
-        except (MacAddressMismatchError, FirmwareUnsupported) as err:
+        except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
             await self._disconnect_websocket()
@@ -412,3 +419,17 @@ class RpcDevice:
     def last_error(self) -> ShellyError | None:
         """Return the last error during async device init."""
         return self._last_error
+
+    @property
+    def firmware_supported(self) -> bool:
+        """Return True if device firmware version is supported."""
+        fw_ver = GEN2_MIN_FIRMWARE_DATE if self.gen == GEN2 else GEN3_MIN_FIRMWARE_DATE
+
+        match = FIRMWARE_PATTERN.search(self.firmware_version)
+
+        if match is None:
+            return False
+
+        # We compare firmware release dates because Shelly version numbering is
+        # inconsistent, sometimes the word is used as the version number.
+        return int(match[0]) >= fw_ver

@@ -33,11 +33,7 @@ import aiohttp
 
 from aioshelly.block_device import COAP, BlockDevice
 from aioshelly.common import ConnectionOptions
-from aioshelly.exceptions import (
-    DeviceConnectionError,
-    FirmwareUnsupported,
-    InvalidAuthError,
-)
+from aioshelly.exceptions import DeviceConnectionError, InvalidAuthError
 
 
 async def test_block_device():
@@ -47,9 +43,6 @@ async def test_block_device():
     async with aiohttp.ClientSession() as aiohttp_session, COAP() as coap_context:
         try:
             device = await BlockDevice.create(aiohttp_session, coap_context, options)
-        except FirmwareUnsupported as err:
-            print(f"Device firmware not supported, error: {repr(err)}")
-            return
         except InvalidAuthError as err:
             print(f"Invalid or missing authorization, error: {repr(err)}")
             return
@@ -76,11 +69,7 @@ from pprint import pprint
 import aiohttp
 
 from aioshelly.common import ConnectionOptions
-from aioshelly.exceptions import (
-    DeviceConnectionError,
-    FirmwareUnsupported,
-    InvalidAuthError,
-)
+from aioshelly.exceptions import DeviceConnectionError, InvalidAuthError
 from aioshelly.rpc_device import RpcDevice, WsServer
 
 
@@ -93,9 +82,6 @@ async def test_rpc_device():
     async with aiohttp.ClientSession() as aiohttp_session:
         try:
             device = await RpcDevice.create(aiohttp_session, ws_context, options)
-        except FirmwareUnsupported as err:
-            print(f"Device firmware not supported, error: {repr(err)}")
-            return
         except InvalidAuthError as err:
             print(f"Invalid or missing authorization, error: {repr(err)}")
             return

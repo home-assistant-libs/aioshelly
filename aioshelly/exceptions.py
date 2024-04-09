@@ -35,10 +35,6 @@ class DeviceConnectionError(ShellyError):
     """Exception indicates device connection errors."""
 
 
-class FirmwareUnsupported(ShellyError):
-    """Raised if device firmware version is unsupported."""
-
-
 class InvalidAuthError(ShellyError):
     """Raised to indicate invalid or missing authentication error."""
 
