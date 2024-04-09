@@ -20,6 +20,7 @@ from common import (
     connect_and_print_device,
     create_device,
     device_updated,
+    init_device,
     print_device,
     update_outbound_ws,
     ws_context,
@@ -27,41 +28,14 @@ from common import (
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import DEFAULT_HTTP_PORT, WS_API_URL
-from aioshelly.exceptions import (
-    CustomPortNotSupported,
-    DeviceConnectionError,
-    FirmwareUnsupported,
-    InvalidAuthError,
-    MacAddressMismatchError,
-    WrongShellyGen,
-)
 
 
 async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -> None:
     """Test single device."""
     async with ClientSession() as aiohttp_session:
-        try:
-            device = await create_device(aiohttp_session, options, init, gen)
-        except FirmwareUnsupported as err:
-            print(f"Device firmware not supported, error: {err!r}")
-            return
-        except InvalidAuthError as err:
-            print(f"Invalid or missing authorization, error: {err!r}")
-            return
-        except DeviceConnectionError as err:
-            print(
-                f"Error connecting to {options.ip_address}:{options.port}, "
-                f"error: {err!r}"
-            )
-            return
-        except MacAddressMismatchError as err:
-            print(f"MAC address mismatch, error: {err!r}")
-            return
-        except WrongShellyGen:
-            print(f"Wrong Shelly generation {gen}, device gen: {2 if gen==1 else 1}")
-            return
-        except CustomPortNotSupported:
-            print(f"Custom port ({options.port}) not supported for Gen1")
+        device = await create_device(aiohttp_session, options, gen)
+
+        if init and not await init_device(device):
             return
 
         print_device(device)
@@ -91,23 +65,9 @@ async def test_devices(init: bool, gen: int | None) -> None:
         )
 
         for options, result in zip(device_options, results, strict=False):
-            if not isinstance(result, Exception):
-                continue
-
-            print()
-            print(f"Error printing device @ {options.ip_address}:{options.port}")
-
-            if isinstance(result, FirmwareUnsupported):
-                print("Device firmware not supported")
-            elif isinstance(result, InvalidAuthError):
-                print("Invalid or missing authorization")
-            elif isinstance(result, DeviceConnectionError):
-                print("Error connecting to device")
-            elif isinstance(result, MacAddressMismatchError):
-                print("MAC address mismatch error")
-            elif isinstance(result, WrongShellyGen):
-                print("Wrong Shelly generation")
-            else:
+            if isinstance(result, bool) and not result:
+                print(f"Error printing device @ {options.ip_address}:{options.port}")
+            elif isinstance(result, Exception):
                 print()
                 traceback.print_tb(result.__traceback__)
                 print(result)
