@@ -81,7 +81,7 @@ class BlockDevice:
         self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
         self.coap_d: dict[str, Any] | None = None
-        self.blocks: list = []
+        self.blocks: list[Block] = []
         self.coap_s: dict[str, Any] | None = None
         self._settings: dict[str, Any] | None = None
         self._shelly: dict[str, Any] | None = None
