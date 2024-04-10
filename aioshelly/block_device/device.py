@@ -147,7 +147,7 @@ class BlockDevice:
                 # Older devices has incompatible CoAP protocol (v1)
                 # Skip CoAP to avoid parsing errors
                 if self.firmware_supported:
-                    event_d: asyncio.Event = await self._coap_request("d")
+                    event_d = await self._coap_request("d")
                     # We need to wait for D to come in before we request S
                     # Or else we might miss the answer to D
                     await event_d.wait()
