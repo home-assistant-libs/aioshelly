@@ -93,7 +93,7 @@ class BlockDevice:
             sub_id, self._coap_message_received
         )
         self._update_listener: Callable | None = None
-        self._coap_response_events: dict = {}
+        self._coap_response_events: dict[str, asyncio.Event] = {}
         self.initialized = False
         self._initializing = False
         self._last_error: ShellyError | None = None
