@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import logging
-import re
 from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any
@@ -13,27 +12,13 @@ from typing import Any
 from aiohttp import BasicAuth, ClientSession
 from yarl import URL
 
-from .const import (
-    CONNECT_ERRORS,
-    DEFAULT_HTTP_PORT,
-    DEVICE_IO_TIMEOUT,
-    GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
-    GEN1_MIN_FIRMWARE_DATE,
-    GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
-    GEN1_MODELS_UNSUPPORTED,
-    GEN2,
-    GEN2_MIN_FIRMWARE_DATE,
-    GEN3_MIN_FIRMWARE_DATE,
-)
+from .const import CONNECT_ERRORS, DEFAULT_HTTP_PORT, DEVICE_IO_TIMEOUT
 from .exceptions import (
     DeviceConnectionError,
-    FirmwareUnsupported,
     MacAddressMismatchError,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
 
 @dataclass
@@ -103,38 +88,4 @@ async def get_info(
         _LOGGER.debug("host %s:%s: error: %r", ip_address, port, mac_err)
         raise mac_err
 
-    if not shelly_supported_firmware(result):
-        fw_error = FirmwareUnsupported(result)
-        _LOGGER.debug("host %s:%s: error: %r", ip_address, port, fw_error)
-        raise fw_error
-
     return result
-
-
-def shelly_supported_firmware(result: dict[str, Any]) -> bool:
-    """Return True if device firmware version is supported."""
-    fw_str: str
-    fw_ver: int
-
-    if "fw" in result:
-        if result["type"] in GEN1_MODELS_UNSUPPORTED:
-            return False
-        fw_str = result["fw"]
-        if result["type"] in GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION:
-            fw_ver = GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE
-        else:
-            fw_ver = GEN1_MIN_FIRMWARE_DATE
-    else:
-        fw_str = result["fw_id"]
-        fw_ver = (
-            GEN2_MIN_FIRMWARE_DATE if result["gen"] == GEN2 else GEN3_MIN_FIRMWARE_DATE
-        )
-
-    match = FIRMWARE_PATTERN.search(fw_str)
-
-    if match is None:
-        return False
-
-    # We compare firmware release dates because Shelly version numbering is
-    # inconsistent, sometimes the word is used as the version number.
-    return int(match[0]) >= fw_ver

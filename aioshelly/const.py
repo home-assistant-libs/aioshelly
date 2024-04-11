@@ -1,6 +1,7 @@
 """Constants for aioshelly."""
 
 import asyncio
+import re
 
 import aiohttp
 
@@ -264,3 +265,5 @@ RPC_GENERATIONS = (GEN2, GEN3)
 DEFAULT_HTTP_PORT = 80
 PERIODIC_COAP_TYPE_CODE = 30
 END_OF_OPTIONS_MARKER = 0xFF
+
+FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
