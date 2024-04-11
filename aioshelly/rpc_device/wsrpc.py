@@ -50,21 +50,20 @@ BUFFER_SIZE = 1024 * 64
 
 def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
     """Receive json or raise."""
+    if msg.type is WSMsgType.TEXT:
+        try:
+            data: dict[str, Any] = msg.json(loads=json_loads)
+        except ValueError as err:
+            raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
+        return data
+
     if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
         raise ConnectionClosed("Connection was closed.")
 
-    if msg.type == WSMsgType.ERROR:
+    if msg.type is WSMsgType.ERROR:
         raise InvalidMessage("Received message error")
 
-    if msg.type != WSMsgType.TEXT:
-        raise InvalidMessage(f"Received non-Text message: {msg.type}")
-
-    try:
-        data: dict[str, Any] = msg.json(loads=json_loads)
-    except ValueError as err:
-        raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
-
-    return data
+    raise InvalidMessage(f"Received non-Text message: {msg.type}")
 
 
 def hex_hash(message: str) -> str:
@@ -350,10 +349,10 @@ class WsRPC:
                 try:
                     msg = await self._client.receive()
                     self._last_time = time.time()
-                    if msg.type == WSMsgType.PONG:
+                    if msg.type is WSMsgType.PONG:
                         self._schedule_heartbeat()
                         continue
-                    if msg.type == WSMsgType.PING:
+                    if msg.type is WSMsgType.PING:
                         await self._client.pong(msg.data)
                         continue
                     frame = _receive_json_or_raise(msg)
@@ -382,12 +381,6 @@ class WsRPC:
                 self._port,
             )
             self._cancel_heatbeat_and_pong_response_cb()
-            # Ensure the underlying transport is closed
-            # Remove this after aiohttp 3.9.2 is released
-            # as it leaks before this version (and has for
-            # a long time)
-            with contextlib.suppress(Exception):
-                self._client._response.close()  # noqa: SLF001
 
             for call_item in self._calls.values():
                 if not call_item.resolve.done():

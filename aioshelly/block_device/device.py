@@ -253,7 +253,7 @@ class BlockDevice:
         self.coap_s = {info[1]: info[2] for info in data["G"]}
 
         if self._update_listener and self.initialized:
-            if coap_type == CoapType.PERIODIC:
+            if coap_type is CoapType.PERIODIC:
                 self._update_listener(self, BlockUpdateType.COAP_PERIODIC)
                 return
 
