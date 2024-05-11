@@ -102,7 +102,12 @@ class RpcDevice:
     ) -> RpcDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
-        _LOGGER.debug("host %s:%s: RPC device create", options.ip_address, options.port)
+        _LOGGER.debug(
+            "host %s:%s: RPC device create, MAC: %s",
+            options.ip_address,
+            options.port,
+            options.device_mac,
+        )
         return cls(ws_context, aiohttp_session, options)
 
     def _on_notification(

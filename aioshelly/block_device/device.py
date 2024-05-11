@@ -112,7 +112,11 @@ class BlockDevice:
             await coap_context.request(options.ip_address, "s")
         except OSError as err:
             _LOGGER.debug("host %s: error: %r", options.ip_address, err)
-        _LOGGER.debug("host %s: block device create", options.ip_address)
+        _LOGGER.debug(
+            "host %s: block device create, MAC: %s",
+            options.ip_address,
+            options.device_mac,
+        )
         return cls(coap_context, aiohttp_session, options)
 
     @property
