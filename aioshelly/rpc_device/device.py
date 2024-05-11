@@ -102,6 +102,12 @@ class RpcDevice:
     ) -> RpcDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
+        _LOGGER.debug(
+            "host %s:%s: RPC device create, MAC: %s",
+            options.ip_address,
+            options.port,
+            options.device_mac,
+        )
         return cls(ws_context, aiohttp_session, options)
 
     def _on_notification(
@@ -143,6 +149,7 @@ class RpcDevice:
 
     async def initialize(self) -> None:
         """Device initialization."""
+        _LOGGER.debug("host %s:%s: RPC device initialize", self.ip_address, self.port)
         if self._initializing:
             raise RuntimeError("Already initializing")
 
@@ -203,6 +210,7 @@ class RpcDevice:
         This method will unsubscribe the update listener and disconnect the websocket.
 
         """
+        _LOGGER.debug("host %s:%s: RPC device shutdown", self.ip_address, self.port)
         self._update_listener = None
         await self._disconnect_websocket()
 
@@ -213,7 +221,10 @@ class RpcDevice:
                 self._unsub_ws()
             except KeyError as err:
                 _LOGGER.error(
-                    "host %s: error during shutdown: %r", self.options.ip_address, err
+                    "host %s:%s error during shutdown: %r",
+                    self.ip_address,
+                    self.port,
+                    err,
                 )
             self._unsub_ws = None
 

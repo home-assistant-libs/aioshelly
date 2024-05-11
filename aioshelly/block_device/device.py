@@ -112,6 +112,11 @@ class BlockDevice:
             await coap_context.request(options.ip_address, "s")
         except OSError as err:
             _LOGGER.debug("host %s: error: %r", options.ip_address, err)
+        _LOGGER.debug(
+            "host %s: block device create, MAC: %s",
+            options.ip_address,
+            options.device_mac,
+        )
         return cls(coap_context, aiohttp_session, options)
 
     @property
@@ -121,6 +126,7 @@ class BlockDevice:
 
     async def initialize(self) -> None:
         """Device initialization."""
+        _LOGGER.debug("host %s: block device initialize", self.ip_address)
         if self._initializing:
             raise RuntimeError("Already initializing")
 
@@ -183,6 +189,7 @@ class BlockDevice:
 
     def shutdown(self) -> None:
         """Shutdown device."""
+        _LOGGER.debug("host %s: block device shutdown", self.ip_address)
         self._update_listener = None
 
         if self._unsub_coap:
