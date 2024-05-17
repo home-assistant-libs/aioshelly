@@ -7,11 +7,9 @@ import argparse
 import asyncio
 import json
 import logging
-import signal
 import traceback
 from functools import partial
 from pathlib import Path
-from types import FrameType
 
 from aiohttp import ClientSession
 from common import (
@@ -23,6 +21,7 @@ from common import (
     init_device,
     print_device,
     update_outbound_ws,
+    wait_for_keyboard_interrupt,
     ws_context,
 )
 
@@ -42,8 +41,10 @@ async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -
 
         device.subscribe_updates(partial(device_updated, action=print_device))
 
-        while True:
-            await asyncio.sleep(0.1)
+        await wait_for_keyboard_interrupt()
+
+        await device.shutdown()
+        close_connections()
 
 
 async def test_devices(init: bool, gen: int | None) -> None:
@@ -72,8 +73,8 @@ async def test_devices(init: bool, gen: int | None) -> None:
                 traceback.print_tb(result.__traceback__)
                 print(result)
 
-        while True:
-            await asyncio.sleep(0.1)
+        await wait_for_keyboard_interrupt()
+        close_connections()
 
 
 def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -191,12 +192,6 @@ async def main() -> None:
             logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
         elif args.gen2 or args.gen3:
             logging.getLogger("aioshelly.block_device").setLevel(logging.INFO)
-
-    def handle_sigint(_exit_code: int, _frame: FrameType) -> None:
-        """Handle Keyboard signal interrupt (ctrl-c)."""
-        close_connections(_exit_code)
-
-    signal.signal(signal.SIGINT, handle_sigint)  # type: ignore [func-returns-value]
 
     if args.devices:
         await test_devices(args.init, gen)

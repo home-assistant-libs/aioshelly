@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+import signal
 import sys
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -181,3 +182,10 @@ async def update_outbound_ws(
         device: RpcDevice = await create_device(aiohttp_session, options, init, 2)
         print(f"Updating outbound weboskcet URL to {ws_url}")
         print(f"Restart required: {await device.update_outbound_websocket(ws_url)}")
+
+
+async def wait_for_keyboard_interrupt() -> None:
+    """Wait for keyboard interrupt (Ctrl-C)."""
+    sig_event = asyncio.Event()
+    signal.signal(signal.SIGINT, lambda _exit_code, _frame: sig_event.set())
+    await sig_event.wait()
