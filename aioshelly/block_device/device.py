@@ -169,17 +169,17 @@ class BlockDevice:
             else:
                 self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            self.shutdown()
+            await self.shutdown()
             raise self._last_error from err
         except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s: error: %r", ip, err)
-            self.shutdown()
+            await self.shutdown()
             raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            self.shutdown()
+            await self.shutdown()
             raise DeviceConnectionError(err) from err
         finally:
             self._initializing = False
@@ -187,7 +187,7 @@ class BlockDevice:
         if self._update_listener:
             self._update_listener(self, BlockUpdateType.INITIALIZED)
 
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
         """Shutdown device."""
         _LOGGER.debug("host %s: block device shutdown", self.ip_address)
         self._update_listener = None
