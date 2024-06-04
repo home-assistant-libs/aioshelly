@@ -213,7 +213,7 @@ MODEL_NAMES = {
     MODEL_1_MINI_G3: "Shelly 1 Mini Gen3",
     MODEL_1PM_GEN3: "Shelly 1PM Gen3",
     MODEL_1PM_MINI_G3: "Shelly 1PM Mini Gen3",
-    MODEL_DIMMER_10V_GEN3: "Shelly Dimmer 0-10V PM Gen3",
+    MODEL_DIMMER_10V_GEN3: "Shelly Dimmer 0/1-10V PM Gen3",
     MODEL_HT_G3: "Shelly H&T Gen3",
     MODEL_I4_GEN3: "Shelly I4 Gen3",
     MODEL_PM_MINI_G3: "Shelly PM Mini Gen3",
