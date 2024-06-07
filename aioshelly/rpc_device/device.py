@@ -154,7 +154,13 @@ class RpcDevice:
             raise RuntimeError("Already initializing")
 
         self._initializing = True
-        self.initialized = False
+
+        # First initialize may already have status from wakeup event
+        # If device is initialized again we need to fetch new status
+        if self.initialized:
+            self.initialized = False
+            self._status = None
+
         ip = self.options.ip_address
         port = self.options.port
         try:

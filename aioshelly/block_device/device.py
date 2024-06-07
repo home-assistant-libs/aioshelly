@@ -136,7 +136,13 @@ class BlockDevice:
             raise CustomPortNotSupported
 
         self._initializing = True
-        self.initialized = False
+
+        # First initialize may already have CoAP status from wakeup event
+        # If device is initialized again we need to fetch new CoAP status
+        if self.initialized:
+            self.initialized = False
+            self.coap_s = None
+
         ip = self.options.ip_address
         try:
             self._shelly = await get_info(
