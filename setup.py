@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 PROJECT_DIR = Path(__file__).parent.resolve()
 README_FILE = PROJECT_DIR / "README.md"
-VERSION = "10.0.0"
+VERSION = "10.0.1"
 
 with open("requirements.txt", encoding="utf-8") as file:  # noqa: PTH123
     requirements = file.read().splitlines()
