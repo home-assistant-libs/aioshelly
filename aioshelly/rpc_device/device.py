@@ -17,6 +17,7 @@ from ..const import (
     FIRMWARE_PATTERN,
     GEN2,
     GEN2_MIN_FIRMWARE_DATE,
+    GEN3,
     GEN3_MIN_FIRMWARE_DATE,
     NOTIFY_WS_CLOSED,
 )
@@ -79,6 +80,7 @@ class RpcDevice:
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
+        self._dynamic_components: list[dict[str, Any]] = []
         self._wsrpc = WsRPC(
             options.ip_address, self._on_notification, port=options.port
         )
@@ -183,6 +185,7 @@ class RpcDevice:
 
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
+                await self.get_dynamic_components()
                 await self.update_config()
 
                 if self._status is None:
@@ -249,10 +252,22 @@ class RpcDevice:
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
         self._status = await self.call_rpc("Shelly.GetStatus")
+        self._status.update(
+            {
+                item["key"]: {"value": item["status"]["value"]}
+                for item in self._dynamic_components
+            }
+        )
 
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
+        self._config.update(
+            {
+                item["key"]: {"name": item["config"]["name"]}
+                for item in self._dynamic_components
+            }
+        )
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -447,3 +462,16 @@ class RpcDevice:
         # We compare firmware release dates because Shelly version numbering is
         # inconsistent, sometimes the word is used as the version number.
         return int(match[0]) >= fw_ver
+
+    async def get_dynamic_components(self) -> None:
+        """Return a list of dynamic components."""
+        if self.gen != GEN3:
+            return
+
+        result = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
+        self._dynamic_components = result["components"]
+
+    @property
+    def dynamic_components(self) -> list[dict[str, Any]]:
+        """Return a list of dynamic components."""
+        return self._dynamic_components
