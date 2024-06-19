@@ -263,10 +263,7 @@ class RpcDevice:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
         self._config.update(
-            {
-                item["key"]: {"name": item["config"]["name"]}
-                for item in self._dynamic_components
-            }
+            {item["key"]: item["config"] for item in self._dynamic_components}
         )
 
     async def script_list(self) -> list[ShellyScript]:
