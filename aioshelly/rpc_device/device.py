@@ -17,7 +17,6 @@ from ..const import (
     FIRMWARE_PATTERN,
     GEN2,
     GEN2_MIN_FIRMWARE_DATE,
-    GEN3,
     GEN3_MIN_FIRMWARE_DATE,
     NOTIFY_WS_CLOSED,
 )
@@ -462,9 +461,6 @@ class RpcDevice:
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
-        if self.gen != GEN3:
-            return
-
         result = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
         self._dynamic_components = result["components"]
 
