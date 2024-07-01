@@ -192,18 +192,15 @@ class RpcDevice:
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
-            await self._disconnect_websocket()
             raise
         except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
-            await self._disconnect_websocket()
             raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
-            await self._disconnect_websocket()
-            raise DeviceConnectionError(err) from err
+            raise self._last_error from err
         finally:
             self._initializing = False
 

@@ -175,18 +175,15 @@ class BlockDevice:
             else:
                 self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            await self.shutdown()
             raise self._last_error from err
         except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s: error: %r", ip, err)
-            await self.shutdown()
             raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
-            await self.shutdown()
-            raise DeviceConnectionError(err) from err
+            raise self._last_error from err
         finally:
             self._initializing = False
 
