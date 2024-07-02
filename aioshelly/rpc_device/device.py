@@ -470,8 +470,3 @@ class RpcDevice:
             for component in result["components"]
             if any(supported in component["key"] for supported in VIRTUAL_COMPONENTS)
         ]
-
-    @property
-    def dynamic_components(self) -> list[dict[str, Any]]:
-        """Return a list of dynamic components."""
-        return self._dynamic_components
