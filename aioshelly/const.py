@@ -277,3 +277,5 @@ PERIODIC_COAP_TYPE_CODE = 30
 END_OF_OPTIONS_MARKER = 0xFF
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
+
+VIRTUAL_COMPONENTS = ("boolean", "button", "enum", "number", "text")
