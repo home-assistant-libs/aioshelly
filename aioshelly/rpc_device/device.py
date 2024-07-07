@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
@@ -185,11 +185,12 @@ class RpcDevice:
 
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
-                await self.get_dynamic_components()
                 await self.update_config()
 
                 if self._status is None:
                     await self.update_status()
+
+                await self.get_dynamic_components()
 
             self.initialized = True
         except InvalidAuthError as err:
@@ -252,19 +253,10 @@ class RpcDevice:
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
         self._status = await self.call_rpc("Shelly.GetStatus")
-        self._status.update(
-            {
-                item["key"]: {"value": item["status"].get("value")}
-                for item in self._dynamic_components
-            }
-        )
 
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
-        self._config.update(
-            {item["key"]: item["config"] for item in self._dynamic_components}
-        )
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -470,3 +462,17 @@ class RpcDevice:
             for component in result["components"]
             if any(supported in component["key"] for supported in VIRTUAL_COMPONENTS)
         ]
+
+        if TYPE_CHECKING:
+            assert self._config is not None
+            assert self._status is not None
+
+        self._config.update(
+            {item["key"]: item["config"] for item in self._dynamic_components}
+        )
+        self._status.update(
+            {
+                item["key"]: {"value": item["status"].get("value")}
+                for item in self._dynamic_components
+            }
+        )
