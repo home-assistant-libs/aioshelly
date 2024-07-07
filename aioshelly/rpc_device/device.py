@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from enum import Enum, auto
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
@@ -19,6 +19,7 @@ from ..const import (
     GEN2_MIN_FIRMWARE_DATE,
     GEN3_MIN_FIRMWARE_DATE,
     NOTIFY_WS_CLOSED,
+    VIRTUAL_COMPONENTS,
 )
 from ..exceptions import (
     DeviceConnectionError,
@@ -79,6 +80,7 @@ class RpcDevice:
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
+        self._dynamic_components: list[dict[str, Any]] = []
         self._wsrpc = WsRPC(
             options.ip_address, self._on_notification, port=options.port
         )
@@ -187,6 +189,8 @@ class RpcDevice:
 
                 if self._status is None:
                     await self.update_status()
+
+                await self.get_dynamic_components()
 
             self.initialized = True
         except InvalidAuthError as err:
@@ -447,3 +451,28 @@ class RpcDevice:
         # We compare firmware release dates because Shelly version numbering is
         # inconsistent, sometimes the word is used as the version number.
         return int(match[0]) >= fw_ver
+
+    async def get_dynamic_components(self) -> None:
+        """Return a list of dynamic components."""
+        result = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
+        # This is a workaround for Wall Display, we get rid of components that are not
+        # virtual components.
+        self._dynamic_components = [
+            component
+            for component in result["components"]
+            if any(supported in component["key"] for supported in VIRTUAL_COMPONENTS)
+        ]
+
+        if TYPE_CHECKING:
+            assert self._config is not None
+            assert self._status is not None
+
+        self._config.update(
+            {item["key"]: item["config"] for item in self._dynamic_components}
+        )
+        self._status.update(
+            {
+                item["key"]: {"value": item["status"].get("value")}
+                for item in self._dynamic_components
+            }
+        )
