@@ -119,7 +119,7 @@ class RPCCall:
 
     __slots__ = ("auth", "call_id", "params", "method", "src", "dst", "resolve")
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         call_id: int,
         method: str,
