@@ -210,7 +210,11 @@ class WsRPC:
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
-        self._rx_task = None
+        if self._rx_task is not None:
+            self._rx_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._rx_task
+            self._rx_task = None
         if self._client is None:
             return
 
