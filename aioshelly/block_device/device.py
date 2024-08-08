@@ -9,7 +9,7 @@ from enum import Enum, auto
 from http import HTTPStatus
 from typing import Any, ClassVar, cast
 
-from aiohttp import ClientResponse, ClientResponseError, ClientSession
+from aiohttp import ClientResponse, ClientResponseError, ClientSession, ClientTimeout
 from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
@@ -54,6 +54,8 @@ BLOCK_VALUE_TYPE_STATUS = "S"  # (catch-all if no other fits)
 BLOCK_VALUE_TYPE_TEMPERATURE = "T"
 BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
+
+HTTP_CALL_TIMEOUT_CLIENT_TIMEOUT = ClientTimeout(total=HTTP_CALL_TIMEOUT)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -311,7 +313,7 @@ class BlockDevice:
                 params=params,
                 auth=self.options.auth,
                 raise_for_status=True,
-                timeout=HTTP_CALL_TIMEOUT,
+                timeout=HTTP_CALL_TIMEOUT_CLIENT_TIMEOUT,
             )
         except ClientResponseError as err:
             if err.status == HTTPStatus.UNAUTHORIZED:
