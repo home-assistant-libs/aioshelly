@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from socket import gethostbyname
 from typing import Any
 
-from aiohttp import BasicAuth, ClientSession
+from aiohttp import BasicAuth, ClientSession, ClientTimeout
 from yarl import URL
 
 from .const import CONNECT_ERRORS, DEFAULT_HTTP_PORT, DEVICE_IO_TIMEOUT
@@ -19,6 +19,8 @@ from .exceptions import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT = ClientTimeout(total=DEVICE_IO_TIMEOUT)
 
 
 @dataclass
@@ -74,7 +76,7 @@ async def get_info(
         async with aiohttp_session.get(
             URL.build(scheme="http", host=ip_address, port=port, path="/shelly"),
             raise_for_status=True,
-            timeout=DEVICE_IO_TIMEOUT,
+            timeout=DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT,
         ) as resp:
             result: dict[str, Any] = await resp.json()
     except CONNECT_ERRORS as err:
