@@ -20,6 +20,7 @@ from ..const import (
     GEN3_MIN_FIRMWARE_DATE,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
+    VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
 from ..exceptions import (
     DeviceConnectionError,
@@ -454,12 +455,19 @@ class RpcDevice:
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
-        result = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
+        components = {}
+        match = FIRMWARE_PATTERN.search(self.firmware_version)
+
+        if match is not None and int(match[0]) >= VIRTUAL_COMPONENTS_MIN_FIRMWARE:
+            components = await self.call_rpc(
+                "Shelly.GetComponents", {"dynamic_only": True}
+            )
+
         # This is a workaround for Wall Display, we get rid of components that are not
         # virtual components.
         self._dynamic_components = [
             component
-            for component in result["components"]
+            for component in components.get("components", [])
             if any(supported in component["key"] for supported in VIRTUAL_COMPONENTS)
         ]
 
