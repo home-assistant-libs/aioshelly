@@ -151,14 +151,12 @@ class RPCCall:
 class WsRPC:
     """WsRPC class."""
 
-    def __init__(
-        self, ip_address: str, on_notification: Callable, port: int = DEFAULT_HTTP_PORT
-    ) -> None:
+    def __init__(self, ip_address: str, port: int = DEFAULT_HTTP_PORT) -> None:
         """Initialize WsRPC class."""
         self._auth_data: AuthData | None = None
         self._ip_address = ip_address
         self._port = port
-        self._on_notification = on_notification
+        self._on_notification: Callable[[str, dict | None], None] | None = None
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
         self._calls: dict[int, RPCCall] = {}
@@ -171,6 +169,12 @@ class WsRPC:
     def _next_id(self) -> int:
         self._call_id += 1
         return self._call_id
+
+    def set_notification_callback(
+        self, on_notification: Callable[[str, dict | None], None]
+    ) -> None:
+        """Set notification callback."""
+        self._on_notification = on_notification
 
     async def connect(self, aiohttp_session: ClientSession) -> None:
         """Connect to device."""
@@ -258,7 +262,8 @@ class WsRPC:
             else:
                 # this is a notification
                 _LOGGER.debug("Notification: %s %s", method, params)
-                self._on_notification(method, params)
+                if self._on_notification:
+                    self._on_notification(method, params)
 
         elif frame_id:
             # looks like a response
@@ -314,7 +319,8 @@ class WsRPC:
 
             client = self._client
             self._client = None
-            self._on_notification(NOTIFY_WS_CLOSED)
+            if self._on_notification:
+                self._on_notification(NOTIFY_WS_CLOSED, None)
 
             # Close last since the await can yield
             # to the event loop and we want to minimize
