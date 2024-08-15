@@ -349,8 +349,7 @@ class RpcDevice:
     ) -> dict[str, Any]:
         """Call RPC method."""
         try:
-            async with asyncio.timeout(DEVICE_IO_TIMEOUT):
-                return await self._wsrpc.call(method, params)
+            return await self._wsrpc.call(method, params, DEVICE_IO_TIMEOUT)
         except (InvalidAuthError, RpcCallError) as err:
             self._last_error = err
             raise
