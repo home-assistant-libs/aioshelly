@@ -218,6 +218,7 @@ class RpcDevice:
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
             raise self._last_error from err
         else:
+            _LOGGER.debug("host %s:%s: RPC device init finished", ip, port)
             # Set notification callback once we are finished
             # the init process
             self._wsrpc.set_notification_callback(self._on_notification)
