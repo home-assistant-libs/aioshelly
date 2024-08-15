@@ -29,6 +29,14 @@ lint.ignore = [
 "tools/*" = [
     "T201",      # `print` found
 ]
+"tests/**/*" = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "S101",
+]
 
 [lint.mccabe]
 max-complexity = 18
