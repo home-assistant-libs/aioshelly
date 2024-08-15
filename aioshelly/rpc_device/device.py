@@ -44,14 +44,16 @@ from .wsrpc import WsRPC, WsServer
 _LOGGER = logging.getLogger(__name__)
 
 
-def mergedicts(dict1: dict, dict2: dict) -> dict:
-    """Deep dicts merge."""
-    result = dict(dict1)
-    result.update(dict2)
-    for key, value in result.items():
-        if isinstance(value, dict) and isinstance(dict1.get(key), dict):
-            result[key] = mergedicts(dict1[key], value)
-    return result
+def mergedicts(dest: dict, source: dict) -> None:
+    """Deep dicts merge.
+
+    The destination dict is updated with the source dict.
+    """
+    for k, v in source.items():
+        if k in dest and type(v) is dict:  # - only accepts `dict` type
+            mergedicts(dest[k], v)
+        else:
+            dest[k] = v
 
 
 class RpcUpdateType(Enum):
@@ -123,7 +125,7 @@ class RpcDevice:
                 self._status = params
                 update_type = RpcUpdateType.STATUS
             elif method == "NotifyStatus" and self._status is not None:
-                self._status = dict(mergedicts(self._status, params))
+                mergedicts(self._status, params)
                 update_type = RpcUpdateType.STATUS
             elif method == "NotifyEvent":
                 self._event = params
