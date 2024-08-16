@@ -84,9 +84,7 @@ class RpcDevice:
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._dynamic_components: list[dict[str, Any]] = []
-        self._wsrpc = WsRPC(
-            options.ip_address, self._on_notification, port=options.port
-        )
+        self._wsrpc = WsRPC(options.ip_address, port=options.port)
         sub_id = options.ip_address
         if options.device_mac:
             sub_id = options.device_mac
@@ -94,6 +92,7 @@ class RpcDevice:
             sub_id, self._wsrpc.handle_frame
         )
         self._update_listener: Callable | None = None
+        self._initialize_lock = asyncio.Lock()
         self.initialized: bool = False
         self._initializing: bool = False
         self._last_error: ShellyError | None = None
@@ -119,6 +118,14 @@ class RpcDevice:
         self, method: str, params: dict[str, Any] | None = None
     ) -> None:
         """Received status notification from device."""
+        if self._initializing:
+            # We should never get a notification during initialization
+            # since set_notification_callback is called after init
+            raise RuntimeError("Device is still initializing")
+
+        if not self._update_listener:
+            return
+
         update_type = RpcUpdateType.UNKNOWN
         if params is not None:
             if method == "NotifyFullStatus":
@@ -132,9 +139,6 @@ class RpcDevice:
                 update_type = RpcUpdateType.EVENT
         elif method == NOTIFY_WS_CLOSED:
             update_type = RpcUpdateType.DISCONNECTED
-
-        if not self._update_listener or self._initializing:
-            return
 
         if not self.initialized:
             self._update_listener(self, RpcUpdateType.ONLINE)
@@ -155,17 +159,26 @@ class RpcDevice:
     async def initialize(self) -> None:
         """Device initialization."""
         _LOGGER.debug("host %s:%s: RPC device initialize", self.ip_address, self.port)
-        if self._initializing:
+        if self._initialize_lock.locked():
             raise RuntimeError("Already initializing")
 
-        self._initializing = True
+        async with self._initialize_lock:
+            self._initializing = True
+            # First initialize may already have status from wakeup event
+            # If device is initialized again we need to fetch new status
+            if self.initialized:
+                self.initialized = False
+                self._status = None
 
-        # First initialize may already have status from wakeup event
-        # If device is initialized again we need to fetch new status
-        if self.initialized:
-            self.initialized = False
-            self._status = None
+            try:
+                await self._connect_websocket()
+            finally:
+                self._initializing = False
+                if self._update_listener and self.initialized:
+                    self._update_listener(self, RpcUpdateType.INITIALIZED)
 
+    async def _connect_websocket(self) -> None:
+        """Connect device websocket."""
         ip = self.options.ip_address
         port = self.options.port
         try:
@@ -194,8 +207,6 @@ class RpcDevice:
                     await self.update_status()
 
                 await self.get_dynamic_components()
-
-            self.initialized = True
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
@@ -208,11 +219,12 @@ class RpcDevice:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
             raise self._last_error from err
-        finally:
-            self._initializing = False
-
-        if self._update_listener and self.initialized:
-            self._update_listener(self, RpcUpdateType.INITIALIZED)
+        else:
+            _LOGGER.debug("host %s:%s: RPC device init finished", ip, port)
+            # Set notification callback once we are finished
+            # the init process
+            self._wsrpc.set_notification_callback(self._on_notification)
+            self.initialized = True
 
     async def shutdown(self) -> None:
         """Shutdown device and remove the listener.
