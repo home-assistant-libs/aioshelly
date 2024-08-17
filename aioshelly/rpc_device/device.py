@@ -147,11 +147,19 @@ class RpcDevice:
         elif method == NOTIFY_WS_CLOSED:
             update_type = RpcUpdateType.DISCONNECTED
 
-        if source is RPCSource.SERVER and not self.initialized:
+        # Battery operated device, inform listener that device is online
+        if (
+            source is RPCSource.SERVER
+            and not self.initialized
+            and not self._initializing
+        ):
             self._update_listener(self, RpcUpdateType.ONLINE)
             return
 
-        self._update_listener(self, update_type)
+        # If the device isn't initialized, avoid sending updates
+        # as it may be in the process of initializing.
+        if self.initialized:
+            self._update_listener(self, update_type)
 
     @property
     def ip_address(self) -> str:
