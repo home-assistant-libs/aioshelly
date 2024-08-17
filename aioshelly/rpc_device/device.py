@@ -6,6 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from enum import Enum, auto
+from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
@@ -39,7 +40,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .wsrpc import WsRPC, WsServer
+from .wsrpc import RPCSource, WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,12 +85,14 @@ class RpcDevice:
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._dynamic_components: list[dict[str, Any]] = []
-        self._wsrpc = WsRPC(options.ip_address, port=options.port)
+        self._wsrpc = WsRPC(
+            options.ip_address, self._on_notification, port=options.port
+        )
         sub_id = options.ip_address
         if options.device_mac:
             sub_id = options.device_mac
         self._unsub_ws: Callable | None = ws_context.subscribe_updates(
-            sub_id, self._wsrpc.handle_frame
+            sub_id, partial(self._wsrpc.handle_frame, RPCSource.SERVER)
         )
         self._update_listener: Callable | None = None
         self._initialize_lock = asyncio.Lock()
@@ -115,14 +118,18 @@ class RpcDevice:
         return cls(ws_context, aiohttp_session, options)
 
     def _on_notification(
-        self, method: str, params: dict[str, Any] | None = None
+        self, source: RPCSource, method: str, params: dict[str, Any] | None = None
     ) -> None:
-        """Received status notification from device."""
-        if self._initializing:
-            # We should never get a notification during initialization
-            # since set_notification_callback is called after init
-            raise RuntimeError("Device is still initializing")
+        """Received status notification from device.
 
+        If source is RPCSource.SERVER than the Shelly
+        device connected back to the library and sent
+        us the message
+
+        If source is RPCSource.CLIENT than the library
+        connected to the Shelly device and received
+        the message
+        """
         if not self._update_listener:
             return
 
@@ -140,7 +147,7 @@ class RpcDevice:
         elif method == NOTIFY_WS_CLOSED:
             update_type = RpcUpdateType.DISCONNECTED
 
-        if not self.initialized:
+        if source is RPCSource.SERVER and not self.initialized:
             self._update_listener(self, RpcUpdateType.ONLINE)
             return
 
@@ -221,9 +228,6 @@ class RpcDevice:
             raise self._last_error from err
         else:
             _LOGGER.debug("host %s:%s: RPC device init finished", ip, port)
-            # Set notification callback once we are finished
-            # the init process
-            self._wsrpc.set_notification_callback(self._on_notification)
             self.initialized = True
 
     async def shutdown(self) -> None:

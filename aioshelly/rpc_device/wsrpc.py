@@ -11,6 +11,7 @@ import time
 from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
+from enum import Enum, auto
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 
@@ -44,6 +45,13 @@ from ..json import json_dumps, json_loads
 _LOGGER = logging.getLogger(__name__)
 
 BUFFER_SIZE = 1024 * 64
+
+
+class RPCSource(Enum):
+    """RPC message source."""
+
+    CLIENT = auto()
+    SERVER = auto()
 
 
 def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
@@ -165,13 +173,18 @@ class WsBase:
 class WsRPC(WsBase):
     """WsRPC class."""
 
-    def __init__(self, ip_address: str, port: int = DEFAULT_HTTP_PORT) -> None:
+    def __init__(
+        self,
+        ip_address: str,
+        on_notification: Callable[[RPCSource, str, dict | None], None],
+        port: int = DEFAULT_HTTP_PORT,
+    ) -> None:
         """Initialize WsRPC class."""
         super().__init__()
         self._auth_data: AuthData | None = None
         self._ip_address = ip_address
         self._port = port
-        self._on_notification: Callable[[str, dict | None], None] | None = None
+        self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse | None = None
         self._calls: dict[int, RPCCall] = {}
@@ -183,12 +196,6 @@ class WsRPC(WsBase):
     def _next_id(self) -> int:
         self._call_id += 1
         return self._call_id
-
-    def set_notification_callback(
-        self, on_notification: Callable[[str, dict | None], None]
-    ) -> None:
-        """Set notification callback."""
-        self._on_notification = on_notification
 
     async def connect(self, aiohttp_session: ClientSession) -> None:
         """Connect to device."""
@@ -255,7 +262,7 @@ class WsRPC(WsBase):
             }
         )
 
-    def handle_frame(self, frame: dict[str, Any]) -> None:
+    def handle_frame(self, source: RPCSource, frame: dict[str, Any]) -> None:
         """Handle RPC frame."""
         if peer_src := frame.get("src"):
             if self._session.dst is not None and peer_src != self._session.dst:
@@ -276,8 +283,7 @@ class WsRPC(WsBase):
             else:
                 # this is a notification
                 _LOGGER.debug("Notification: %s %s", method, params)
-                if self._on_notification:
-                    self._on_notification(method, params)
+                self._on_notification(source, method, params)
 
         elif frame_id:
             # looks like a response
@@ -318,7 +324,7 @@ class WsRPC(WsBase):
                     raise
 
                 if not self._client.closed:
-                    self.handle_frame(frame)
+                    self.handle_frame(RPCSource.CLIENT, frame)
         finally:
             _LOGGER.debug(
                 "Websocket client connection from %s:%s closed",
@@ -333,8 +339,7 @@ class WsRPC(WsBase):
 
             client = self._client
             self._client = None
-            if self._on_notification:
-                self._on_notification(NOTIFY_WS_CLOSED, None)
+            self._on_notification(RPCSource.CLIENT, NOTIFY_WS_CLOSED, None)
 
             # Close last since the await can yield
             # to the event loop and we want to minimize
