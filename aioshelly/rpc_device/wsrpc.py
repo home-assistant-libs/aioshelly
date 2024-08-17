@@ -148,11 +148,26 @@ class RPCCall:
         return msg
 
 
-class WsRPC:
+class WsBase:
+    """Base class for WebSocket handlers."""
+
+    def __init__(self) -> None:
+        """Initialize WsBase class."""
+        self._background_tasks: set[Task] = set()
+
+    def _create_and_track_task(self, func: Coroutine) -> None:
+        """Create and and hold strong reference to the task."""
+        task = asyncio.create_task(func)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+
+
+class WsRPC(WsBase):
     """WsRPC class."""
 
     def __init__(self, ip_address: str, port: int = DEFAULT_HTTP_PORT) -> None:
         """Initialize WsRPC class."""
+        super().__init__()
         self._auth_data: AuthData | None = None
         self._ip_address = ip_address
         self._port = port
@@ -163,7 +178,6 @@ class WsRPC:
         self._call_id = 0
         self._session = SessionData(f"aios-{id(self)}", None, None)
         self._loop = asyncio.get_running_loop()
-        self._background_tasks: set[Task] = set()
 
     @property
     def _next_id(self) -> int:
@@ -394,18 +408,13 @@ class WsRPC:
 
         await self._client.send_json(data, dumps=json_dumps)
 
-    def _create_and_track_task(self, func: Coroutine) -> None:
-        """Create and and hold strong reference to the task."""
-        task = asyncio.create_task(func)
-        self._background_tasks.add(task)
-        task.add_done_callback(self._background_tasks.discard)
 
-
-class WsServer:
+class WsServer(WsBase):
     """WsServer class."""
 
     def __init__(self) -> None:
         """Initialize WsServer class."""
+        super().__init__()
         self._runner: AppRunner | None = None
         self.subscriptions: dict[str, Callable] = {}
 
@@ -421,8 +430,7 @@ class WsServer:
     def close(self) -> None:
         """Stop the websocket server."""
         if self._runner is not None:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._runner.cleanup())  # noqa: RUF006
+            self._create_and_track_task(self._runner.cleanup())
 
     async def websocket_handler(self, request: BaseRequest) -> WebSocketResponse:
         """Handle connections from sleeping devices."""
