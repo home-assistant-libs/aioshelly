@@ -225,14 +225,17 @@ class RpcDevice:
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
+            await self._wsrpc.disconnect()
             raise
         except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
+            await self._wsrpc.disconnect()
             raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
+            await self._wsrpc.disconnect()
             raise self._last_error from err
         else:
             _LOGGER.debug("host %s:%s: RPC device init finished", ip, port)
