@@ -45,7 +45,8 @@ async def connect_and_save(
 
         device.subscribe_updates(partial(device_updated, action=save_endpoints))
 
-        while True:
+        # This is for diagnostic purposes only.
+        while True:  # noqa: ASYNC110
             await asyncio.sleep(0.1)
 
 
