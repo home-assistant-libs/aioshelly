@@ -250,7 +250,8 @@ class COAP(asyncio.DatagramProtocol):
 async def discovery_dump() -> None:
     """Dump all discovery data as it comes in."""
     async with COAP(lambda msg: print(msg.ip, msg.payload)):  # noqa: T201
-        while True:
+        # This is for diagnostic purposes only.
+        while True:  # noqa: ASYNC110
             await asyncio.sleep(0.1)
 
 
