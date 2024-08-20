@@ -130,9 +130,8 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
         print()
         return
 
-    model_name = (
-        DEVICES.get(device.model, {}).get(ATTR_MODEL_NAME)
-        or f"Unknown ({device.model})"
+    model_name = DEVICES.get(device.model, {}).get(
+        ATTR_MODEL_NAME, f"Unknown ({device.model})"
     )
     print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
     print()
