@@ -22,7 +22,7 @@ from ..const import (
     FIRMWARE_PATTERN,
     GEN1_MODELS_UNSUPPORTED,
     HTTP_CALL_TIMEOUT,
-    MIN_FIRMWARE_DATE,
+    MIN_FIRMWARE_DATES,
     MODEL_RGBW2,
 )
 from ..exceptions import (
@@ -457,7 +457,7 @@ class BlockDevice:
         if self.model in DEVICES:
             fw_ver = cast(int, DEVICES[self.model][ATTR_MIN_FW_DATE])
         else:
-            fw_ver = MIN_FIRMWARE_DATE[self.gen]
+            fw_ver = MIN_FIRMWARE_DATES[self.gen]
 
         match = FIRMWARE_PATTERN.search(self.firmware_version)
 

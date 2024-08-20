@@ -16,9 +16,10 @@ from aiohttp import ClientSession
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
 from aioshelly.const import (
+    ATTR_MODEL_NAME,
     BLOCK_GENERATIONS,
     DEFAULT_HTTP_PORT,
-    MODEL_NAMES,
+    DEVICES,
     RPC_GENERATIONS,
 )
 from aioshelly.exceptions import (
@@ -129,7 +130,10 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
         print()
         return
 
-    model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
+    model_name = (
+        DEVICES.get(device.model, {}).get(ATTR_MODEL_NAME)
+        or f"Unknown ({device.model})"
+    )
     print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
     print()
 

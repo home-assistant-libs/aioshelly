@@ -18,7 +18,7 @@ from ..const import (
     DEVICE_IO_TIMEOUT,
     DEVICES,
     FIRMWARE_PATTERN,
-    MIN_FIRMWARE_DATE,
+    MIN_FIRMWARE_DATES,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
@@ -470,14 +470,14 @@ class RpcDevice:
     @property
     def firmware_supported(self) -> bool:
         """Return True if device firmware version is supported."""
-        if self.gen not in MIN_FIRMWARE_DATE:
+        if self.gen not in MIN_FIRMWARE_DATES:
             # Protection against future generations of devices.
             return False
 
         if self.model in DEVICES:
             fw_ver = cast(int, DEVICES[self.model][ATTR_MIN_FW_DATE])
         else:
-            fw_ver = MIN_FIRMWARE_DATE[self.gen]
+            fw_ver = MIN_FIRMWARE_DATES[self.gen]
 
         match = FIRMWARE_PATTERN.search(self.firmware_version)
 

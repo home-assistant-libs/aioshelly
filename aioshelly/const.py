@@ -318,15 +318,6 @@ DEVICE_IO_TIMEOUT = 10
 # Timeout used for HTTP calls
 HTTP_CALL_TIMEOUT = 10
 
-# Firmware 1.9.0 release date
-GEN1_MIN_FIRMWARE_DATE = 20201124
-
-# Firmware 1.0.0 release date
-GEN2_MIN_FIRMWARE_DATE = 20230803
-
-# Firmware 1.0.99 release date
-GEN3_MIN_FIRMWARE_DATE = 20231102
-
 WS_HEARTBEAT = 55
 
 # Default network settings for gen1 devices ( CoAP )
@@ -342,10 +333,10 @@ GEN1 = 1
 GEN2 = 2
 GEN3 = 3
 
-MIN_FIRMWARE_DATE = {
-    GEN1: GEN1_MIN_FIRMWARE_DATE,
-    GEN2: GEN2_MIN_FIRMWARE_DATE,
-    GEN3: GEN3_MIN_FIRMWARE_DATE,
+MIN_FIRMWARE_DATES = {
+    GEN1: 20201124,  # Firmware 1.9.0 release date
+    GEN2: 20230803,  # Firmware 1.0.0 release date
+    GEN3: 20231102,  # Firmware 1.0.99 release date
 }
 
 BLOCK_GENERATIONS = (GEN1,)
