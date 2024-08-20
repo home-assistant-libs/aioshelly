@@ -14,6 +14,9 @@ CONNECT_ERRORS = (
     OSError,
 )
 
+ATTR_MIN_FW_DATE = "min_fw_date"
+ATTR_MODEL_NAME = "model_name"
+
 # Gen1 CoAP based models
 MODEL_1 = "SHSW-1"
 MODEL_1L = "SHSW-L"
@@ -118,109 +121,181 @@ MODEL_I4_GEN3 = "S3SN-0024X"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_X_MOD1 = "S3MX-0A"
 
-MODEL_NAMES = {
+DEVICES = {
     # Gen1 CoAP based models
-    MODEL_1: "Shelly 1",
-    MODEL_1L: "Shelly 1L",
-    MODEL_1PM: "Shelly 1PM",
-    MODEL_2: "Shelly 2",
-    MODEL_25: "Shelly 2.5",
-    MODEL_2LED: "Shelly 2LED",
-    MODEL_4PRO: "Shelly 4Pro",
-    MODEL_AIR: "Shelly Air",
-    MODEL_BULB: "Shelly Bulb",
-    MODEL_BULB_RGBW: "Shelly Bulb RGBW",
-    MODEL_BUTTON1: "Shelly Button1",
-    MODEL_BUTTON1_V2: "Shelly Button1",
-    MODEL_COLOR: "Shelly Color",
-    MODEL_DIMMER: "Shelly Dimmer",
-    MODEL_DIMMER_2: "Shelly Dimmer 2",
-    MODEL_DIMMER_W1: "Shelly Dimmer W1",
-    MODEL_DUO: "Shelly DUO",
-    MODEL_DW: "Shelly Door/Window",
-    MODEL_DW_2: "Shelly Door/Window 2",
-    MODEL_EM: "Shelly EM",
-    MODEL_EM3: "Shelly 3EM",
-    MODEL_FLOOD: "Shelly Flood",
-    MODEL_GAS: "Shelly Gas",
-    MODEL_HT: "Shelly H&T",
-    MODEL_I3: "Shelly i3",
-    MODEL_MOTION: "Shelly Motion",
-    MODEL_MOTION_2: "Shelly Motion 2",
-    MODEL_PLUG: "Shelly Plug",
-    MODEL_PLUG_E: "Shelly Plug E",
-    MODEL_PLUG_S: "Shelly Plug S",
-    MODEL_PLUG_US: "Shelly Plug US",
-    MODEL_RGBW: "Shelly RGBW",
-    MODEL_RGBW2: "Shelly RGBW2",
-    MODEL_SENSE: "Shelly Sense",
-    MODEL_SMOKE: "Shelly Smoke",
-    MODEL_SMOKE_2: "Shelly Smoke 2",
-    MODEL_SPOT: "Shelly Spot",
-    MODEL_SPOT_2: "Shelly Spot 2",
-    MODEL_UNI: "Shelly UNI",
-    MODEL_VALVE: "Shelly Valve",
-    MODEL_VINTAGE: "Shelly Vintage",
-    MODEL_VINTAGE_V2: "Shelly Vintage",
+    MODEL_1: {ATTR_MODEL_NAME: "Shelly 1", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_1L: {ATTR_MODEL_NAME: "Shelly 1L", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_1PM: {ATTR_MODEL_NAME: "Shelly 1PM", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_2: {ATTR_MODEL_NAME: "Shelly 2", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_25: {ATTR_MODEL_NAME: "Shelly 2.5", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_2LED: {ATTR_MODEL_NAME: "Shelly 2LED", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_4PRO: {ATTR_MODEL_NAME: "Shelly 4Pro", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_AIR: {ATTR_MODEL_NAME: "Shelly Air", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_BULB: {ATTR_MODEL_NAME: "Shelly Bulb", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_BULB_RGBW: {ATTR_MODEL_NAME: "Shelly Bulb RGBW", ATTR_MIN_FW_DATE: 20210710},
+    MODEL_BUTTON1: {ATTR_MODEL_NAME: "Shelly Button1", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_BUTTON1_V2: {ATTR_MODEL_NAME: "Shelly Button1", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_COLOR: {ATTR_MODEL_NAME: "Shelly Color", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_DIMMER: {ATTR_MODEL_NAME: "Shelly Dimmer", ATTR_MIN_FW_DATE: 20210710},
+    MODEL_DIMMER_2: {ATTR_MODEL_NAME: "Shelly Dimmer 2", ATTR_MIN_FW_DATE: 20210710},
+    MODEL_DIMMER_W1: {ATTR_MODEL_NAME: "Shelly Dimmer W1", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_DUO: {ATTR_MODEL_NAME: "Shelly DUO", ATTR_MIN_FW_DATE: 20210710},
+    MODEL_DW: {ATTR_MODEL_NAME: "Shelly Door/Window", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_DW_2: {ATTR_MODEL_NAME: "Shelly Door/Window 2", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_EM: {ATTR_MODEL_NAME: "Shelly EM", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_EM3: {ATTR_MODEL_NAME: "Shelly 3EM", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_FLOOD: {ATTR_MODEL_NAME: "Shelly Flood", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_GAS: {ATTR_MODEL_NAME: "Shelly Gas", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_HT: {ATTR_MODEL_NAME: "Shelly H&T", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_I3: {ATTR_MODEL_NAME: "Shelly i3", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_MOTION: {ATTR_MODEL_NAME: "Shelly Motion", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_MOTION_2: {ATTR_MODEL_NAME: "Shelly Motion 2", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_PLUG: {ATTR_MODEL_NAME: "Shelly Plug", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_PLUG_E: {ATTR_MODEL_NAME: "Shelly Plug E", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_PLUG_S: {ATTR_MODEL_NAME: "Shelly Plug S", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_PLUG_US: {ATTR_MODEL_NAME: "Shelly Plug US", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_RGBW: {ATTR_MODEL_NAME: "Shelly RGBW", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_RGBW2: {ATTR_MODEL_NAME: "Shelly RGBW2", ATTR_MIN_FW_DATE: 20210710},
+    MODEL_SENSE: {ATTR_MODEL_NAME: "Shelly Sense", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_SMOKE: {ATTR_MODEL_NAME: "Shelly Smoke", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_SMOKE_2: {ATTR_MODEL_NAME: "Shelly Smoke 2", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_SPOT: {ATTR_MODEL_NAME: "Shelly Spot", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_SPOT_2: {ATTR_MODEL_NAME: "Shelly Spot 2", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_UNI: {ATTR_MODEL_NAME: "Shelly UNI", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_VALVE: {ATTR_MODEL_NAME: "Shelly Valve", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_VINTAGE: {ATTR_MODEL_NAME: "Shelly Vintage", ATTR_MIN_FW_DATE: 20201124},
+    MODEL_VINTAGE_V2: {ATTR_MODEL_NAME: "Shelly Vintage", ATTR_MIN_FW_DATE: 20210710},
     # Gen2 RPC based models
-    MODEL_BLU_GATEWAY: "Shelly BLU Gateway",
-    MODEL_PLUS_1: "Shelly Plus 1",
-    MODEL_PLUS_1_MINI: "Shelly Plus 1 Mini",
-    MODEL_PLUS_1_UL: "Shelly Plus 1 UL",
-    MODEL_PLUS_10V: "Shelly Plus 10V",
-    MODEL_PLUS_10V_DIMMER: "Shelly Plus 0-10V Dimmer",
-    MODEL_PLUS_1PM: "Shelly Plus 1PM",
-    MODEL_PLUS_1PM_MINI: "Shelly Plus 1PM Mini",
-    MODEL_PLUS_1PM_UL: "Shelly Plus 1PM UL",
-    MODEL_PLUS_2PM: "Shelly Plus 2PM",
-    MODEL_PLUS_2PM_UL: "Shelly Plus 2PM UL",
-    MODEL_PLUS_2PM_V2: "Shelly Plus 2PM",
-    MODEL_PLUS_HT: "Shelly Plus H&T",
-    MODEL_PLUS_I4: "Shelly Plus I4",
-    MODEL_PLUS_I4DC: "Shelly Plus I4DC",
-    MODEL_PLUS_PLUG_IT: "Shelly Plus Plug IT",
-    MODEL_PLUS_PLUG_S: "Shelly Plus Plug S",
-    MODEL_PLUS_PLUG_S_V2: "Shelly Plus Plug S",
-    MODEL_PLUS_PLUG_UK: "Shelly Plus Plug UK",
-    MODEL_PLUS_PLUG_US: "Shelly Plus Plug US",
-    MODEL_PLUS_PM_MINI: "Shelly Plus PM Mini",
-    MODEL_PLUS_RGBW_PM: "Shelly Plus RGBW PM",
-    MODEL_PLUS_SMOKE: "Shelly Plus Smoke",
-    MODEL_PLUS_UNI: "Shelly Plus Uni",
-    MODEL_PLUS_WALL_DIMMER: "Shelly Plus Wall Dimmer",
-    MODEL_PRO_1: "Shelly Pro 1",
-    MODEL_PRO_1_V2: "Shelly Pro 1",
-    MODEL_PRO_1_V3: "Shelly Pro 1",
-    MODEL_PRO_1PM: "Shelly Pro 1PM",
-    MODEL_PRO_1PM_V2: "Shelly Pro 1PM",
-    MODEL_PRO_1PM_V3: "Shelly Pro 1PM",
-    MODEL_PRO_2: "Shelly Pro 2",
-    MODEL_PRO_2_V2: "Shelly Pro 2",
-    MODEL_PRO_2_V3: "Shelly Pro 2",
-    MODEL_PRO_2PM: "Shelly Pro 2PM",
-    MODEL_PRO_2PM_V2: "Shelly Pro 2PM",
-    MODEL_PRO_3: "Shelly Pro 3",
-    MODEL_PRO_4PM: "Shelly Pro 4PM",
-    MODEL_PRO_4PM_V2: "Shelly Pro 4PM",
-    MODEL_PRO_DIMMER_1PM: "Shelly Pro Dimmer 1PM",
-    MODEL_PRO_DIMMER_2PM: "Shelly Pro Dimmer 2PM",
-    MODEL_PRO_DUAL_COVER: "Shelly Pro Dual Cover PM",
-    MODEL_PRO_EM: "Shelly Pro EM",
-    MODEL_PRO_EM3: "Shelly Pro 3EM",
-    MODEL_PRO_EM3_120: "Shelly Pro 3EM",
-    MODEL_PRO_EM3_400: "Shelly Pro 3EM-400",
-    MODEL_WALL_DISPLAY: "Shelly Wall Display",
+    MODEL_BLU_GATEWAY: {
+        ATTR_MODEL_NAME: "Shelly BLU Gateway",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_1: {ATTR_MODEL_NAME: "Shelly Plus 1", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_1_MINI: {
+        ATTR_MODEL_NAME: "Shelly Plus 1 Mini",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_1_UL: {ATTR_MODEL_NAME: "Shelly Plus 1 UL", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_10V: {ATTR_MODEL_NAME: "Shelly Plus 10V", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_10V_DIMMER: {
+        ATTR_MODEL_NAME: "Shelly Plus 0-10V Dimmer",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_1PM: {ATTR_MODEL_NAME: "Shelly Plus 1PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_1PM_MINI: {
+        ATTR_MODEL_NAME: "Shelly Plus 1PM Mini",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_1PM_UL: {
+        ATTR_MODEL_NAME: "Shelly Plus 1PM UL",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_2PM: {ATTR_MODEL_NAME: "Shelly Plus 2PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_2PM_UL: {
+        ATTR_MODEL_NAME: "Shelly Plus 2PM UL",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_2PM_V2: {ATTR_MODEL_NAME: "Shelly Plus 2PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_HT: {ATTR_MODEL_NAME: "Shelly Plus H&T", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_I4: {ATTR_MODEL_NAME: "Shelly Plus I4", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_I4DC: {ATTR_MODEL_NAME: "Shelly Plus I4DC", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_PLUG_IT: {
+        ATTR_MODEL_NAME: "Shelly Plus Plug IT",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_PLUG_S: {
+        ATTR_MODEL_NAME: "Shelly Plus Plug S",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_PLUG_S_V2: {
+        ATTR_MODEL_NAME: "Shelly Plus Plug S",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_PLUG_UK: {
+        ATTR_MODEL_NAME: "Shelly Plus Plug UK",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_PLUG_US: {
+        ATTR_MODEL_NAME: "Shelly Plus Plug US",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_PM_MINI: {
+        ATTR_MODEL_NAME: "Shelly Plus PM Mini",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_RGBW_PM: {
+        ATTR_MODEL_NAME: "Shelly Plus RGBW PM",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_SMOKE: {
+        ATTR_MODEL_NAME: "Shelly Plus Smoke",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PLUS_UNI: {ATTR_MODEL_NAME: "Shelly Plus Uni", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PLUS_WALL_DIMMER: {
+        ATTR_MODEL_NAME: "Shelly Plus Wall Dimmer",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PRO_1: {ATTR_MODEL_NAME: "Shelly Pro 1", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_1_V2: {ATTR_MODEL_NAME: "Shelly Pro 1", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_1_V3: {ATTR_MODEL_NAME: "Shelly Pro 1", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_1PM: {ATTR_MODEL_NAME: "Shelly Pro 1PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_1PM_V2: {ATTR_MODEL_NAME: "Shelly Pro 1PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_1PM_V3: {ATTR_MODEL_NAME: "Shelly Pro 1PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_2: {ATTR_MODEL_NAME: "Shelly Pro 2", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_2_V2: {ATTR_MODEL_NAME: "Shelly Pro 2", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_2_V3: {ATTR_MODEL_NAME: "Shelly Pro 2", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_2PM: {ATTR_MODEL_NAME: "Shelly Pro 2PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_2PM_V2: {ATTR_MODEL_NAME: "Shelly Pro 2PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_3: {ATTR_MODEL_NAME: "Shelly Pro 3", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_4PM: {ATTR_MODEL_NAME: "Shelly Pro 4PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_4PM_V2: {ATTR_MODEL_NAME: "Shelly Pro 4PM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_DIMMER_1PM: {
+        ATTR_MODEL_NAME: "Shelly Pro Dimmer 1PM",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PRO_DIMMER_2PM: {
+        ATTR_MODEL_NAME: "Shelly Pro Dimmer 2PM",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PRO_DUAL_COVER: {
+        ATTR_MODEL_NAME: "Shelly Pro Dual Cover PM",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_PRO_EM: {ATTR_MODEL_NAME: "Shelly Pro EM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_EM3: {ATTR_MODEL_NAME: "Shelly Pro 3EM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_EM3_120: {ATTR_MODEL_NAME: "Shelly Pro 3EM", ATTR_MIN_FW_DATE: 20230803},
+    MODEL_PRO_EM3_400: {
+        ATTR_MODEL_NAME: "Shelly Pro 3EM-400",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
+    MODEL_WALL_DISPLAY: {
+        ATTR_MODEL_NAME: "Shelly Wall Display",
+        ATTR_MIN_FW_DATE: 20230803,
+    },
     # Gen3 RPC based models
-    MODEL_1_GEN3: "Shelly 1 Gen3",
-    MODEL_1_MINI_G3: "Shelly 1 Mini Gen3",
-    MODEL_1PM_GEN3: "Shelly 1PM Gen3",
-    MODEL_1PM_MINI_G3: "Shelly 1PM Mini Gen3",
-    MODEL_2PM_G3: "Shelly 2PM Gen3",
-    MODEL_DIMMER_10V_GEN3: "Shelly Dimmer 0/1-10V PM Gen3",
-    MODEL_HT_G3: "Shelly H&T Gen3",
-    MODEL_I4_GEN3: "Shelly I4 Gen3",
-    MODEL_PM_MINI_G3: "Shelly PM Mini Gen3",
-    MODEL_X_MOD1: "Shelly X MOD1",
+    MODEL_1_GEN3: {ATTR_MODEL_NAME: "Shelly 1 Gen3", ATTR_MIN_FW_DATE: 20231102},
+    MODEL_1_MINI_G3: {
+        ATTR_MODEL_NAME: "Shelly 1 Mini Gen3",
+        ATTR_MIN_FW_DATE: 20231102,
+    },
+    MODEL_1PM_GEN3: {ATTR_MODEL_NAME: "Shelly 1PM Gen3", ATTR_MIN_FW_DATE: 20231102},
+    MODEL_1PM_MINI_G3: {
+        ATTR_MODEL_NAME: "Shelly 1PM Mini Gen3",
+        ATTR_MIN_FW_DATE: 20231102,
+    },
+    MODEL_2PM_G3: {ATTR_MODEL_NAME: "Shelly 2PM Gen3", ATTR_MIN_FW_DATE: 20231102},
+    MODEL_DIMMER_10V_GEN3: {
+        ATTR_MODEL_NAME: "Shelly Dimmer 0/1-10V PM Gen3",
+        ATTR_MIN_FW_DATE: 20231102,
+    },
+    MODEL_HT_G3: {ATTR_MODEL_NAME: "Shelly H&T Gen3", ATTR_MIN_FW_DATE: 20231102},
+    MODEL_I4_GEN3: {ATTR_MODEL_NAME: "Shelly I4 Gen3", ATTR_MIN_FW_DATE: 20231102},
+    MODEL_PM_MINI_G3: {
+        ATTR_MODEL_NAME: "Shelly PM Mini Gen3",
+        ATTR_MIN_FW_DATE: 20231102,
+    },
+    MODEL_X_MOD1: {ATTR_MODEL_NAME: "Shelly X MOD1", ATTR_MIN_FW_DATE: 20231102},
 }
 
 GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = (
@@ -246,10 +321,6 @@ HTTP_CALL_TIMEOUT = 10
 # Firmware 1.9.0 release date
 GEN1_MIN_FIRMWARE_DATE = 20201124
 
-# Firmware 1.11.0 release date (introduction of light transition)
-# Due to date fluctuation for different models, 20210710 was used.
-GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210710
-
 # Firmware 1.0.0 release date
 GEN2_MIN_FIRMWARE_DATE = 20230803
 
@@ -270,6 +341,12 @@ NOTIFY_WS_CLOSED = "NotifyWebSocketClosed"
 GEN1 = 1
 GEN2 = 2
 GEN3 = 3
+
+MIN_FIRMWARE_DATE = {
+    GEN1: GEN1_MIN_FIRMWARE_DATE,
+    GEN2: GEN2_MIN_FIRMWARE_DATE,
+    GEN3: GEN3_MIN_FIRMWARE_DATE,
+}
 
 BLOCK_GENERATIONS = (GEN1,)
 RPC_GENERATIONS = (GEN2, GEN3)

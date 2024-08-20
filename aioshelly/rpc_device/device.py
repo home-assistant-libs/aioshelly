@@ -13,12 +13,12 @@ from aiohttp import ClientSession
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import (
+    ATTR_MIN_FW_DATE,
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
+    DEVICES,
     FIRMWARE_PATTERN,
-    GEN2,
-    GEN2_MIN_FIRMWARE_DATE,
-    GEN3_MIN_FIRMWARE_DATE,
+    MIN_FIRMWARE_DATE,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
@@ -470,7 +470,13 @@ class RpcDevice:
     @property
     def firmware_supported(self) -> bool:
         """Return True if device firmware version is supported."""
-        fw_ver = GEN2_MIN_FIRMWARE_DATE if self.gen == GEN2 else GEN3_MIN_FIRMWARE_DATE
+        if self.gen not in MIN_FIRMWARE_DATE:
+            return False
+
+        if self.model in DEVICES:
+            fw_ver = cast(int, DEVICES[self.model][ATTR_MIN_FW_DATE])
+        else:
+            fw_ver = MIN_FIRMWARE_DATE[self.gen]
 
         match = FIRMWARE_PATTERN.search(self.firmware_version)
 

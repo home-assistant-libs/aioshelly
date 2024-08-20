@@ -14,15 +14,15 @@ from yarl import URL
 
 from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
 from ..const import (
+    ATTR_MIN_FW_DATE,
     CONNECT_ERRORS,
     DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
+    DEVICES,
     FIRMWARE_PATTERN,
-    GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
-    GEN1_MIN_FIRMWARE_DATE,
-    GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION,
     GEN1_MODELS_UNSUPPORTED,
     HTTP_CALL_TIMEOUT,
+    MIN_FIRMWARE_DATE,
     MODEL_RGBW2,
 )
 from ..exceptions import (
@@ -454,10 +454,10 @@ class BlockDevice:
         if self.model in GEN1_MODELS_UNSUPPORTED:
             return False
 
-        if self.model in GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION:
-            fw_ver = GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE
+        if self.model in DEVICES:
+            fw_ver = cast(int, DEVICES[self.model][ATTR_MIN_FW_DATE])
         else:
-            fw_ver = GEN1_MIN_FIRMWARE_DATE
+            fw_ver = MIN_FIRMWARE_DATE[self.gen]
 
         match = FIRMWARE_PATTERN.search(self.firmware_version)
 
