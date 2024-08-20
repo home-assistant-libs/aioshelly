@@ -19,6 +19,7 @@ from .const import (
     DEVICE_IO_TIMEOUT,
     DEVICES,
     FIRMWARE_PATTERN,
+    GEN1,
     GEN1_MODELS_UNSUPPORTED,
     MIN_FIRMWARE_DATES,
 )
@@ -108,7 +109,7 @@ def is_firmware_supported(gen: int, model: str, firmware_version: str) -> bool:
         # Protection against future generations of devices.
         return False
 
-    if model in GEN1_MODELS_UNSUPPORTED:
+    if gen == GEN1 and model in GEN1_MODELS_UNSUPPORTED:
         return False
 
     if model in DEVICES:
