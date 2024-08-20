@@ -12,17 +12,18 @@ from typing import Any, ClassVar, cast
 from aiohttp import ClientResponse, ClientResponseError, ClientSession, ClientTimeout
 from yarl import URL
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import (
+    ConnectionOptions,
+    IpOrOptionsType,
+    get_info,
+    is_firmware_supported,
+    process_ip_or_options,
+)
 from ..const import (
-    ATTR_MIN_FW_DATE,
     CONNECT_ERRORS,
     DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
-    DEVICES,
-    FIRMWARE_PATTERN,
-    GEN1_MODELS_UNSUPPORTED,
     HTTP_CALL_TIMEOUT,
-    MIN_FIRMWARE_DATES,
     MODEL_RGBW2,
 )
 from ..exceptions import (
@@ -451,22 +452,7 @@ class BlockDevice:
     @property
     def firmware_supported(self) -> bool:
         """Return True if device firmware version is supported."""
-        if self.model in GEN1_MODELS_UNSUPPORTED:
-            return False
-
-        if self.model in DEVICES:
-            fw_ver = cast(int, DEVICES[self.model][ATTR_MIN_FW_DATE])
-        else:
-            fw_ver = MIN_FIRMWARE_DATES[self.gen]
-
-        match = FIRMWARE_PATTERN.search(self.firmware_version)
-
-        if match is None:
-            return False
-
-        # We compare firmware release dates because Shelly version numbering is
-        # inconsistent, sometimes the word is used as the version number.
-        return int(match[0]) >= fw_ver
+        return is_firmware_supported(self.gen, self.model, self.firmware_version)
 
 
 class Block:

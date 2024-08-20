@@ -7,12 +7,21 @@ import ipaddress
 import logging
 from dataclasses import dataclass
 from socket import gethostbyname
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import BasicAuth, ClientSession, ClientTimeout
 from yarl import URL
 
-from .const import CONNECT_ERRORS, DEFAULT_HTTP_PORT, DEVICE_IO_TIMEOUT
+from .const import (
+    ATTR_MIN_FW_DATE,
+    CONNECT_ERRORS,
+    DEFAULT_HTTP_PORT,
+    DEVICE_IO_TIMEOUT,
+    DEVICES,
+    FIRMWARE_PATTERN,
+    GEN1_MODELS_UNSUPPORTED,
+    MIN_FIRMWARE_DATES,
+)
 from .exceptions import (
     DeviceConnectionError,
     MacAddressMismatchError,
@@ -91,3 +100,27 @@ async def get_info(
         raise mac_err
 
     return result
+
+
+def is_firmware_supported(gen: int, model: str, firmware_version: str) -> bool:
+    """Return True if firmware is supported."""
+    if gen not in MIN_FIRMWARE_DATES:
+        # Protection against future generations of devices.
+        return False
+
+    if model in GEN1_MODELS_UNSUPPORTED:
+        return False
+
+    if model in DEVICES:
+        fw_ver = cast(int, DEVICES[model][ATTR_MIN_FW_DATE])
+    else:
+        fw_ver = MIN_FIRMWARE_DATES[gen]
+
+    match = FIRMWARE_PATTERN.search(firmware_version)
+
+    if match is None:
+        return False
+
+    # We compare firmware release dates because Shelly version numbering is
+    # inconsistent, sometimes the word is used as the version number.
+    return int(match[0]) >= fw_ver

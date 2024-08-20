@@ -11,14 +11,17 @@ from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import (
+    ConnectionOptions,
+    IpOrOptionsType,
+    get_info,
+    is_firmware_supported,
+    process_ip_or_options,
+)
 from ..const import (
-    ATTR_MIN_FW_DATE,
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
-    DEVICES,
     FIRMWARE_PATTERN,
-    MIN_FIRMWARE_DATES,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
@@ -470,23 +473,7 @@ class RpcDevice:
     @property
     def firmware_supported(self) -> bool:
         """Return True if device firmware version is supported."""
-        if self.gen not in MIN_FIRMWARE_DATES:
-            # Protection against future generations of devices.
-            return False
-
-        if self.model in DEVICES:
-            fw_ver = cast(int, DEVICES[self.model][ATTR_MIN_FW_DATE])
-        else:
-            fw_ver = MIN_FIRMWARE_DATES[self.gen]
-
-        match = FIRMWARE_PATTERN.search(self.firmware_version)
-
-        if match is None:
-            return False
-
-        # We compare firmware release dates because Shelly version numbering is
-        # inconsistent, sometimes the word is used as the version number.
-        return int(match[0]) >= fw_ver
+        return is_firmware_supported(self.gen, self.model, self.firmware_version)
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
