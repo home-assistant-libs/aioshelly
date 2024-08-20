@@ -471,6 +471,7 @@ class RpcDevice:
     def firmware_supported(self) -> bool:
         """Return True if device firmware version is supported."""
         if self.gen not in MIN_FIRMWARE_DATE:
+            # Protection against future generations of devices.
             return False
 
         if self.model in DEVICES:
