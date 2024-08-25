@@ -120,6 +120,12 @@ class SessionData:
     auth: dict[str, Any] | None
 
 
+def _handle_timeout(fut: asyncio.Future[Any]) -> None:
+    """Handle a timeout."""
+    if not fut.done():
+        fut.set_exception(TimeoutError)
+
+
 class RPCCall:
     """RPCCall class."""
 
@@ -390,16 +396,17 @@ class WsRPC(WsBase):
         future: asyncio.Future[dict[str, Any]] = self._loop.create_future()
         call = RPCCall(self._next_id, method, params, self._session, future)
         self._calls[call.call_id] = call
+        timeout_handle = self._loop.call_at(
+            self._loop.time() + timeout, _handle_timeout, future
+        )
 
         try:
-            async with asyncio.timeout(timeout):
-                await self._send_json(call.request_frame)
-                resp = await future
+            await self._send_json(call.request_frame)
+            resp = await future
         except TimeoutError as exc:
-            with contextlib.suppress(asyncio.CancelledError):
-                future.cancel()
-                await future
             raise DeviceConnectionError(call) from exc
+        finally:
+            timeout_handle.cancel()
 
         _LOGGER.debug("%s(%s) -> %s", call.method, call.params, resp)
         return resp
