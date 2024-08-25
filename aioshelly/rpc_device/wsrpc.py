@@ -298,7 +298,7 @@ class WsRPC(WsBase):
                 return
 
             call = self._calls.pop(frame_id)
-            if not call.resolve.cancelled():
+            if not call.resolve.done():
                 call.resolve.set_result(frame)
 
         else:
