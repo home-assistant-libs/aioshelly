@@ -65,8 +65,7 @@ def _receive_json_or_raise(msg: WSMessage) -> RPCResponseType:
             data: RPCResponseType = json_loads(msg.data)
         except ValueError as err:
             raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
-        else:
-            return data
+        return data
 
     if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
         raise ConnectionClosed("Connection was closed.")
