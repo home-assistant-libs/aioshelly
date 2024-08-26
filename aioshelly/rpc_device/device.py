@@ -391,7 +391,7 @@ class RpcDevice:
 
     async def call_rpc_multiple(
         self, calls: Iterable[tuple[str, dict[str, Any] | None]]
-    ) -> tuple[dict[str, Any], ...]:
+    ) -> list[dict[str, Any]]:
         """Call RPC method."""
         try:
             return await self._wsrpc.calls(calls, DEVICE_IO_TIMEOUT)

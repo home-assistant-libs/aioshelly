@@ -132,7 +132,6 @@ class RPCCall:
         "dst",
         "resolve",
         "result",
-        "success",
     )
 
     def __init__(
@@ -151,11 +150,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
-        self.success = False
-        # RPCCall are never returned to a higher scope
-        # unless result is set so we do not type it to
-        # allow None to avoid lots of asserts in the code
-        self.result: dict[str, dict[str, Any]] = None  # type: ignore[assignment]
+        self.result: dict[str, dict[str, Any]] | None = None
 
     @property
     def request_frame(self) -> dict[str, Any]:
@@ -374,7 +369,8 @@ class WsRPC(WsBase):
         timeout: int = 10,
     ) -> dict[str, dict[str, Any]]:
         """Websocket RPC call."""
-        return (await self.calls([(method, params)], timeout))[0]
+        results = await self.calls([(method, params)], timeout)
+        return results[0]
 
     def _raise_for_unrecoverable_errors(
         self, resp: dict[str, dict[str, Any]], allow_auth_retry: bool
@@ -397,21 +393,21 @@ class WsRPC(WsBase):
 
     async def calls(
         self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int = 10
-    ) -> tuple[dict[str, dict[str, Any]], ...]:
+    ) -> list[dict[str, dict[str, Any]]]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
         all_successful, results = await self._rpc_calls(calls, timeout)
         if all_successful:
-            return tuple(call.result for call in results)
+            return [call.result for call in results]  # type: ignore[misc]
 
         # Partial success, try to update auth and retry
         to_retry: list[RPCCall] = []
-        successful: list[RPCCall] = []
+        successful: list[dict[str, dict[str, Any]]] = []
         for call in results:
-            if call.success:
-                successful.append(call)
+            if (result := call.result) is not None:
+                successful.append(result)
                 continue
-            resp = call.result
+            resp = call.resolve.result()
             self._raise_for_unrecoverable_errors(resp, allow_auth_retry=True)
             if not to_retry:
                 # Update auth from response and try with new auth data
@@ -426,15 +422,16 @@ class WsRPC(WsBase):
             to_retry.append(call)
 
         _, results = await self._rpc_calls(
-            tuple((call.method, call.params) for call in to_retry), timeout
+            [(call.method, call.params) for call in to_retry], timeout
         )
         for call in results:
-            if call.success:
-                successful.append(call)
-            else:
+            if (result := call.result) is None:
+                resp = call.resolve.result()
                 self._raise_for_unrecoverable_errors(resp, allow_auth_retry=False)
+            else:
+                successful.append(result)
 
-        return tuple(call.result for call in successful)
+        return successful
 
     async def _rpc_calls(
         self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int
@@ -468,11 +465,11 @@ class WsRPC(WsBase):
 
                 # Wait for all the responses
                 for call in to_send:
-                    call.result = await call.resolve
-                    success = "result" in call.result
-                    if not success:
+                    response = await call.resolve
+                    if "result" in response:
                         all_successful = False
-                    call.success = success
+                        continue
+                    call.result = response["result"]
         except TimeoutError as exc:
             for call in to_send:
                 with contextlib.suppress(asyncio.CancelledError):
