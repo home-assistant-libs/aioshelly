@@ -47,7 +47,7 @@ _LOGGER = logging.getLogger(__name__)
 BUFFER_SIZE = 1024 * 64
 
 
-RPCResponseType = dict[str, dict[str, Any]]
+RPCResponseType = dict[str, Any]
 RPCResultType = dict[str, Any]
 
 
@@ -58,14 +58,15 @@ class RPCSource(Enum):
     SERVER = auto()
 
 
-def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
+def _receive_json_or_raise(msg: WSMessage) -> RPCResponseType:
     """Receive json or raise."""
     if msg.type is WSMsgType.TEXT:
         try:
-            data: dict[str, Any] = msg.json(loads=json_loads)
+            data: RPCResponseType = json_loads(msg.data)
         except ValueError as err:
             raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
-        return data
+        else:
+            return data
 
     if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
         raise ConnectionClosed("Connection was closed.")
@@ -299,18 +300,20 @@ class WsRPC(WsBase):
                 _LOGGER.debug("Notification: %s %s", method, params)
                 self._on_notification(source, method, params)
 
-        elif frame_id:
+            return
+
+        if frame_id:
             # looks like a response
-            if frame_id not in self._calls:
+            if (call := self._calls.pop(frame_id, None)) is None:
                 _LOGGER.warning("Response for an unknown request id: %s", frame_id)
                 return
 
-            call = self._calls.pop(frame_id)
             if not call.resolve.cancelled():
                 call.resolve.set_result(frame)
 
-        else:
-            _LOGGER.warning("Invalid frame: %s", frame)
+            return
+
+        _LOGGER.warning("Invalid frame: %s", frame)
 
     async def _rx_msgs(self) -> None:
         if TYPE_CHECKING:
