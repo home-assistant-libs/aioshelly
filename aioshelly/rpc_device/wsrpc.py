@@ -469,7 +469,7 @@ class WsRPC(WsBase):
                 # Wait for all the responses
                 for call in to_send:
                     response = await call.resolve
-                    if "result" in response:
+                    if "result" not in response:
                         all_successful = False
                         continue
                     call.result = response["result"]
