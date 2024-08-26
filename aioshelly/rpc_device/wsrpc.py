@@ -47,10 +47,6 @@ _LOGGER = logging.getLogger(__name__)
 BUFFER_SIZE = 1024 * 64
 
 
-RPCResponseType = dict[str, Any]
-RPCResultType = dict[str, Any]
-
-
 class RPCSource(Enum):
     """RPC message source."""
 
@@ -58,11 +54,11 @@ class RPCSource(Enum):
     SERVER = auto()
 
 
-def _receive_json_or_raise(msg: WSMessage) -> RPCResponseType:
+def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
     """Receive json or raise."""
     if msg.type is WSMsgType.TEXT:
         try:
-            data: RPCResponseType = json_loads(msg.data)
+            data: dict[str, Any] = json_loads(msg.data)
         except ValueError as err:
             raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
         return data
@@ -144,7 +140,7 @@ class RPCCall:
         method: str,
         params: dict[str, Any] | None,
         session: SessionData,
-        resolve: asyncio.Future[RPCResponseType],
+        resolve: asyncio.Future[dict[str, Any]],
     ) -> None:
         """Initialize RPC class."""
         self.auth = session.auth
@@ -154,7 +150,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
-        self.result: RPCResultType | None = None
+        self.result: dict[str, Any] | None = None
 
     @property
     def request_frame(self) -> dict[str, Any]:
@@ -373,12 +369,12 @@ class WsRPC(WsBase):
         method: str,
         params: dict[str, Any] | None = None,
         timeout: int = 10,
-    ) -> RPCResultType:
+    ) -> dict[str, Any]:
         """Websocket RPC call."""
         return (await self.calls([(method, params)], timeout))[0]
 
     def _raise_for_unrecoverable_errors(
-        self, resp: RPCResponseType, allow_auth_retry: bool
+        self, resp: dict[str, Any], allow_auth_retry: bool
     ) -> None:
         """Raise for unrecoverable errors."""
         try:
@@ -398,7 +394,7 @@ class WsRPC(WsBase):
 
     async def calls(
         self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int = 10
-    ) -> list[RPCResultType]:
+    ) -> list[dict[str, Any]]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
         all_successful, results = await self._rpc_calls(calls, timeout)
@@ -411,7 +407,7 @@ class WsRPC(WsBase):
 
         # Partial success, try to update auth and retry
         to_retry: list[RPCCall] = []
-        successful: list[RPCResultType] = []
+        successful: list[dict[str, Any]] = []
         for call in results:
             if (result := call.result) is not None:
                 successful.append(result)
