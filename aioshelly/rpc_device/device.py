@@ -40,7 +40,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .wsrpc import RPCCall, RPCSource, WsRPC, WsServer
+from .wsrpc import RPCSource, WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -291,11 +291,12 @@ class RpcDevice:
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls)
-        self._config = results.pop(0).result
+        self._config = results[0]
         if fetch_status:
-            self._status = results.pop(0).result
+            self._status = results[1]
         if fetch_dynamic:
-            self._parse_dynamic_components(results.pop(0).result)
+            dynamic_idx = 2 if fetch_status else 1
+            self._parse_dynamic_components(results[dynamic_idx])
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -386,11 +387,11 @@ class RpcDevice:
         self, method: str, params: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Call RPC method."""
-        return (await self.call_rpc_multiple(((method, params),)))[0].result
+        return (await self.call_rpc_multiple(((method, params),)))[0]
 
     async def call_rpc_multiple(
         self, calls: Iterable[tuple[str, dict[str, Any] | None]]
-    ) -> list[RPCCall]:
+    ) -> tuple[dict[str, Any], ...]:
         """Call RPC method."""
         try:
             return await self._wsrpc.calls(calls, DEVICE_IO_TIMEOUT)

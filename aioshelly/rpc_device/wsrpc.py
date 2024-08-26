@@ -374,7 +374,7 @@ class WsRPC(WsBase):
         timeout: int = 10,
     ) -> dict[str, dict[str, Any]]:
         """Websocket RPC call."""
-        return (await self.calls([(method, params)], timeout))[0].result
+        return (await self.calls([(method, params)], timeout))[0]
 
     def _raise_for_unrecoverable_errors(
         self, resp: dict[str, dict[str, Any]], allow_auth_retry: bool
@@ -397,12 +397,12 @@ class WsRPC(WsBase):
 
     async def calls(
         self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int = 10
-    ) -> list[RPCCall]:
+    ) -> tuple[dict[str, dict[str, Any]], ...]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
         all_successful, results = await self._rpc_calls(calls, timeout)
         if all_successful:
-            return results
+            return tuple(call.result for call in results)
 
         # Partial success, try to update auth and retry
         to_retry: list[RPCCall] = []
@@ -434,7 +434,7 @@ class WsRPC(WsBase):
             else:
                 self._raise_for_unrecoverable_errors(resp, allow_auth_retry=False)
 
-        return successful
+        return tuple(call.result for call in successful)
 
     async def _rpc_calls(
         self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int
