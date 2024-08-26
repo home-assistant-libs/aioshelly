@@ -274,7 +274,7 @@ class RpcDevice:
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
-        self._shelly = await self.call_rpc("Shelly.GetInfo")
+        self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
         if fetch_status := self._status is None:
             calls.append(("Shelly.GetStatus", None))
