@@ -285,12 +285,11 @@ class RpcDevice:
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
-        calls: list[tuple[str, dict[str, Any] | None]] = []
-        if fetch_dynamic := self._supports_dynamic_components():
-            calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
+        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
         if fetch_status := self._status is None:
             calls.append(("Shelly.GetStatus", None))
-        calls.append(("Shelly.GetConfig", None))
+        if fetch_dynamic := self._supports_dynamic_components():
+            calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls)
         if fetch_dynamic:
             self._parse_dynamic_components(results.pop())
