@@ -493,7 +493,7 @@ class WsRPC(WsBase):
         if TYPE_CHECKING:
             assert self._client
 
-        await self._client.send_json(data, dumps=json_dumps)
+        await self._client.send_str(json_dumps(data))
 
 
 class WsServer(WsBase):
