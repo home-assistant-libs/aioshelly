@@ -47,6 +47,10 @@ _LOGGER = logging.getLogger(__name__)
 BUFFER_SIZE = 1024 * 64
 
 
+RPCResponseType = dict[str, dict[str, Any]]
+RPCResultType = dict[str, Any]
+
+
 class RPCSource(Enum):
     """RPC message source."""
 
@@ -140,7 +144,7 @@ class RPCCall:
         method: str,
         params: dict[str, Any] | None,
         session: SessionData,
-        resolve: asyncio.Future[dict[str, dict[str, Any]]],
+        resolve: asyncio.Future[RPCResponseType],
     ) -> None:
         """Initialize RPC class."""
         self.auth = session.auth
@@ -150,7 +154,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
-        self.result: dict[str, dict[str, Any]] | None = None
+        self.result: RPCResultType | None = None
 
     @property
     def request_frame(self) -> dict[str, Any]:
@@ -367,13 +371,12 @@ class WsRPC(WsBase):
         method: str,
         params: dict[str, Any] | None = None,
         timeout: int = 10,
-    ) -> dict[str, dict[str, Any]]:
+    ) -> RPCResultType:
         """Websocket RPC call."""
-        results = await self.calls([(method, params)], timeout)
-        return results[0]
+        return (await self.calls([(method, params)], timeout))[0]
 
     def _raise_for_unrecoverable_errors(
-        self, resp: dict[str, dict[str, Any]], allow_auth_retry: bool
+        self, resp: RPCResponseType, allow_auth_retry: bool
     ) -> None:
         """Raise for unrecoverable errors."""
         try:
@@ -393,7 +396,7 @@ class WsRPC(WsBase):
 
     async def calls(
         self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int = 10
-    ) -> list[dict[str, dict[str, Any]]]:
+    ) -> list[RPCResultType]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
         all_successful, results = await self._rpc_calls(calls, timeout)
@@ -402,7 +405,7 @@ class WsRPC(WsBase):
 
         # Partial success, try to update auth and retry
         to_retry: list[RPCCall] = []
-        successful: list[dict[str, dict[str, Any]]] = []
+        successful: list[RPCResultType] = []
         for call in results:
             if (result := call.result) is not None:
                 successful.append(result)
