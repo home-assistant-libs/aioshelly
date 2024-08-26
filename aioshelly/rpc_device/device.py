@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import ConnectionOptions, IpOrOptionsType, process_ip_or_options
 from ..const import (
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
@@ -197,23 +197,12 @@ class RpcDevice:
         ip = self.options.ip_address
         port = self.options.port
         try:
-            self._shelly = await get_info(
-                self.aiohttp_session,
-                self.options.ip_address,
-                self.options.device_mac,
-                self.options.port,
-            )
-
-            if self.requires_auth:
-                if self.options.username is None or self.options.password is None:
-                    raise InvalidAuthError("auth missing and required")  # noqa: TRY301
-
+            if self.options.username and self.options.password:
                 self._wsrpc.set_auth_data(
                     self.shelly["auth_domain"],
                     self.options.username,
                     self.options.password,
                 )
-
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
             await self._init_calls()
@@ -285,17 +274,18 @@ class RpcDevice:
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
+        self._shelly = await self.call_rpc("Shelly.GetInfo")
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
         if fetch_status := self._status is None:
             calls.append(("Shelly.GetStatus", None))
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls)
-        self._config = results.pop(0)
+        self._config = results.pop()
         if fetch_status:
-            self._status = results.pop(0)
+            self._status = results.pop()
         if fetch_dynamic:
-            self._parse_dynamic_components(results.pop(0))
+            self._parse_dynamic_components(results.pop())
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
