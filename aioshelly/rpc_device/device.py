@@ -216,7 +216,7 @@ class RpcDevice:
 
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
-                await self._init_calls()
+            await self._init_calls()
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
