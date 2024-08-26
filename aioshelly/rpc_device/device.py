@@ -291,11 +291,11 @@ class RpcDevice:
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls)
-        if fetch_dynamic:
-            self._parse_dynamic_components(results.pop())
+        self._config = results.pop(0)
         if fetch_status:
-            self._status = results.pop()
-        self._config = results[0]
+            self._status = results.pop(0)
+        if fetch_dynamic:
+            self._parse_dynamic_components(results.pop(0))
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
