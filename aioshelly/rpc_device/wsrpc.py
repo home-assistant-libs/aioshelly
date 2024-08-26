@@ -315,7 +315,7 @@ class WsRPC(WsBase):
             assert self._client
 
         try:
-            while not self._client.closed:
+            while True:
                 try:
                     msg = await self._client.receive()
                     frame = _receive_json_or_raise(msg)
@@ -335,8 +335,10 @@ class WsRPC(WsBase):
                     _LOGGER.exception("Unexpected error while receiving message")
                     raise
 
-                if not self._client.closed:
-                    self.handle_frame(RPCSource.CLIENT, frame)
+                if self._client.closed:
+                    break
+
+                self.handle_frame(RPCSource.CLIENT, frame)
         finally:
             _LOGGER.debug(
                 "Websocket client connection from %s:%s closed",
