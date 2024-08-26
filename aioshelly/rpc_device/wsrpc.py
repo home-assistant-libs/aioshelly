@@ -453,41 +453,47 @@ class WsRPC(WsBase):
         if self._client is None:
             raise RuntimeError("Not connected")
 
-        to_send: list[RPCCall] = []
+        sent_calls: list[RPCCall] = []
         loop = self._loop
         all_successful: bool = True
-        for method, params in rpc_calls:
-            call = RPCCall(
-                self._next_id, method, params, self._session, loop.create_future()
-            )
-            to_send.append(call)
-            self._calls[call.call_id] = call
+        future: asyncio.Future[dict[str, Any]]
 
         try:
             async with asyncio.timeout(timeout):
-                # Send all the requests
-                for call in to_send:
+                for method, params in rpc_calls:
+                    call_id = self._next_id
+                    future = loop.create_future()
+                    call = RPCCall(call_id, method, params, self._session, future)
+                    sent_calls.append(call)
+                    self._calls[call_id] = call
                     await self._send_json(call.request_frame)
 
                 # Wait for all the responses
-                for call in to_send:
+                for call in sent_calls:
                     response = await call.resolve
                     if "result" not in response:
                         all_successful = False
                         continue
                     call.result = response["result"]
         except TimeoutError as exc:
-            for call in to_send:
+            for call in sent_calls:
                 with contextlib.suppress(asyncio.CancelledError):
                     call.resolve.cancel()
                     await call.resolve
             raise DeviceConnectionError(call) from exc
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
-            for call in to_send:
-                _LOGGER.debug("%s(%s) -> %s", call.method, call.params, call.result)
+            for call in sent_calls:
+                _LOGGER.debug(
+                    "result(%s:%s): %s(%s) -> %s",
+                    self._ip_address,
+                    self._port,
+                    call.method,
+                    call.params,
+                    call.result,
+                )
 
-        return all_successful, to_send
+        return all_successful, sent_calls
 
     async def _send_json(self, data: dict[str, Any]) -> None:
         """Send json frame to device."""
