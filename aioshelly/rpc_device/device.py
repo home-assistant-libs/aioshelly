@@ -285,18 +285,18 @@ class RpcDevice:
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
-        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
-        if fetch_status := self._status is None:
-            calls.append(("Shelly.GetStatus", None))
+        calls: list[tuple[str, dict[str, Any] | None]] = []
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
+        if fetch_status := self._status is None:
+            calls.append(("Shelly.GetStatus", None))
+        calls.append(("Shelly.GetConfig", None))
         results = await self.call_rpc_multiple(calls)
-        self._config = results[0]
-        if fetch_status:
-            self._status = results[1]
         if fetch_dynamic:
-            dynamic_idx = 2 if fetch_status else 1
-            self._parse_dynamic_components(results[dynamic_idx])
+            self._parse_dynamic_components(results.pop())
+        if fetch_status:
+            self._status = results.pop()
+        self._config = results[0]
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
