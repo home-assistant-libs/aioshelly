@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
@@ -40,7 +40,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .wsrpc import RPCSource, WsRPC, WsServer
+from .wsrpc import RPCCall, RPCSource, WsRPC, WsServer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -216,12 +216,7 @@ class RpcDevice:
 
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
-                await self.update_config()
-
-                if self._status is None:
-                    await self.update_status()
-
-                await self.get_dynamic_components()
+                await self._init_calls()
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
@@ -287,6 +282,20 @@ class RpcDevice:
     async def update_config(self) -> None:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
+
+    async def _init_calls(self) -> None:
+        """Make calls needed to initialize the device."""
+        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
+        if fetch_status := self._status is None:
+            calls.append(("Shelly.GetStatus", None))
+        if fetch_dynamic := self._supports_dynamic_components():
+            calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
+        results = await self.call_rpc_multiple(calls)
+        self._config = results.pop(0).result
+        if fetch_status:
+            self._status = results.pop(0).result
+        if fetch_dynamic:
+            self._parse_dynamic_components(results.pop(0).result)
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -377,8 +386,14 @@ class RpcDevice:
         self, method: str, params: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Call RPC method."""
+        return (await self.call_rpc_multiple(((method, params),)))[0].result
+
+    async def call_rpc_multiple(
+        self, calls: Iterable[tuple[str, dict[str, Any] | None]]
+    ) -> list[RPCCall]:
+        """Call RPC method."""
         try:
-            return await self._wsrpc.call(method, params, DEVICE_IO_TIMEOUT)
+            return await self._wsrpc.calls(calls, DEVICE_IO_TIMEOUT)
         except (InvalidAuthError, RpcCallError) as err:
             self._last_error = err
             raise
@@ -483,14 +498,18 @@ class RpcDevice:
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
-        components = {}
+        if not self._supports_dynamic_components():
+            return
+        components = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
+        self._parse_dynamic_components(components)
+
+    def _supports_dynamic_components(self) -> bool:
+        """Return True if device supports dynamic components."""
         match = FIRMWARE_PATTERN.search(self.firmware_version)
+        return match is not None and int(match[0]) >= VIRTUAL_COMPONENTS_MIN_FIRMWARE
 
-        if match is not None and int(match[0]) >= VIRTUAL_COMPONENTS_MIN_FIRMWARE:
-            components = await self.call_rpc(
-                "Shelly.GetComponents", {"dynamic_only": True}
-            )
-
+    def _parse_dynamic_components(self, components: dict[str, Any]) -> None:
+        """Parse dynamic components."""
         # This is a workaround for Wall Display, we get rid of components that are not
         # virtual components.
         self._dynamic_components = [

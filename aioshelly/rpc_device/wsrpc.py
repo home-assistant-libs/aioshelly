@@ -9,11 +9,11 @@ import logging
 import socket
 import time
 from asyncio import Task, tasks
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass
 from enum import Enum, auto
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import (
     ClientSession,
@@ -123,7 +123,21 @@ class SessionData:
 class RPCCall:
     """RPCCall class."""
 
-    __slots__ = ("auth", "call_id", "params", "method", "src", "dst", "resolve")
+    __slots__ = (
+        "auth",
+        "call_id",
+        "params",
+        "method",
+        "src",
+        "dst",
+        "resolve",
+        "result",
+        "has_result",
+    )
+
+    # RPCCall are never returned to a higher scope
+    # unless result is set
+    result: dict[str, dict[str, Any]] = None  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -131,7 +145,7 @@ class RPCCall:
         method: str,
         params: dict[str, Any] | None,
         session: SessionData,
-        resolve: asyncio.Future[dict[str, Any]],
+        resolve: asyncio.Future[dict[str, dict[str, Any]]],
     ) -> None:
         """Initialize RPC class."""
         self.auth = session.auth
@@ -141,6 +155,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
+        self.has_result = False
 
     @property
     def request_frame(self) -> dict[str, Any]:
@@ -357,52 +372,119 @@ class WsRPC(WsBase):
         method: str,
         params: dict[str, Any] | None = None,
         timeout: int = 10,
-        handle_auth: bool = True,
-    ) -> dict[str, Any]:
+    ) -> dict[str, dict[str, Any]]:
         """Websocket RPC call."""
-        # Try request with initial/last call auth data
-        resp = await self._rpc_call(method, params, timeout)
-        if "result" in resp:
-            return cast(dict, resp["result"])
+        return (await self.calls([(method, params)], timeout))[0].result
 
+    def _raise_for_unrecoverable_errors(
+        self, resp: dict[str, dict[str, Any]], allow_auth_retry: bool
+    ) -> None:
+        """Raise for unrecoverable errors."""
         try:
-            code, msg = resp["error"]["code"], resp["error"]["message"]
+            error = resp["error"]
+            code = error["code"]
+            msg = error["message"]
         except KeyError as err:
             raise RpcCallError(0, f"bad response: {resp}") from err
 
         if code != HTTPStatus.UNAUTHORIZED.value:
             raise RpcCallError(code, msg)
-        if not handle_auth or self._auth_data is None:
-            raise InvalidAuthError(msg)
 
-        # Update auth from response and try with new auth data
-        auth = json_loads(msg)
-        self._session.auth = self._auth_data.get_auth(auth["nonce"], auth.get("nc", 1))
-        return await self.call(method, params, timeout, handle_auth=False)
+        if allow_auth_retry and self._auth_data is not None:
+            return
 
-    async def _rpc_call(
-        self, method: str, params: dict[str, Any] | None, timeout: int
-    ) -> dict[str, Any]:
-        """Websocket RPC call."""
+        raise InvalidAuthError(msg)
+
+    async def calls(
+        self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int = 10
+    ) -> list[RPCCall]:
+        """Websocket RPC calls."""
+        # Try request with initial/last call auth data
+        all_successful, results = await self._rpc_calls(calls, timeout)
+        if all_successful:
+            return results
+
+        # Partial success, try to update auth and retry
+        to_retry: list[RPCCall] = []
+        successful: list[RPCCall] = []
+        for call in results:
+            if call.has_result:
+                successful.append(call)
+                continue
+            resp = call.result
+            self._raise_for_unrecoverable_errors(resp, allow_auth_retry=True)
+            if not to_retry:
+                # Update auth from response and try with new auth data
+                # If we have multiple calls, we only need to update auth once
+                if TYPE_CHECKING:
+                    # _raise_for_unrecoverable_errors ensures that auth_data is not None
+                    assert self._auth_data is not None
+                auth = json_loads(resp["error"]["message"])
+                self._session.auth = self._auth_data.get_auth(
+                    auth["nonce"], auth.get("nc", 1)
+                )
+            to_retry.append(call)
+
+        _, results = await self._rpc_calls(
+            tuple((call.method, call.params) for call in to_retry), timeout
+        )
+        for call in results:
+            if call.has_result:
+                successful.append(call)
+            else:
+                self._raise_for_unrecoverable_errors(resp, allow_auth_retry=False)
+
+        return successful
+
+    async def _rpc_calls(
+        self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int
+    ) -> tuple[bool, list[RPCCall]]:
+        """Websocket RPC call.
+
+        calls is a tuple of tuples of
+        (
+           (method, params),
+           ...
+
+        """
         if self._client is None:
             raise RuntimeError("Not connected")
 
-        future: asyncio.Future[dict[str, Any]] = self._loop.create_future()
-        call = RPCCall(self._next_id, method, params, self._session, future)
-        self._calls[call.call_id] = call
+        to_send: list[RPCCall] = []
+        loop = self._loop
+        all_successful: bool = True
+        for method, params in rpc_calls:
+            call = RPCCall(
+                self._next_id, method, params, self._session, loop.create_future()
+            )
+            to_send.append(call)
+            self._calls[call.call_id] = call
 
         try:
             async with asyncio.timeout(timeout):
-                await self._send_json(call.request_frame)
-                resp = await future
+                # Send all the requests
+                for call in to_send:
+                    await self._send_json(call.request_frame)
+
+                # Wait for all the responses
+                for call in to_send:
+                    call.result = await call.resolve
+                    has_result = "result" in call.result
+                    if not has_result:
+                        all_successful = False
+                    call.has_result = has_result
         except TimeoutError as exc:
-            with contextlib.suppress(asyncio.CancelledError):
-                future.cancel()
-                await future
+            for call in to_send:
+                with contextlib.suppress(asyncio.CancelledError):
+                    call.resolve.cancel()
+                    await call.resolve
             raise DeviceConnectionError(call) from exc
 
-        _LOGGER.debug("%s(%s) -> %s", call.method, call.params, resp)
-        return resp
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            for call in to_send:
+                _LOGGER.debug("%s(%s) -> %s", call.method, call.params, call.result)
+
+        return all_successful, to_send
 
     async def _send_json(self, data: dict[str, Any]) -> None:
         """Send json frame to device."""
