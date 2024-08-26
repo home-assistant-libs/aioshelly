@@ -132,7 +132,7 @@ class RPCCall:
         "dst",
         "resolve",
         "result",
-        "has_result",
+        "success",
     )
 
     def __init__(
@@ -151,7 +151,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
-        self.has_result = False
+        self.success = False
         # RPCCall are never returned to a higher scope
         # unless result is set so we do not type it to
         # allow None to avoid lots of asserts in the code
@@ -408,7 +408,7 @@ class WsRPC(WsBase):
         to_retry: list[RPCCall] = []
         successful: list[RPCCall] = []
         for call in results:
-            if call.has_result:
+            if call.success:
                 successful.append(call)
                 continue
             resp = call.result
@@ -429,7 +429,7 @@ class WsRPC(WsBase):
             tuple((call.method, call.params) for call in to_retry), timeout
         )
         for call in results:
-            if call.has_result:
+            if call.success:
                 successful.append(call)
             else:
                 self._raise_for_unrecoverable_errors(resp, allow_auth_retry=False)
@@ -469,10 +469,10 @@ class WsRPC(WsBase):
                 # Wait for all the responses
                 for call in to_send:
                     call.result = await call.resolve
-                    has_result = "result" in call.result
-                    if not has_result:
+                    success = "result" in call.result
+                    if not success:
                         all_successful = False
-                    call.has_result = has_result
+                    call.success = success
         except TimeoutError as exc:
             for call in to_send:
                 with contextlib.suppress(asyncio.CancelledError):
