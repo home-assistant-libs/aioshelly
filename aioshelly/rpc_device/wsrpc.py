@@ -135,10 +135,6 @@ class RPCCall:
         "has_result",
     )
 
-    # RPCCall are never returned to a higher scope
-    # unless result is set
-    result: dict[str, dict[str, Any]] = None  # type: ignore[assignment]
-
     def __init__(
         self,
         call_id: int,
@@ -156,6 +152,10 @@ class RPCCall:
         self.dst = session.dst
         self.resolve = resolve
         self.has_result = False
+        # RPCCall are never returned to a higher scope
+        # unless result is set so we do not type it to
+        # allow None to avoid lots of asserts in the code
+        self.result: dict[str, dict[str, Any]] = None  # type: ignore[assignment]
 
     @property
     def request_frame(self) -> dict[str, Any]:
