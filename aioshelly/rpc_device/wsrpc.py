@@ -480,6 +480,9 @@ class WsRPC(WsBase):
                 with contextlib.suppress(asyncio.CancelledError):
                     call.resolve.cancel()
                     await call.resolve
+                # Ensure the call is removed from the calls dict
+                # on failure
+                self._calls.pop(call.call_id, None)
             raise DeviceConnectionError(call) from exc
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
