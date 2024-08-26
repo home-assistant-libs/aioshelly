@@ -404,6 +404,10 @@ class WsRPC(WsBase):
         # Try request with initial/last call auth data
         all_successful, results = await self._rpc_calls(calls, timeout)
         if all_successful:
+            # If all_successful, return results immediately
+            # mypy does not know that .result is never
+            # None when all_successful is True so we need
+            # to ignore the type check here
             return [call.result for call in results]  # type: ignore[misc]
 
         # Partial success, try to update auth and retry
