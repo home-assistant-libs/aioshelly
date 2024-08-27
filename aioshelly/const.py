@@ -126,9 +126,20 @@ GEN2 = 2
 GEN3 = 3
 
 
-GEN1_MIN_FIRMWARE_DATE = 20201124  # Firmware 1.9.0 release date
-GEN2_MIN_FIRMWARE_DATE = 20230803  # Firmware 1.0.0 release date
-GEN3_MIN_FIRMWARE_DATE = 20231102  # Firmware 1.0.99 release date
+# Firmware 1.9.0 release date
+GEN1_MIN_FIRMWARE_DATE = 20201124
+
+# Firmware 1.11.0 release date (introduction of light transition)
+# Due to date fluctuation for different models,
+# GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE was used.
+GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210710
+
+# Firmware 1.0.0 release date
+GEN2_MIN_FIRMWARE_DATE = 20230803
+
+# Firmware 1.0.99 release date
+GEN3_MIN_FIRMWARE_DATE = 20231102
+
 
 # Fallback for unknown devices
 MIN_FIRMWARE_DATES = {
@@ -216,7 +227,7 @@ DEVICES = {
     "SHCB-1": ShellyDevice(
         model="SHCB-1",
         name="Shelly Bulb RGBW",
-        min_fw_date=20210710,
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
     ),
@@ -244,14 +255,14 @@ DEVICES = {
     "SHDM-1": ShellyDevice(
         model="SHDM-1",
         name="Shelly Dimmer",
-        min_fw_date=20210710,
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
     ),
     "SHDM-2": ShellyDevice(
         model="SHDM-2",
         name="Shelly Dimmer 2",
-        min_fw_date=20210710,
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
     ),
@@ -265,7 +276,7 @@ DEVICES = {
     "SHBDUO-1": ShellyDevice(
         model="SHBDUO-1",
         name="Shelly DUO",
-        min_fw_date=20210710,
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
     ),
@@ -377,7 +388,7 @@ DEVICES = {
     "SHRGBW2": ShellyDevice(
         model="SHRGBW2",
         name="Shelly RGBW2",
-        min_fw_date=20210710,
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
     ),
@@ -440,7 +451,7 @@ DEVICES = {
     "SHVIN-1": ShellyDevice(
         model="SHVIN-1",
         name="Shelly Vintage",
-        min_fw_date=20210710,
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
     ),
