@@ -1,4 +1,4 @@
-"""Tests for common module."""
+"""Tests for const module."""
 
 import pytest
 
