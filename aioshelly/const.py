@@ -147,7 +147,6 @@ class ShellyDevice:
     min_fw_date: int
     gen: int
     supported: bool
-    gen1_light_transition: bool
 
 
 DEVICES = {
@@ -157,7 +156,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSW-L": ShellyDevice(
         model="SHSW-L",
@@ -165,7 +163,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSW-PM": ShellyDevice(
         model="SHSW-PM",
@@ -173,7 +170,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSW-21": ShellyDevice(
         model="SHSW-21",
@@ -181,7 +177,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSW-25": ShellyDevice(
         model="SHSW-25",
@@ -189,7 +184,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SH2LED-1": ShellyDevice(
         model="SH2LED-1",
@@ -197,7 +191,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSW-44": ShellyDevice(
         model="SHSW-44",
@@ -205,7 +198,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=False,
-        gen1_light_transition=False,
     ),
     "SHAIR-1": ShellyDevice(
         model="SHAIR-1",
@@ -213,7 +205,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHBLB-1": ShellyDevice(
         model="SHBLB-1",
@@ -221,7 +212,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHCB-1": ShellyDevice(
         model="SHCB-1",
@@ -229,7 +219,6 @@ DEVICES = {
         min_fw_date=20210710,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=True,
     ),
     "SHBTN-1": ShellyDevice(
         model="SHBTN-1",
@@ -237,7 +226,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHBTN-2": ShellyDevice(
         model="SHBTN-2",
@@ -245,7 +233,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHCL-255": ShellyDevice(
         model="SHCL-255",
@@ -253,7 +240,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHDM-1": ShellyDevice(
         model="SHDM-1",
@@ -261,7 +247,6 @@ DEVICES = {
         min_fw_date=20210710,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=True,
     ),
     "SHDM-2": ShellyDevice(
         model="SHDM-2",
@@ -269,7 +254,6 @@ DEVICES = {
         min_fw_date=20210710,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=True,
     ),
     "SHDIMW-1": ShellyDevice(
         model="SHDIMW-1",
@@ -277,7 +261,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHBDUO-1": ShellyDevice(
         model="SHBDUO-1",
@@ -285,7 +268,6 @@ DEVICES = {
         min_fw_date=20210710,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=True,
     ),
     "SHDW-1": ShellyDevice(
         model="SHDW-1",
@@ -293,7 +275,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHDW-2": ShellyDevice(
         model="SHDW-2",
@@ -301,7 +282,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHEM": ShellyDevice(
         model="SHEM",
@@ -309,7 +289,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHEM-3": ShellyDevice(
         model="SHEM-3",
@@ -317,7 +296,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHWT-1": ShellyDevice(
         model="SHWT-1",
@@ -325,7 +303,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHGS-1": ShellyDevice(
         model="SHGS-1",
@@ -333,7 +310,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHHT-1": ShellyDevice(
         model="SHHT-1",
@@ -341,7 +317,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHIX3-1": ShellyDevice(
         model="SHIX3-1",
@@ -349,7 +324,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHMOS-01": ShellyDevice(
         model="SHMOS-01",
@@ -357,7 +331,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHMOS-02": ShellyDevice(
         model="SHMOS-02",
@@ -365,7 +338,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHPLG-1": ShellyDevice(
         model="SHPLG-1",
@@ -373,7 +345,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHPLG2-1": ShellyDevice(
         model="SHPLG2-1",
@@ -381,7 +352,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHPLG-S": ShellyDevice(
         model="SHPLG-S",
@@ -389,7 +359,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHPLG-U1": ShellyDevice(
         model="SHPLG-U1",
@@ -397,7 +366,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHRGBWW-01": ShellyDevice(
         model="SHRGBWW-01",
@@ -405,7 +373,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHRGBW2": ShellyDevice(
         model="SHRGBW2",
@@ -413,7 +380,6 @@ DEVICES = {
         min_fw_date=20210710,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=True,
     ),
     "SHSEN-1": ShellyDevice(
         model="SHSEN-1",
@@ -421,7 +387,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=False,
-        gen1_light_transition=False,
     ),
     "SHSM-01": ShellyDevice(
         model="SHSM-01",
@@ -429,7 +394,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSM-02": ShellyDevice(
         model="SHSM-02",
@@ -437,7 +401,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSPOT-1": ShellyDevice(
         model="SHSPOT-1",
@@ -445,7 +408,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHSPOT-2": ShellyDevice(
         model="SHSPOT-2",
@@ -453,7 +415,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHUNI-1": ShellyDevice(
         model="SHUNI-1",
@@ -461,7 +422,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHTRV-01": ShellyDevice(
         model="SHTRV-01",
@@ -469,7 +429,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHBVIN-1": ShellyDevice(
         model="SHBVIN-1",
@@ -477,7 +436,6 @@ DEVICES = {
         min_fw_date=GEN1_MIN_FIRMWARE_DATE,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SHVIN-1": ShellyDevice(
         model="SHVIN-1",
@@ -485,7 +443,6 @@ DEVICES = {
         min_fw_date=20210710,
         gen=GEN1,
         supported=True,
-        gen1_light_transition=True,
     ),
     "SNGW-BT01": ShellyDevice(
         model="SNGW-BT01",
@@ -493,7 +450,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-001X16EU": ShellyDevice(
         model="SNSW-001X16EU",
@@ -501,7 +457,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-001X8EU": ShellyDevice(
         model="SNSW-001X8EU",
@@ -509,7 +464,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-001X15UL": ShellyDevice(
         model="SNSW-001X15UL",
@@ -517,7 +471,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNGW-0A11WW010": ShellyDevice(
         model="SNGW-0A11WW010",
@@ -525,7 +478,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNDM-00100WW": ShellyDevice(
         model="SNDM-00100WW",
@@ -533,7 +485,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=0,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-001P16EU": ShellyDevice(
         model="SNSW-001P16EU",
@@ -541,7 +492,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-001P8EU": ShellyDevice(
         model="SNSW-001P8EU",
@@ -549,7 +499,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-001P15UL": ShellyDevice(
         model="SNSW-001P15UL",
@@ -557,7 +506,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-002P16EU": ShellyDevice(
         model="SNSW-002P16EU",
@@ -565,7 +513,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=0,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-002P15UL": ShellyDevice(
         model="SNSW-002P15UL",
@@ -573,7 +520,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSW-102P16EU": ShellyDevice(
         model="SNSW-102P16EU",
@@ -581,7 +527,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSN-0013A": ShellyDevice(
         model="SNSN-0013A",
@@ -589,7 +534,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSN-0024X": ShellyDevice(
         model="SNSN-0024X",
@@ -597,7 +541,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSN-0D24X": ShellyDevice(
         model="SNSN-0D24X",
@@ -605,7 +548,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNPL-00110IT": ShellyDevice(
         model="SNPL-00110IT",
@@ -613,7 +555,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNPL-00112EU": ShellyDevice(
         model="SNPL-00112EU",
@@ -621,7 +562,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNPL-10112EU": ShellyDevice(
         model="SNPL-10112EU",
@@ -629,7 +569,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNPL-00112UK": ShellyDevice(
         model="SNPL-00112UK",
@@ -637,7 +576,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNPL-00116US": ShellyDevice(
         model="SNPL-00116US",
@@ -645,7 +583,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=0,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNPM-001PCEU16": ShellyDevice(
         model="SNPM-001PCEU16",
@@ -653,7 +590,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNDC-0D4P10WW": ShellyDevice(
         model="SNDC-0D4P10WW",
@@ -661,7 +597,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=0,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSN-0031Z": ShellyDevice(
         model="SNSN-0031Z",
@@ -669,7 +604,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNSN-0043X": ShellyDevice(
         model="SNSN-0043X",
@@ -677,7 +611,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SNDM-0013US": ShellyDevice(
         model="SNDM-0013US",
@@ -685,7 +618,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-001XE16EU": ShellyDevice(
         model="SPSW-001XE16EU",
@@ -693,7 +625,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-101XE16EU": ShellyDevice(
         model="SPSW-101XE16EU",
@@ -701,7 +632,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-201XE16EU": ShellyDevice(
         model="SPSW-201XE16EU",
@@ -709,7 +639,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-001PE16EU": ShellyDevice(
         model="SPSW-001PE16EU",
@@ -717,7 +646,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-101PE16EU": ShellyDevice(
         model="SPSW-101PE16EU",
@@ -725,7 +653,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-201PE16EU": ShellyDevice(
         model="SPSW-201PE16EU",
@@ -733,7 +660,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=0,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-002XE16EU": ShellyDevice(
         model="SPSW-002XE16EU",
@@ -741,7 +667,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-102XE16EU": ShellyDevice(
         model="SPSW-102XE16EU",
@@ -749,7 +674,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-202XE16EU": ShellyDevice(
         model="SPSW-202XE16EU",
@@ -757,7 +681,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-002PE16EU": ShellyDevice(
         model="SPSW-002PE16EU",
@@ -765,7 +688,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-202PE16EU": ShellyDevice(
         model="SPSW-202PE16EU",
@@ -773,7 +695,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-003XE16EU": ShellyDevice(
         model="SPSW-003XE16EU",
@@ -781,7 +702,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-004PE16EU": ShellyDevice(
         model="SPSW-004PE16EU",
@@ -789,7 +709,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSW-104PE16EU": ShellyDevice(
         model="SPSW-104PE16EU",
@@ -797,7 +716,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPDM-001PE01EU": ShellyDevice(
         model="SPDM-001PE01EU",
@@ -805,7 +723,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPDM-002PE01EU": ShellyDevice(
         model="SPDM-002PE01EU",
@@ -813,7 +730,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPSH-002PE16EU": ShellyDevice(
         model="SPSH-002PE16EU",
@@ -821,7 +737,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPEM-002CEBEU50": ShellyDevice(
         model="SPEM-002CEBEU50",
@@ -829,7 +744,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPEM-003CEBEU": ShellyDevice(
         model="SPEM-003CEBEU",
@@ -837,7 +751,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPEM-003CEBEU120": ShellyDevice(
         model="SPEM-003CEBEU120",
@@ -845,7 +758,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SPEM-003CEBEU400": ShellyDevice(
         model="SPEM-003CEBEU400",
@@ -853,7 +765,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "SAWD-0A1XX10EU1": ShellyDevice(
         model="SAWD-0A1XX10EU1",
@@ -861,7 +772,6 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SW-001X16EU": ShellyDevice(
         model="S3SW-001X16EU",
@@ -869,7 +779,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SW-001X8EU": ShellyDevice(
         model="S3SW-001X8EU",
@@ -877,7 +786,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SW-001P16EU": ShellyDevice(
         model="S3SW-001P16EU",
@@ -885,7 +793,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SW-001P8EU": ShellyDevice(
         model="S3SW-001P8EU",
@@ -893,7 +800,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SW-002P16EU": ShellyDevice(
         model="S3SW-002P16EU",
@@ -901,7 +807,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3DM-0010WW": ShellyDevice(
         model="S3DM-0010WW",
@@ -909,7 +814,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SN-0U12A": ShellyDevice(
         model="S3SN-0U12A",
@@ -917,7 +821,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3SN-0024X": ShellyDevice(
         model="S3SN-0024X",
@@ -925,7 +828,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3PM-001PCEU16": ShellyDevice(
         model="S3PM-001PCEU16",
@@ -933,7 +835,6 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
     "S3MX-0A": ShellyDevice(
         model="S3MX-0A",
@@ -941,19 +842,18 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-        gen1_light_transition=False,
     ),
 }
 
 GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
-    data.model
-    for data in DEVICES.values()
-    if data.gen1_light_transition and data.gen == 1
+    MODEL_DUO,
+    MODEL_BULB_RGBW,
+    MODEL_DIMMER,
+    MODEL_DIMMER_2,
+    MODEL_RGBW2,
+    MODEL_VINTAGE_V2,
 }
 
-GEN1_MODELS_UNSUPPORTED = {
-    data.model for data in DEVICES.values() if not data.supported and data.gen == 1
-}
 
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
