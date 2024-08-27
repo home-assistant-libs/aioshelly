@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
-from ..common import ConnectionOptions, IpOrOptionsType, get_info, process_ip_or_options
+from ..common import ConnectionOptions, IpOrOptionsType, process_ip_or_options
 from ..const import (
     CONNECT_ERRORS,
     DEVICE_IO_TIMEOUT,
@@ -197,23 +197,6 @@ class RpcDevice:
         ip = self.options.ip_address
         port = self.options.port
         try:
-            self._shelly = await get_info(
-                self.aiohttp_session,
-                self.options.ip_address,
-                self.options.device_mac,
-                self.options.port,
-            )
-
-            if self.requires_auth:
-                if self.options.username is None or self.options.password is None:
-                    raise InvalidAuthError("auth missing and required")  # noqa: TRY301
-
-                self._wsrpc.set_auth_data(
-                    self.shelly["id"],
-                    self.options.username,
-                    self.options.password,
-                )
-
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
             await self._init_calls()
@@ -285,6 +268,17 @@ class RpcDevice:
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
+        # Shelly.GetDeviceInfo is the only RPC call that does not
+        # require auth, so we must do a separate call here to get
+        # the auth_domain/id so we can enable auth for the rest of the calls
+        self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
+        if self.options.username and self.options.password:
+            self._wsrpc.set_auth_data(
+                self.shelly.get("auth_domain", self.shelly["id"]),
+                self.options.username,
+                self.options.password,
+            )
+
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
         if fetch_status := self._status is None:
             calls.append(("Shelly.GetStatus", None))
