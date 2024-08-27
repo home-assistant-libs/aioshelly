@@ -270,7 +270,7 @@ class RpcDevice:
         """Make calls needed to initialize the device."""
         # Shelly.GetDeviceInfo is the only RPC call that does not
         # require auth, so we must do a separate call here to get
-        # the auth_domain/id
+        # the auth_domain/id so we can enable auth for the rest of the calls
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
         if self.options.username and self.options.password:
             self._wsrpc.set_auth_data(
