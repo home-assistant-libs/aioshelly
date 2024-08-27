@@ -102,9 +102,9 @@ async def get_info(
 
 def is_firmware_supported(gen: int, model: str, firmware_version: str) -> bool:
     """Return True if firmware is supported."""
-    # Specific model is known
     fw_ver: int | None
     if device := DEVICES.get(model):
+        # Specific model is known
         if not device.supported:
             return False
         fw_ver = device.min_fw_date
