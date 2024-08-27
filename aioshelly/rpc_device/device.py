@@ -268,10 +268,9 @@ class RpcDevice:
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
-        # _supports_dynamic_components() needs _shelly to be set
-        # so we need to fetch it first. In the future we could
-        # change this to fetch all data in one call once call_rpc_multiple
-        # can be refactored to return errors instead of raising them.
+        # Shelly.GetDeviceInfo is the only RPC call that does not
+        # require auth, so we must do a separate call here to get
+        # the auth_domain/id
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
         if self.options.username and self.options.password:
             self._wsrpc.set_auth_data(
