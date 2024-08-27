@@ -197,12 +197,6 @@ class RpcDevice:
         ip = self.options.ip_address
         port = self.options.port
         try:
-            if self.options.username and self.options.password:
-                self._wsrpc.set_auth_data(
-                    self.shelly["auth_domain"],
-                    self.options.username,
-                    self.options.password,
-                )
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 await self._wsrpc.connect(self.aiohttp_session)
             await self._init_calls()
@@ -279,6 +273,12 @@ class RpcDevice:
         # change this to fetch all data in one call once call_rpc_multiple
         # can be refactored to return errors instead of raising them.
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
+        if self.options.username and self.options.password:
+            self._wsrpc.set_auth_data(
+                self.shelly.get("auth_domain", self.shelly["id"]),
+                self.options.username,
+                self.options.password,
+            )
 
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
         if fetch_status := self._status is None:
