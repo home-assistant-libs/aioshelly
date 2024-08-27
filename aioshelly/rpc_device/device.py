@@ -209,7 +209,7 @@ class RpcDevice:
                     raise InvalidAuthError("auth missing and required")  # noqa: TRY301
 
                 self._wsrpc.set_auth_data(
-                    self.shelly["auth_domain"],
+                    self.shelly["id"],
                     self.options.username,
                     self.options.password,
                 )
