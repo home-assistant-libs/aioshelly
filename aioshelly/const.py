@@ -955,6 +955,8 @@ GEN1_MODELS_UNSUPPORTED = {
     data.model for data in DEVICES.values() if not data.supported and data.gen == 1
 }
 
+MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
+
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10
 
