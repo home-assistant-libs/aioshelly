@@ -26,7 +26,7 @@ from common import (
 
 from aioshelly.block_device import BlockDevice
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import BLOCK_GENERATIONS, MODEL_NAMES, WS_API_URL
+from aioshelly.const import BLOCK_GENERATIONS, DEVICES, WS_API_URL
 from aioshelly.rpc_device import RpcDevice
 
 
@@ -63,7 +63,10 @@ def save_endpoints(device: BlockDevice | RpcDevice) -> None:
 
     gen = device.gen
     model = device.model
-    name = MODEL_NAMES.get(model, "Unknown")
+    if shelly_device := DEVICES.get(model):
+        name = shelly_device.name
+    else:
+        name = f"Unknown ({model})"
     version = device.firmware_version.replace("/", "-")
     current_path = Path(__file__)
     fixture_path = (

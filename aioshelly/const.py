@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from dataclasses import dataclass
 
 import aiohttp
 
@@ -13,6 +14,7 @@ CONNECT_ERRORS = (
     DeviceConnectionError,
     OSError,
 )
+
 
 # Gen1 CoAP based models
 MODEL_1 = "SHSW-1"
@@ -118,136 +120,18 @@ MODEL_I4_GEN3 = "S3SN-0024X"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_X_MOD1 = "S3MX-0A"
 
-MODEL_NAMES = {
-    # Gen1 CoAP based models
-    MODEL_1: "Shelly 1",
-    MODEL_1L: "Shelly 1L",
-    MODEL_1PM: "Shelly 1PM",
-    MODEL_2: "Shelly 2",
-    MODEL_25: "Shelly 2.5",
-    MODEL_2LED: "Shelly 2LED",
-    MODEL_4PRO: "Shelly 4Pro",
-    MODEL_AIR: "Shelly Air",
-    MODEL_BULB: "Shelly Bulb",
-    MODEL_BULB_RGBW: "Shelly Bulb RGBW",
-    MODEL_BUTTON1: "Shelly Button1",
-    MODEL_BUTTON1_V2: "Shelly Button1",
-    MODEL_COLOR: "Shelly Color",
-    MODEL_DIMMER: "Shelly Dimmer",
-    MODEL_DIMMER_2: "Shelly Dimmer 2",
-    MODEL_DIMMER_W1: "Shelly Dimmer W1",
-    MODEL_DUO: "Shelly DUO",
-    MODEL_DW: "Shelly Door/Window",
-    MODEL_DW_2: "Shelly Door/Window 2",
-    MODEL_EM: "Shelly EM",
-    MODEL_EM3: "Shelly 3EM",
-    MODEL_FLOOD: "Shelly Flood",
-    MODEL_GAS: "Shelly Gas",
-    MODEL_HT: "Shelly H&T",
-    MODEL_I3: "Shelly i3",
-    MODEL_MOTION: "Shelly Motion",
-    MODEL_MOTION_2: "Shelly Motion 2",
-    MODEL_PLUG: "Shelly Plug",
-    MODEL_PLUG_E: "Shelly Plug E",
-    MODEL_PLUG_S: "Shelly Plug S",
-    MODEL_PLUG_US: "Shelly Plug US",
-    MODEL_RGBW: "Shelly RGBW",
-    MODEL_RGBW2: "Shelly RGBW2",
-    MODEL_SENSE: "Shelly Sense",
-    MODEL_SMOKE: "Shelly Smoke",
-    MODEL_SMOKE_2: "Shelly Smoke 2",
-    MODEL_SPOT: "Shelly Spot",
-    MODEL_SPOT_2: "Shelly Spot 2",
-    MODEL_UNI: "Shelly UNI",
-    MODEL_VALVE: "Shelly Valve",
-    MODEL_VINTAGE: "Shelly Vintage",
-    MODEL_VINTAGE_V2: "Shelly Vintage",
-    # Gen2 RPC based models
-    MODEL_BLU_GATEWAY: "Shelly BLU Gateway",
-    MODEL_PLUS_1: "Shelly Plus 1",
-    MODEL_PLUS_1_MINI: "Shelly Plus 1 Mini",
-    MODEL_PLUS_1_UL: "Shelly Plus 1 UL",
-    MODEL_PLUS_10V: "Shelly Plus 10V",
-    MODEL_PLUS_10V_DIMMER: "Shelly Plus 0-10V Dimmer",
-    MODEL_PLUS_1PM: "Shelly Plus 1PM",
-    MODEL_PLUS_1PM_MINI: "Shelly Plus 1PM Mini",
-    MODEL_PLUS_1PM_UL: "Shelly Plus 1PM UL",
-    MODEL_PLUS_2PM: "Shelly Plus 2PM",
-    MODEL_PLUS_2PM_UL: "Shelly Plus 2PM UL",
-    MODEL_PLUS_2PM_V2: "Shelly Plus 2PM",
-    MODEL_PLUS_HT: "Shelly Plus H&T",
-    MODEL_PLUS_I4: "Shelly Plus I4",
-    MODEL_PLUS_I4DC: "Shelly Plus I4DC",
-    MODEL_PLUS_PLUG_IT: "Shelly Plus Plug IT",
-    MODEL_PLUS_PLUG_S: "Shelly Plus Plug S",
-    MODEL_PLUS_PLUG_S_V2: "Shelly Plus Plug S",
-    MODEL_PLUS_PLUG_UK: "Shelly Plus Plug UK",
-    MODEL_PLUS_PLUG_US: "Shelly Plus Plug US",
-    MODEL_PLUS_PM_MINI: "Shelly Plus PM Mini",
-    MODEL_PLUS_RGBW_PM: "Shelly Plus RGBW PM",
-    MODEL_PLUS_SMOKE: "Shelly Plus Smoke",
-    MODEL_PLUS_UNI: "Shelly Plus Uni",
-    MODEL_PLUS_WALL_DIMMER: "Shelly Plus Wall Dimmer",
-    MODEL_PRO_1: "Shelly Pro 1",
-    MODEL_PRO_1_V2: "Shelly Pro 1",
-    MODEL_PRO_1_V3: "Shelly Pro 1",
-    MODEL_PRO_1PM: "Shelly Pro 1PM",
-    MODEL_PRO_1PM_V2: "Shelly Pro 1PM",
-    MODEL_PRO_1PM_V3: "Shelly Pro 1PM",
-    MODEL_PRO_2: "Shelly Pro 2",
-    MODEL_PRO_2_V2: "Shelly Pro 2",
-    MODEL_PRO_2_V3: "Shelly Pro 2",
-    MODEL_PRO_2PM: "Shelly Pro 2PM",
-    MODEL_PRO_2PM_V2: "Shelly Pro 2PM",
-    MODEL_PRO_3: "Shelly Pro 3",
-    MODEL_PRO_4PM: "Shelly Pro 4PM",
-    MODEL_PRO_4PM_V2: "Shelly Pro 4PM",
-    MODEL_PRO_DIMMER_1PM: "Shelly Pro Dimmer 1PM",
-    MODEL_PRO_DIMMER_2PM: "Shelly Pro Dimmer 2PM",
-    MODEL_PRO_DUAL_COVER: "Shelly Pro Dual Cover PM",
-    MODEL_PRO_EM: "Shelly Pro EM",
-    MODEL_PRO_EM3: "Shelly Pro 3EM",
-    MODEL_PRO_EM3_120: "Shelly Pro 3EM",
-    MODEL_PRO_EM3_400: "Shelly Pro 3EM-400",
-    MODEL_WALL_DISPLAY: "Shelly Wall Display",
-    # Gen3 RPC based models
-    MODEL_1_GEN3: "Shelly 1 Gen3",
-    MODEL_1_MINI_G3: "Shelly 1 Mini Gen3",
-    MODEL_1PM_GEN3: "Shelly 1PM Gen3",
-    MODEL_1PM_MINI_G3: "Shelly 1PM Mini Gen3",
-    MODEL_2PM_G3: "Shelly 2PM Gen3",
-    MODEL_DIMMER_10V_GEN3: "Shelly Dimmer 0/1-10V PM Gen3",
-    MODEL_HT_G3: "Shelly H&T Gen3",
-    MODEL_I4_GEN3: "Shelly I4 Gen3",
-    MODEL_PM_MINI_G3: "Shelly PM Mini Gen3",
-    MODEL_X_MOD1: "Shelly X MOD1",
-}
 
-GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = (
-    MODEL_DUO,
-    MODEL_BULB_RGBW,
-    MODEL_DIMMER,
-    MODEL_DIMMER_2,
-    MODEL_RGBW2,
-    MODEL_VINTAGE_V2,
-)
+GEN1 = 1
+GEN2 = 2
+GEN3 = 3
 
-GEN1_MODELS_UNSUPPORTED = (
-    MODEL_4PRO,
-    MODEL_SENSE,
-)
-
-# Timeout used for Device IO
-DEVICE_IO_TIMEOUT = 10
-
-# Timeout used for HTTP calls
-HTTP_CALL_TIMEOUT = 10
 
 # Firmware 1.9.0 release date
 GEN1_MIN_FIRMWARE_DATE = 20201124
 
 # Firmware 1.11.0 release date (introduction of light transition)
-# Due to date fluctuation for different models, 20210710 was used.
+# Due to date fluctuation for different models,
+# GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE was used.
 GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210710
 
 # Firmware 1.0.0 release date
@@ -255,6 +139,740 @@ GEN2_MIN_FIRMWARE_DATE = 20230803
 
 # Firmware 1.0.99 release date
 GEN3_MIN_FIRMWARE_DATE = 20231102
+
+
+# Fallback for unknown devices
+MIN_FIRMWARE_DATES = {
+    GEN1: GEN1_MIN_FIRMWARE_DATE,
+    GEN2: GEN2_MIN_FIRMWARE_DATE,
+    GEN3: GEN3_MIN_FIRMWARE_DATE,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ShellyDevice:
+    """Shelly device."""
+
+    model: str
+    name: str
+    min_fw_date: int
+    gen: int
+    supported: bool
+
+
+DEVICES = {
+    MODEL_1: ShellyDevice(
+        model="SHSW-1",
+        name="Shelly 1",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_1L: ShellyDevice(
+        model="SHSW-L",
+        name="Shelly 1L",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_1PM: ShellyDevice(
+        model="SHSW-PM",
+        name="Shelly 1PM",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_2: ShellyDevice(
+        model="SHSW-21",
+        name="Shelly 2",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_25: ShellyDevice(
+        model="SHSW-25",
+        name="Shelly 2.5",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_2LED: ShellyDevice(
+        model="SH2LED-1",
+        name="Shelly 2LED",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_4PRO: ShellyDevice(
+        model="SHSW-44",
+        name="Shelly 4Pro",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=False,
+    ),
+    MODEL_AIR: ShellyDevice(
+        model="SHAIR-1",
+        name="Shelly Air",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_BULB: ShellyDevice(
+        model="SHBLB-1",
+        name="Shelly Bulb",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_BULB_RGBW: ShellyDevice(
+        model="SHCB-1",
+        name="Shelly Bulb RGBW",
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_BUTTON1: ShellyDevice(
+        model="SHBTN-1",
+        name="Shelly Button1",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_BUTTON1_V2: ShellyDevice(
+        model="SHBTN-2",
+        name="Shelly Button1",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_COLOR: ShellyDevice(
+        model="SHCL-255",
+        name="Shelly Color",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_DIMMER: ShellyDevice(
+        model="SHDM-1",
+        name="Shelly Dimmer",
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_DIMMER_2: ShellyDevice(
+        model="SHDM-2",
+        name="Shelly Dimmer 2",
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_DIMMER_W1: ShellyDevice(
+        model="SHDIMW-1",
+        name="Shelly Dimmer W1",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_DUO: ShellyDevice(
+        model="SHBDUO-1",
+        name="Shelly DUO",
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_DW: ShellyDevice(
+        model="SHDW-1",
+        name="Shelly Door/Window",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_DW_2: ShellyDevice(
+        model="SHDW-2",
+        name="Shelly Door/Window 2",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_EM: ShellyDevice(
+        model="SHEM",
+        name="Shelly EM",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_EM3: ShellyDevice(
+        model="SHEM-3",
+        name="Shelly 3EM",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_FLOOD: ShellyDevice(
+        model="SHWT-1",
+        name="Shelly Flood",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_GAS: ShellyDevice(
+        model="SHGS-1",
+        name="Shelly Gas",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_HT: ShellyDevice(
+        model="SHHT-1",
+        name="Shelly H&T",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_I3: ShellyDevice(
+        model="SHIX3-1",
+        name="Shelly i3",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_MOTION: ShellyDevice(
+        model="SHMOS-01",
+        name="Shelly Motion",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_MOTION_2: ShellyDevice(
+        model="SHMOS-02",
+        name="Shelly Motion 2",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_PLUG: ShellyDevice(
+        model="SHPLG-1",
+        name="Shelly Plug",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_PLUG_E: ShellyDevice(
+        model="SHPLG2-1",
+        name="Shelly Plug E",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_PLUG_S: ShellyDevice(
+        model="SHPLG-S",
+        name="Shelly Plug S",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_PLUG_US: ShellyDevice(
+        model="SHPLG-U1",
+        name="Shelly Plug US",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_RGBW: ShellyDevice(
+        model="SHRGBWW-01",
+        name="Shelly RGBW",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_RGBW2: ShellyDevice(
+        model="SHRGBW2",
+        name="Shelly RGBW2",
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_SENSE: ShellyDevice(
+        model="SHSEN-1",
+        name="Shelly Sense",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=False,
+    ),
+    MODEL_SMOKE: ShellyDevice(
+        model="SHSM-01",
+        name="Shelly Smoke",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_SMOKE_2: ShellyDevice(
+        model="SHSM-02",
+        name="Shelly Smoke 2",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_SPOT: ShellyDevice(
+        model="SHSPOT-1",
+        name="Shelly Spot",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_SPOT_2: ShellyDevice(
+        model="SHSPOT-2",
+        name="Shelly Spot 2",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_UNI: ShellyDevice(
+        model="SHUNI-1",
+        name="Shelly UNI",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_VALVE: ShellyDevice(
+        model="SHTRV-01",
+        name="Shelly Valve",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_VINTAGE: ShellyDevice(
+        model="SHBVIN-1",
+        name="Shelly Vintage",
+        min_fw_date=GEN1_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_VINTAGE_V2: ShellyDevice(
+        model="SHVIN-1",
+        name="Shelly Vintage",
+        min_fw_date=GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE,
+        gen=GEN1,
+        supported=True,
+    ),
+    MODEL_BLU_GATEWAY: ShellyDevice(
+        model="SNGW-BT01",
+        name="Shelly BLU Gateway",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_1: ShellyDevice(
+        model="SNSW-001X16EU",
+        name="Shelly Plus 1",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_1_MINI: ShellyDevice(
+        model="SNSW-001X8EU",
+        name="Shelly Plus 1 Mini",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_1_UL: ShellyDevice(
+        model="SNSW-001X15UL",
+        name="Shelly Plus 1 UL",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_10V: ShellyDevice(
+        model="SNGW-0A11WW010",
+        name="Shelly Plus 10V",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_10V_DIMMER: ShellyDevice(
+        model="SNDM-00100WW",
+        name="Shelly Plus 0-10V Dimmer",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_1PM: ShellyDevice(
+        model="SNSW-001P16EU",
+        name="Shelly Plus 1PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_1PM_MINI: ShellyDevice(
+        model="SNSW-001P8EU",
+        name="Shelly Plus 1PM Mini",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_1PM_UL: ShellyDevice(
+        model="SNSW-001P15UL",
+        name="Shelly Plus 1PM UL",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_2PM: ShellyDevice(
+        model="SNSW-002P16EU",
+        name="Shelly Plus 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_2PM_UL: ShellyDevice(
+        model="SNSW-002P15UL",
+        name="Shelly Plus 2PM UL",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_2PM_V2: ShellyDevice(
+        model="SNSW-102P16EU",
+        name="Shelly Plus 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_HT: ShellyDevice(
+        model="SNSN-0013A",
+        name="Shelly Plus H&T",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_I4: ShellyDevice(
+        model="SNSN-0024X",
+        name="Shelly Plus I4",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_I4DC: ShellyDevice(
+        model="SNSN-0D24X",
+        name="Shelly Plus I4DC",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_PLUG_IT: ShellyDevice(
+        model="SNPL-00110IT",
+        name="Shelly Plus Plug IT",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_PLUG_S: ShellyDevice(
+        model="SNPL-00112EU",
+        name="Shelly Plus Plug S",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_PLUG_S_V2: ShellyDevice(
+        model="SNPL-10112EU",
+        name="Shelly Plus Plug S",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_PLUG_UK: ShellyDevice(
+        model="SNPL-00112UK",
+        name="Shelly Plus Plug UK",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_PLUG_US: ShellyDevice(
+        model="SNPL-00116US",
+        name="Shelly Plus Plug US",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_PM_MINI: ShellyDevice(
+        model="SNPM-001PCEU16",
+        name="Shelly Plus PM Mini",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_RGBW_PM: ShellyDevice(
+        model="SNDC-0D4P10WW",
+        name="Shelly Plus RGBW PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_SMOKE: ShellyDevice(
+        model="SNSN-0031Z",
+        name="Shelly Plus Smoke",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_UNI: ShellyDevice(
+        model="SNSN-0043X",
+        name="Shelly Plus Uni",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PLUS_WALL_DIMMER: ShellyDevice(
+        model="SNDM-0013US",
+        name="Shelly Plus Wall Dimmer",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_1: ShellyDevice(
+        model="SPSW-001XE16EU",
+        name="Shelly Pro 1",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_1_V2: ShellyDevice(
+        model="SPSW-101XE16EU",
+        name="Shelly Pro 1",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_1_V3: ShellyDevice(
+        model="SPSW-201XE16EU",
+        name="Shelly Pro 1",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_1PM: ShellyDevice(
+        model="SPSW-001PE16EU",
+        name="Shelly Pro 1PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_1PM_V2: ShellyDevice(
+        model="SPSW-101PE16EU",
+        name="Shelly Pro 1PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_1PM_V3: ShellyDevice(
+        model="SPSW-201PE16EU",
+        name="Shelly Pro 1PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_2: ShellyDevice(
+        model="SPSW-002XE16EU",
+        name="Shelly Pro 2",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_2_V2: ShellyDevice(
+        model="SPSW-102XE16EU",
+        name="Shelly Pro 2",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_2_V3: ShellyDevice(
+        model="SPSW-202XE16EU",
+        name="Shelly Pro 2",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_2PM: ShellyDevice(
+        model="SPSW-002PE16EU",
+        name="Shelly Pro 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_2PM_V2: ShellyDevice(
+        model="SPSW-202PE16EU",
+        name="Shelly Pro 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_3: ShellyDevice(
+        model="SPSW-003XE16EU",
+        name="Shelly Pro 3",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_4PM: ShellyDevice(
+        model="SPSW-004PE16EU",
+        name="Shelly Pro 4PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_4PM_V2: ShellyDevice(
+        model="SPSW-104PE16EU",
+        name="Shelly Pro 4PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_DIMMER_1PM: ShellyDevice(
+        model="SPDM-001PE01EU",
+        name="Shelly Pro Dimmer 1PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_DIMMER_2PM: ShellyDevice(
+        model="SPDM-002PE01EU",
+        name="Shelly Pro Dimmer 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_DUAL_COVER: ShellyDevice(
+        model="SPSH-002PE16EU",
+        name="Shelly Pro Dual Cover PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_EM: ShellyDevice(
+        model="SPEM-002CEBEU50",
+        name="Shelly Pro EM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_EM3: ShellyDevice(
+        model="SPEM-003CEBEU",
+        name="Shelly Pro 3EM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_EM3_120: ShellyDevice(
+        model="SPEM-003CEBEU120",
+        name="Shelly Pro 3EM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_EM3_400: ShellyDevice(
+        model="SPEM-003CEBEU400",
+        name="Shelly Pro 3EM-400",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_WALL_DISPLAY: ShellyDevice(
+        model="SAWD-0A1XX10EU1",
+        name="Shelly Wall Display",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_1_GEN3: ShellyDevice(
+        model="S3SW-001X16EU",
+        name="Shelly 1 Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_1_MINI_G3: ShellyDevice(
+        model="S3SW-001X8EU",
+        name="Shelly 1 Mini Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_1PM_GEN3: ShellyDevice(
+        model="S3SW-001P16EU",
+        name="Shelly 1PM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_1PM_MINI_G3: ShellyDevice(
+        model="S3SW-001P8EU",
+        name="Shelly 1PM Mini Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_2PM_G3: ShellyDevice(
+        model="S3SW-002P16EU",
+        name="Shelly 2PM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_DIMMER_10V_GEN3: ShellyDevice(
+        model="S3DM-0010WW",
+        name="Shelly Dimmer 0/1-10V PM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_HT_G3: ShellyDevice(
+        model="S3SN-0U12A",
+        name="Shelly H&T Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_I4_GEN3: ShellyDevice(
+        model="S3SN-0024X",
+        name="Shelly I4 Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_PM_MINI_G3: ShellyDevice(
+        model="S3PM-001PCEU16",
+        name="Shelly PM Mini Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_X_MOD1: ShellyDevice(
+        model="S3MX-0A",
+        name="Shelly X MOD1",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+}
+
+GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
+    MODEL_DUO,
+    MODEL_BULB_RGBW,
+    MODEL_DIMMER,
+    MODEL_DIMMER_2,
+    MODEL_RGBW2,
+    MODEL_VINTAGE_V2,
+}
+
+
+MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
+
+# Timeout used for Device IO
+DEVICE_IO_TIMEOUT = 10
+
+# Timeout used for HTTP calls
+HTTP_CALL_TIMEOUT = 10
 
 WS_HEARTBEAT = 55
 
@@ -267,12 +885,8 @@ WS_API_URL = "/api/shelly/ws"
 # Notification sent by RPC device in case of WebSocket close
 NOTIFY_WS_CLOSED = "NotifyWebSocketClosed"
 
-GEN1 = 1
-GEN2 = 2
-GEN3 = 3
-
-BLOCK_GENERATIONS = (GEN1,)
-RPC_GENERATIONS = (GEN2, GEN3)
+BLOCK_GENERATIONS = {GEN1}
+RPC_GENERATIONS = {GEN2, GEN3}
 
 DEFAULT_HTTP_PORT = 80
 PERIODIC_COAP_TYPE_CODE = 30
@@ -280,6 +894,6 @@ END_OF_OPTIONS_MARKER = 0xFF
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
-VIRTUAL_COMPONENTS = ("boolean", "button", "enum", "number", "text")
+VIRTUAL_COMPONENTS = {"boolean", "button", "enum", "number", "text"}
 # Firmware 1.2.0 release date
 VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213

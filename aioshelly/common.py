@@ -12,7 +12,14 @@ from typing import Any
 from aiohttp import BasicAuth, ClientSession, ClientTimeout
 from yarl import URL
 
-from .const import CONNECT_ERRORS, DEFAULT_HTTP_PORT, DEVICE_IO_TIMEOUT
+from .const import (
+    CONNECT_ERRORS,
+    DEFAULT_HTTP_PORT,
+    DEVICE_IO_TIMEOUT,
+    DEVICES,
+    FIRMWARE_PATTERN,
+    MIN_FIRMWARE_DATES,
+)
 from .exceptions import (
     DeviceConnectionError,
     MacAddressMismatchError,
@@ -91,3 +98,23 @@ async def get_info(
         raise mac_err
 
     return result
+
+
+def is_firmware_supported(gen: int, model: str, firmware_version: str) -> bool:
+    """Return True if firmware is supported."""
+    fw_ver: int | None
+    if device := DEVICES.get(model):
+        # Specific model is known
+        if not device.supported:
+            return False
+        fw_ver = device.min_fw_date
+    elif not (fw_ver := MIN_FIRMWARE_DATES.get(gen)):
+        # Protection against future generations of devices.
+        return False
+
+    match = FIRMWARE_PATTERN.search(firmware_version)
+    if match is None:
+        return False
+    # We compare firmware release dates because Shelly version numbering is
+    # inconsistent, sometimes the word is used as the version number.
+    return int(match[0]) >= fw_ver

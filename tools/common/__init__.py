@@ -18,7 +18,7 @@ from aioshelly.common import ConnectionOptions, get_info
 from aioshelly.const import (
     BLOCK_GENERATIONS,
     DEFAULT_HTTP_PORT,
-    MODEL_NAMES,
+    DEVICES,
     RPC_GENERATIONS,
 )
 from aioshelly.exceptions import (
@@ -129,7 +129,10 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
         print()
         return
 
-    model_name = MODEL_NAMES.get(device.model) or f"Unknown ({device.model})"
+    if shelly_device := DEVICES.get(device.model):
+        model_name = shelly_device.name
+    else:
+        model_name = f"Unknown ({device.model})"
     print(f"** {device.name} - {model_name}  @ {device.ip_address}:{port} **")
     print()
 
