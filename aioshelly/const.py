@@ -494,7 +494,7 @@ DEVICES = {
         model="SNDM-00100WW",
         name="Shelly Plus 0-10V Dimmer",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
-        gen=0,
+        gen=GEN2,
         supported=True,
     ),
     MODEL_PLUS_1PM: ShellyDevice(
@@ -522,7 +522,7 @@ DEVICES = {
         model="SNSW-002P16EU",
         name="Shelly Plus 2PM",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
-        gen=0,
+        gen=GEN2,
         supported=True,
     ),
     MODEL_PLUS_2PM_UL: ShellyDevice(
@@ -592,7 +592,7 @@ DEVICES = {
         model="SNPL-00116US",
         name="Shelly Plus Plug US",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
-        gen=0,
+        gen=GEN2,
         supported=True,
     ),
     MODEL_PLUS_PM_MINI: ShellyDevice(
@@ -606,7 +606,7 @@ DEVICES = {
         model="SNDC-0D4P10WW",
         name="Shelly Plus RGBW PM",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
-        gen=0,
+        gen=GEN2,
         supported=True,
     ),
     MODEL_PLUS_SMOKE: ShellyDevice(
@@ -669,7 +669,7 @@ DEVICES = {
         model="SPSW-201PE16EU",
         name="Shelly Pro 1PM",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
-        gen=0,
+        gen=GEN2,
         supported=True,
     ),
     MODEL_PRO_2: ShellyDevice(
