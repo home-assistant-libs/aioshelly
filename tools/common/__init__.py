@@ -24,6 +24,7 @@ from aioshelly.const import (
 from aioshelly.exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
     InvalidAuthError,
     MacAddressMismatchError,
     ShellyError,
@@ -66,6 +67,11 @@ async def init_device(device: BlockDevice | RpcDevice) -> bool:
         await device.initialize()
     except InvalidAuthError as err:
         print(f"Invalid or missing authorization, error: {err!r}")
+    except DeviceConnectionTimeoutError as err:
+        print(
+            f"Timeout error connecting to {device.ip_address}:{port}, "
+            f"error: {err!r}"
+        )
     except DeviceConnectionError as err:
         print(f"Error connecting to {device.ip_address}:{port}, " f"error: {err!r}")
     except MacAddressMismatchError as err:
