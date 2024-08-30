@@ -305,7 +305,7 @@ class WsRPC(WsBase):
                     self._ip_address,
                     self._port,
                     frame_id,
-                    frame.get("method"),
+                    method,
                 )
                 return
 
