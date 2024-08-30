@@ -186,7 +186,7 @@ class BlockDevice:
             raise
         except TimeoutError as err:
             self._last_error = DeviceConnectionTimeoutError(err)
-            _LOGGER.debug("host %s: error: %r", ip, self._last_error)
+            _LOGGER.debug("host %s: timeout error: %r", ip, self._last_error)
             raise self._last_error from err
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
