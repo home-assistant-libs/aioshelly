@@ -35,7 +35,7 @@ class DeviceConnectionError(ShellyError):
     """Exception indicates device connection errors."""
 
 
-class DeviceConnectionTimeoutError(ShellyError):
+class DeviceConnectionTimeoutError(DeviceConnectionError):
     """Exception indicates device connection timeout errors."""
 
 
