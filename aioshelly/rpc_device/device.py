@@ -21,6 +21,7 @@ from ..const import (
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
+    DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
@@ -271,12 +272,15 @@ class RpcDevice:
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
-        current_cfg_rev = self._status and self._status.get("cfg_rev")
-        await self.update_status()
-        new_cfg_rev = self._status and self._status.get("cfg_rev")
-        # If the config revision has changed, we need to fetch the dynamic components
-        if current_cfg_rev != new_cfg_rev:
-            await self.get_dynamic_components()
+        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
+        has_dynamic = bool(self._dynamic_components)
+        if has_dynamic:
+            # Only poll dynamic components if we have them
+            calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
+        results = await self.call_rpc_multiple(calls, DEVICE_POLL_TIMEOUT)
+        self._status = results[0]
+        if has_dynamic:
+            self._parse_dynamic_components(results[1])
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
