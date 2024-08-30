@@ -300,7 +300,11 @@ class WsRPC(WsBase):
         if frame_id:
             # looks like a response
             if (call := self._calls.pop(frame_id, None)) is None:
-                _LOGGER.warning("Response for an unknown request id: %s", frame_id)
+                _LOGGER.warning(
+                    "Response for an unknown request id: %s: %s",
+                    frame_id,
+                    frame.get("method"),
+                )
                 return
 
             if not call.resolve.cancelled():
