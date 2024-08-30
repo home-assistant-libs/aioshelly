@@ -19,7 +19,9 @@ from ..common import (
 )
 from ..const import (
     CONNECT_ERRORS,
+    DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
+    DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
@@ -268,6 +270,17 @@ class RpcDevice:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
 
+    async def poll(self) -> None:
+        """Poll device for calls that do not receive push updates."""
+        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
+        if has_dynamic := bool(self._dynamic_components):
+            # Only poll dynamic components if we have them
+            calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
+        results = await self.call_rpc_multiple(calls, DEVICE_POLL_TIMEOUT)
+        self._status = results[0]
+        if has_dynamic:
+            self._parse_dynamic_components(results[1])
+
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
         # Shelly.GetDeviceInfo is the only RPC call that does not
@@ -286,7 +299,7 @@ class RpcDevice:
             calls.append(("Shelly.GetStatus", None))
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
-        results = await self.call_rpc_multiple(calls)
+        results = await self.call_rpc_multiple(calls, DEVICE_INIT_TIMEOUT)
         self._config = results.pop(0)
         if fetch_status:
             self._status = results.pop(0)
@@ -385,11 +398,13 @@ class RpcDevice:
         return (await self.call_rpc_multiple(((method, params),)))[0]
 
     async def call_rpc_multiple(
-        self, calls: Iterable[tuple[str, dict[str, Any] | None]]
+        self,
+        calls: Iterable[tuple[str, dict[str, Any] | None]],
+        timeout: float = DEVICE_IO_TIMEOUT,
     ) -> list[dict[str, Any]]:
         """Call RPC method."""
         try:
-            return await self._wsrpc.calls(calls, DEVICE_IO_TIMEOUT)
+            return await self._wsrpc.calls(calls, timeout)
         except (InvalidAuthError, RpcCallError) as err:
             self._last_error = err
             raise
