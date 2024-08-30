@@ -272,11 +272,11 @@ class RpcDevice:
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
-        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
+        calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls, DEVICE_POLLING_TIMEOUT)
-        self._config = results[0]
+        self._status = results[0]
         if fetch_dynamic:
             self._parse_dynamic_components(results[1])
 
