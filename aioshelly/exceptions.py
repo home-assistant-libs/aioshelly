@@ -35,6 +35,10 @@ class DeviceConnectionError(ShellyError):
     """Exception indicates device connection errors."""
 
 
+class DeviceConnectionTimeoutError(ShellyError):
+    """Exception indicates device connection timeout errors."""
+
+
 class InvalidAuthError(ShellyError):
     """Raised to indicate invalid or missing authentication error."""
 

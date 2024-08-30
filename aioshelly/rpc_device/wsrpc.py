@@ -36,6 +36,7 @@ from ..const import DEFAULT_HTTP_PORT, NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEA
 from ..exceptions import (
     ConnectionClosed,
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
     InvalidAuthError,
     InvalidMessage,
     RpcCallError,
@@ -484,7 +485,7 @@ class WsRPC(WsBase):
                 # Ensure the call is removed from the calls dict
                 # on failure
                 self._calls.pop(call.call_id, None)
-            raise DeviceConnectionError(call) from exc
+            raise DeviceConnectionTimeoutError(sent_calls) from exc
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             for call in sent_calls:

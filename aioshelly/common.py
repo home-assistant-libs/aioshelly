@@ -22,6 +22,7 @@ from .const import (
 )
 from .exceptions import (
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
     MacAddressMismatchError,
 )
 
@@ -79,6 +80,9 @@ async def get_info(
     port: int = DEFAULT_HTTP_PORT,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
+    error: (
+        DeviceConnectionError | DeviceConnectionTimeoutError | MacAddressMismatchError
+    )
     try:
         async with aiohttp_session.get(
             URL.build(scheme="http", host=ip_address, port=port, path="/shelly"),
@@ -86,6 +90,10 @@ async def get_info(
             timeout=DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT,
         ) as resp:
             result: dict[str, Any] = await resp.json()
+    except TimeoutError as err:
+        error = DeviceConnectionTimeoutError(err)
+        _LOGGER.debug("host %s:%s: timeout error: %r", ip_address, port, error)
+        raise error from err
     except CONNECT_ERRORS as err:
         error = DeviceConnectionError(err)
         _LOGGER.debug("host %s:%s: error: %r", ip_address, port, error)
@@ -93,9 +101,9 @@ async def get_info(
 
     mac = result["mac"]
     if device_mac and device_mac != mac:
-        mac_err = MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
-        _LOGGER.debug("host %s:%s: error: %r", ip_address, port, mac_err)
-        raise mac_err
+        error = MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
+        _LOGGER.debug("host %s:%s: error: %r", ip_address, port, error)
+        raise error
 
     return result
 

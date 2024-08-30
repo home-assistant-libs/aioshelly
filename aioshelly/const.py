@@ -1,6 +1,5 @@
 """Constants for aioshelly."""
 
-import asyncio
 import re
 from dataclasses import dataclass
 
@@ -8,12 +7,7 @@ import aiohttp
 
 from .exceptions import DeviceConnectionError
 
-CONNECT_ERRORS = (
-    aiohttp.ClientError,
-    asyncio.TimeoutError,
-    DeviceConnectionError,
-    OSError,
-)
+CONNECT_ERRORS = (aiohttp.ClientError, DeviceConnectionError, OSError)
 
 
 # Gen1 CoAP based models
