@@ -866,7 +866,7 @@ MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 DEVICE_IO_TIMEOUT = 10.0
 
 # Timeout used for polling
-DEVICE_POLLING_TIMEOUT = 45.0
+DEVICE_POLL_TIMEOUT = 45.0
 
 # Timeout used for initial connection calls
 # after the connection has been established
