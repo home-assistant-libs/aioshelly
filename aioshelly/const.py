@@ -869,10 +869,17 @@ GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
 # Timeout used for Device IO
-DEVICE_IO_TIMEOUT = 10
+DEVICE_IO_TIMEOUT = 10.0
+
+# Timeout used for polling
+DEVICE_POLLING_TIMEOUT = 45.0
+
+# Timeout used for initial connection calls
+# after the connection has been established
+DEVICE_INIT_TIMEOUT = 30.0
 
 # Timeout used for HTTP calls
-HTTP_CALL_TIMEOUT = 10
+HTTP_CALL_TIMEOUT = 10.0
 
 WS_HEARTBEAT = 55
 

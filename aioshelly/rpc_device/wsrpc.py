@@ -395,7 +395,7 @@ class WsRPC(WsBase):
         raise InvalidAuthError(msg)
 
     async def calls(
-        self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int = 10
+        self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: float = 10.0
     ) -> list[dict[str, Any]]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
@@ -441,7 +441,7 @@ class WsRPC(WsBase):
         return successful
 
     async def _rpc_calls(
-        self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: int
+        self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: float
     ) -> tuple[bool, list[RPCCall]]:
         """Websocket RPC call.
 
