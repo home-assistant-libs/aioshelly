@@ -29,6 +29,7 @@ from ..const import (
 from ..exceptions import (
     CustomPortNotSupported,
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -183,6 +184,10 @@ class BlockDevice:
             self._last_error = err
             _LOGGER.debug("host %s: error: %r", ip, err)
             raise
+        except TimeoutError as err:
+            self._last_error = DeviceConnectionTimeoutError(err)
+            _LOGGER.debug("host %s: timeout error: %r", ip, self._last_error)
+            raise self._last_error from err
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s: error: %r", ip, self._last_error)
@@ -234,9 +239,12 @@ class BlockDevice:
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 event = await self._coap_request("s")
                 await event.wait()
+        except TimeoutError as err:
+            self._last_error = DeviceConnectionTimeoutError(err)
+            raise self._last_error from err
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
-            raise DeviceConnectionError from err
+            raise self._last_error from err
 
     def _update_d(self, data: dict[str, Any]) -> None:
         """Device update from cit/d call."""
@@ -322,7 +330,19 @@ class BlockDevice:
                 raise InvalidAuthError(err) from err
 
             self._last_error = DeviceConnectionError(err)
-            raise DeviceConnectionError from err
+            raise self._last_error from err
+        except TimeoutError as err:
+            self._last_error = DeviceConnectionTimeoutError(err)
+            if retry:
+                _LOGGER.debug(
+                    "host %s: http request timeout: %r", host, self._last_error
+                )
+                return await self.http_request(method, path, params, retry=False)
+
+            _LOGGER.debug(
+                "host %s: http request retry timeout: %r", host, self._last_error
+            )
+            raise self._last_error from err
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             if retry:
@@ -332,7 +352,7 @@ class BlockDevice:
             _LOGGER.debug(
                 "host %s: http request retry error: %r", host, self._last_error
             )
-            raise DeviceConnectionError from err
+            raise self._last_error from err
 
         resp_json = await resp.json(loads=json_loads)
         _LOGGER.debug("aiohttp response: %s", resp_json)
