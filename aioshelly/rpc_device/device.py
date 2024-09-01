@@ -289,7 +289,7 @@ class RpcDevice:
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
         if self.options.username and self.options.password:
             self._wsrpc.set_auth_data(
-                self.shelly.get("auth_domain", self.shelly["id"]),
+                self.shelly.get("auth_domain") or self.shelly["id"],
                 self.options.username,
                 self.options.password,
             )
