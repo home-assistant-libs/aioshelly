@@ -30,3 +30,7 @@ jobs:
           pip install uv tox tox-gh-actions tox-uv
       - name: Test with tox
         run: tox
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
