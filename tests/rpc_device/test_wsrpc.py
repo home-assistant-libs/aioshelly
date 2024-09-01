@@ -1,19 +1,15 @@
 """Tests for rpc_device.device module."""
 
 import pytest
-from aiohttp.http_websocket import WSMessage, WSMsgType
 
-from aioshelly.rpc_device.wsrpc import WsRPC
-
-from .conftest import ResponseMocker
+from . import load_device_fixture
+from .conftest import WsRPCMocker
 
 
 @pytest.mark.asyncio
-async def test_device_wscall(
-    ws_rpc: WsRPC, rpc_websocket_responses: ResponseMocker
-) -> None:
+async def test_device_wscall(ws_rpc: WsRPCMocker) -> None:
     """Test wscall."""
-    await rpc_websocket_responses.mock_ws_message(
-        WSMessage(WSMsgType.TEXT, '{"id": 1, "result": {"a": 1}}', None)
-    )
-    await ws_rpc.call("Shelly.GetConfig")
+    config_response = await load_device_fixture("shellyplugus", "Shelly.GetConfig")
+    calls = [("Shelly.GetConfig", None)]
+    responses = [config_response]
+    await ws_rpc.calls_with_mocked_responses(calls, responses)

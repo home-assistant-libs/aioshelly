@@ -1,15 +1,17 @@
 """Tests for RPC device."""
 
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest_asyncio
 from aiohttp.client import ClientSession
 from aiohttp.client_ws import ClientWebSocketResponse
-from aiohttp.http_websocket import WSMessage
+from aiohttp.http_websocket import WSMessage, WSMsgType
+from orjson import dumps
 
-from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC
+from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, RPCSource, WsRPC
 
 
 class ResponseMocker:
@@ -38,6 +40,37 @@ class NotifyHistory:
     def save(self, rpc_source: RPCSource, method: str, data: dict | None) -> None:
         """Save a notification."""
         self.history.append((rpc_source, method, data))
+
+
+class WsRPCMocker(WsRPC):
+    """RPC WebSocket mocker."""
+
+    def __init__(
+        self,
+        response_mocker: ResponseMocker,
+        ip_address: str,
+        on_notification: Callable[[RPCSource, str, dict | None], None],
+        port: int = DEFAULT_HTTP_PORT,
+    ) -> None:
+        """Initialize the RPC WebSocket mocker."""
+        super().__init__(ip_address, on_notification, port)
+        self.response_mocker = response_mocker
+
+    async def calls_with_mocked_responses(
+        self,
+        calls: list[tuple[str, dict[str, Any] | None]],
+        responses: list[dict[str, Any]],
+    ) -> list[str]:
+        """Call methods with mocked responses."""
+        next_id = self._next_id
+        for idx, response in enumerate(responses):
+            shallow_copy = response.copy()
+            shallow_copy["id"] = next_id + idx
+            response_with_correct_id = dumps(shallow_copy).decode()
+            self.response_mocker.mock_ws_message(
+                WSMessage(WSMsgType.TEXT, response_with_correct_id, None)
+            )
+        return await self.calls(calls)
 
 
 @pytest_asyncio.fixture
@@ -77,11 +110,12 @@ async def ws_rpc(
     rpc_websocket_response: ClientWebSocketResponse,
     client_session: ClientSession,
     notify_history: NotifyHistory,
-) -> AsyncGenerator[WsRPC, None]:
+    rpc_websocket_responses: ResponseMocker,
+) -> AsyncGenerator[WsRPCMocker, None]:
     """Fixture for an RPC WebSocket."""
     with patch("aioshelly.rpc_device.wsrpc.ClientWebSocketResponse") as mock:
         mock.return_value = rpc_websocket_response
-        ws_rpc = WsRPC("127.0.0.1", notify_history.save)
+        ws_rpc = WsRPCMocker(rpc_websocket_responses, "127.0.0.1", notify_history.save)
         await ws_rpc.connect(client_session)
         yield ws_rpc
         await ws_rpc.disconnect()
