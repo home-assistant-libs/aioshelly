@@ -1,4 +1,4 @@
-"""Tests for rpc_device.device module."""
+"""Tests for rpc_device.wsrpc module."""
 
 import pytest
 
