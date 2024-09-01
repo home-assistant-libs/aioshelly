@@ -19,7 +19,7 @@ class ResponseMocker:
 
     def __init__(self) -> None:
         """Initialize the mocker."""
-        self.queue = asyncio.Queue()
+        self.queue: asyncio.Queue[WSMessage] = asyncio.Queue()
 
     async def mock_ws_message(self, response: WSMessage) -> None:
         """Mock a WebSocket message."""
@@ -62,7 +62,7 @@ class WsRPCMocker(WsRPC):
         responses: list[dict[str, Any]],
     ) -> list[str]:
         """Call methods with mocked responses."""
-        next_id = self._next_id
+        next_id = self._call_id + 1
         for idx, response in enumerate(responses):
             shallow_copy = response.copy()
             shallow_copy["id"] = next_id + idx
@@ -86,6 +86,7 @@ async def rpc_websocket_response(
     """Fixture for a WebSocket response."""
     mock = MagicMock(spec=ClientWebSocketResponse)
     mock.receive = rpc_websocket_responses.read
+    mock.closed = False
     return mock
 
 
