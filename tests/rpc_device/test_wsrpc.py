@@ -12,4 +12,5 @@ async def test_device_wscall(ws_rpc: WsRPCMocker) -> None:
     config_response = await load_device_fixture("shellyplugus", "Shelly.GetConfig")
     calls = [("Shelly.GetConfig", None)]
     responses = [config_response]
-    await ws_rpc.calls_with_mocked_responses(calls, responses)
+    results = await ws_rpc.calls_with_mocked_responses(calls, responses)
+    assert results[0] == config_response["result"]
