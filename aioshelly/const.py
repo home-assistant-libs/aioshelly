@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass
+from enum import Enum
 
 import aiohttp
 
@@ -859,6 +860,14 @@ GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
     MODEL_VINTAGE_V2,
 }
 
+
+class UndefinedType(Enum):
+    """Singleton type for use with not set sentinel values."""
+
+    _singleton = 0
+
+
+UNDEFINED = UndefinedType._singleton  # noqa: SLF001
 
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
