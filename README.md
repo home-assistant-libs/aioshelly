@@ -1,11 +1,5 @@
-<p align="center">
-  <a href="https://github.com/home-assistant-libs/aioshelly/actions/workflows/ci.yml?query=branch%3Amain">
-    <img src="https://img.shields.io/github/actions/workflow/status/uilibs/uiprotect/ci.yml?branch=main&label=CI&logo=github&style=flat-square" alt="CI Status" >
-  </a>
-  <a href="https://codecov.io/gh/home-assistant-libs/aioshelly">
-    <img src="https://img.shields.io/codecov/c/github/home-assistant-libs/aioshelly.svg?logo=codecov&logoColor=fff&style=flat-square" alt="Test coverage percentage">
-  </a>
-</p>
+[![codecov](https://codecov.io/gh/home-assistant-libs/aioshelly/graph/badge.svg?token=DDH79OVIQ0)](https://codecov.io/gh/home-assistant-libs/aioshelly)
+[![ci](https://github.com/home-assistant-libs/aioshelly/actions/workflows/ci.yml?query=branch%3Amain)](https://github.com/home-assistant-libs/aioshelly/actions/workflows/ci.yml?query=branch%3Amain)
 
 # Aioshelly
 
