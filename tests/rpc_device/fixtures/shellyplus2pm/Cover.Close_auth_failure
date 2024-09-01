@@ -1,0 +1,1 @@
+{"id":18,"src":"shellyplus2pm-485519992590","dst":"aios-139803755626272","error":{"code":401,"message":"{\"auth_type\": \"digest\", \"nonce\": 1725185413, \"nc\": 1, \"realm\": \"shellyplus2pm-485519992590\", \"algorithm\": \"SHA-256\"}"}}

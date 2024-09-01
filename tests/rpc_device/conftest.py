@@ -11,7 +11,7 @@ from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMessage, WSMsgType
 from orjson import dumps
 
-from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, RPCSource, WsRPC
+from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, AuthData, RPCSource, WsRPC
 
 
 class ResponseMocker:
@@ -55,6 +55,8 @@ class WsRPCMocker(WsRPC):
         """Initialize the RPC WebSocket mocker."""
         super().__init__(ip_address, on_notification, port)
         self.response_mocker = response_mocker
+        self.responses: list[dict[str, Any]] = []
+        self.next_id_mock = 0
 
     async def calls_with_mocked_responses(
         self,
@@ -62,15 +64,25 @@ class WsRPCMocker(WsRPC):
         responses: list[dict[str, Any]],
     ) -> list[str]:
         """Call methods with mocked responses."""
-        next_id = self._call_id + 1
-        for idx, response in enumerate(responses):
-            shallow_copy = response.copy()
-            shallow_copy["id"] = next_id + idx
-            response_with_correct_id = dumps(shallow_copy).decode()
-            await self.response_mocker.mock_ws_message(
-                WSMessage(WSMsgType.TEXT, response_with_correct_id, None)
-            )
+        self.next_id_mock = self._call_id
+        self.responses = responses
         return await self.calls(calls, 0.1)
+
+    async def _send_json(self, data: dict[str, Any]) -> None:
+        """Instrumented send JSON data to mock a response."""
+        await super()._send_json(data)
+        await self._send_next_response()
+
+    async def _send_next_response(self) -> None:
+        """Send the next response."""
+        response = self.responses.pop(0)
+        shallow_copy = response.copy()
+        self.next_id_mock += 1
+        shallow_copy["id"] = self.next_id_mock
+        response_with_correct_id = dumps(shallow_copy).decode()
+        await self.response_mocker.mock_ws_message(
+            WSMessage(WSMsgType.TEXT, response_with_correct_id, None)
+        )
 
 
 @pytest_asyncio.fixture
@@ -120,3 +132,10 @@ async def ws_rpc(
         await ws_rpc.connect(client_session)
         yield ws_rpc
         await ws_rpc.disconnect()
+
+
+@pytest_asyncio.fixture
+async def ws_rpc_with_auth(ws_rpc: WsRPCMocker) -> AsyncGenerator[WsRPCMocker, None]:
+    """Fixture for an RPC WebSocket with authentication."""
+    ws_rpc._auth_data = AuthData("any", "any", "any")  # noqa: SLF001
+    yield ws_rpc
