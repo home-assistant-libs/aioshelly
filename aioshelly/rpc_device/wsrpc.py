@@ -32,7 +32,14 @@ from aiohttp.web import (
 )
 from yarl import URL
 
-from ..const import DEFAULT_HTTP_PORT, NOTIFY_WS_CLOSED, WS_API_URL, WS_HEARTBEAT
+from ..const import (
+    DEFAULT_HTTP_PORT,
+    NOTIFY_WS_CLOSED,
+    UNDEFINED,
+    WS_API_URL,
+    WS_HEARTBEAT,
+    UndefinedType,
+)
 from ..exceptions import (
     ConnectionClosed,
     DeviceConnectionError,
@@ -151,7 +158,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
-        self.result: dict[str, Any] | None = None
+        self.result: dict[str, Any] | UndefinedType = UNDEFINED
 
     @property
     def request_frame(self) -> dict[str, Any]:
@@ -418,7 +425,7 @@ class WsRPC(WsBase):
         to_retry: list[RPCCall] = []
         successful: list[dict[str, Any]] = []
         for call in results:
-            if (result := call.result) is not None:
+            if (result := call.result) is not UNDEFINED:
                 successful.append(result)
                 continue
             resp = call.resolve.result()
@@ -439,7 +446,7 @@ class WsRPC(WsBase):
             [(call.method, call.params) for call in to_retry], timeout
         )
         for call in results:
-            if (result := call.result) is None:
+            if (result := call.result) is UNDEFINED:
                 resp = call.resolve.result()
                 self._raise_for_unrecoverable_errors(resp, allow_auth_retry=False)
             else:
