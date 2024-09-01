@@ -166,7 +166,7 @@ class RPCCall:
             "<RPCCall "
             f"method={self.method} "
             f"params={self.params} "
-            f"call_id{self.call_id} "
+            f"call_id={self.call_id} "
             f"result={self.result}"
             ">"
         )
