@@ -1,5 +1,5 @@
 [![codecov](https://codecov.io/gh/home-assistant-libs/aioshelly/graph/badge.svg?token=DDH79OVIQ0)](https://codecov.io/gh/home-assistant-libs/aioshelly)
-[![ci](https://github.com/home-assistant-libs/aioshelly/actions/workflows/ci.yml?query=branch%3Amain)](https://github.com/home-assistant-libs/aioshelly/actions/workflows/ci.yml?query=branch%3Amain)
+[![ci](https://img.shields.io/github/actions/workflow/status/home-assistant-libs/aioshelly/ci.yml?branch=main&label=CI&logo=github&style=flat-square)](https://github.com/home-assistant-libs/aioshelly/actions/workflows/ci.yml?query=branch%3Amain)
 
 # Aioshelly
 
