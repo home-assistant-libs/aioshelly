@@ -164,7 +164,11 @@ class RPCCall:
         """Return representation of the call."""
         return (
             "<RPCCall "
-            f"{self.method} {self.params} {self.call_id} {self.resolve} {self.result}>"
+            f"method={self.method} "
+            f"params={self.params} "
+            f"call_id{self.call_id} "
+            f"result={self.result}"
+            ">"
         )
 
     @property
