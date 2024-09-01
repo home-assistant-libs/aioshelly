@@ -160,6 +160,13 @@ class RPCCall:
         self.resolve = resolve
         self.result: dict[str, Any] | UndefinedType = UNDEFINED
 
+    def __repr__(self) -> str:
+        """Return representation of the call."""
+        return (
+            "<RPCCall "
+            f"{self.method} {self.params} {self.call_id} {self.resolve} {self.result}>"
+        )
+
     @property
     def request_frame(self) -> dict[str, Any]:
         """Request frame."""

@@ -67,10 +67,10 @@ class WsRPCMocker(WsRPC):
             shallow_copy = response.copy()
             shallow_copy["id"] = next_id + idx
             response_with_correct_id = dumps(shallow_copy).decode()
-            self.response_mocker.mock_ws_message(
+            await self.response_mocker.mock_ws_message(
                 WSMessage(WSMsgType.TEXT, response_with_correct_id, None)
             )
-        return await self.calls(calls)
+        return await self.calls(calls, 0.1)
 
 
 @pytest_asyncio.fixture
