@@ -31,7 +31,7 @@ def test_is_firmware_supported(
 
 
 @pytest.mark.asyncio
-async def test_process_ip_or_options():
+async def test_process_ip_or_options() -> None:
     """Test process_ip_or_options function."""
     ip = "192.168.20.11"
 
@@ -48,6 +48,5 @@ async def test_process_ip_or_options():
     assert options.auth == BasicAuth("user", "pass")
 
     # Test missing password
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Supply both username and password"):
         options = ConnectionOptions(ip, "user")
-        await process_ip_or_options(options)
