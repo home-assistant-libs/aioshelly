@@ -121,7 +121,7 @@ async def test_get_info_mac_mismatch() -> None:
 )
 @pytest.mark.asyncio
 async def test_get_info_exc(exc: Exception, expected_exc: Exception) -> None:
-    """Test get_info function with MAC mismatch."""
+    """Test get_info function with exception."""
     ip_address = "10.10.10.10"
 
     session = ClientSession()
