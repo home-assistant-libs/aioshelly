@@ -1,0 +1,14 @@
+{
+    "name": "Shelly Plus 2PM",
+    "id": "shellyplus2pm-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "slot": 1,
+    "model": "SNSW-102P16EU",
+    "gen": 2,
+    "fw_id": "20240819-074337/1.4.2-gc2639da",
+    "ver": "1.4.2",
+    "app": "Plus2PM",
+    "auth_en": true,
+    "auth_domain": "shellyplus2pm-aabbccddeeff",
+    "profile": "switch"
+}
