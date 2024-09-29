@@ -102,6 +102,7 @@ MODEL_PRO_EM = "SPEM-002CEBEU50"
 MODEL_PRO_EM3 = "SPEM-003CEBEU"
 MODEL_PRO_EM3_120 = "SPEM-003CEBEU120"
 MODEL_PRO_EM3_400 = "SPEM-003CEBEU400"
+MODEL_PRO_EM3_3CT63 = "SPEM-003CEBEU63"
 MODEL_PRO_RGBWW_PM = "SPDC-0D5PE16EU"
 MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
 # Gen3 RPC based models
@@ -114,6 +115,7 @@ MODEL_DIMMER_10V_GEN3 = "S3DM-0010WW"
 MODEL_HT_G3 = "S3SN-0U12A"
 MODEL_I4_GEN3 = "S3SN-0024X"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
+MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
 
 
@@ -773,6 +775,13 @@ DEVICES = {
         gen=GEN2,
         supported=True,
     ),
+    MODEL_PRO_EM3_3CT63: ShellyDevice(
+        model="SPEM-003CEBEU63",
+        name="Shelly Pro 3EM 3CT63",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
     MODEL_PRO_RGBWW_PM: ShellyDevice(
         model="SPDC-0D5PE16EU",
         name="Shelly Pro RGBWW PM",
@@ -846,6 +855,13 @@ DEVICES = {
     MODEL_PM_MINI_G3: ShellyDevice(
         model="S3PM-001PCEU16",
         name="Shelly PM Mini Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_PLUG_S_G3: ShellyDevice(
+        model="S3PL-00112EU",
+        name="Shelly Plug S Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
