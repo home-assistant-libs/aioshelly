@@ -11,13 +11,6 @@ BLE_SCAN_RESULT_VERSION = 2
 VAR_EVENT_TYPE = "%event_type%"
 VAR_ACTIVE = "%active%"
 VAR_VERSION = "%version%"
-VAR_INTERVAL_MS = "%interval_ms%"
-VAR_WINDOW_MS = "%window_ms%"
-VAR_DURATION_MS = "%duration_ms%"
-
-DEFAULT_INTERVAL_MS = 320
-DEFAULT_WINDOW_MS = 30
-DEFAULT_DURATION_MS = -1
 
 BLE_CODE = """
 // aioshelly BLE script 2.0
@@ -76,10 +69,8 @@ function bleCallback(event, res) {
 // Skip starting if scanner is active
 if (!BLE.Scanner.isRunning()) {
   BLE.Scanner.Start({
-    duration_ms: %duration_ms%,
+    duration_ms: -1,
     active: %active%,
-    interval_ms: %interval_ms%,
-    window_ms: %window_ms%,
   });
 }
 
