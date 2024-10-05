@@ -313,9 +313,20 @@ class RpcDevice:
         if fetch_status:
             self._status = results.pop(0)
         if fetch_dynamic:
-            components = results.pop(0)
-            self._parse_dynamic_components(components)
-            await self._retrieve_blutrv_components(components)
+            all_pages = await self.get_all_pages(results.pop(0))
+            self._parse_dynamic_components(all_pages)
+            await self._retrieve_blutrv_components(all_pages)
+
+    async def get_all_pages(self, first_page: dict[str, Any]) -> dict[str, Any]:
+        """Get all pages of paginated response to GetComponents."""
+        total = first_page["total"]
+        while len(first_page["components"]) < total:
+            offset = len(first_page["components"])
+            next_page = await self.call_rpc(
+                "Shelly.GetComponents", {"dynamic_only": True, "offset": offset}
+            )
+            first_page["components"].extend(next_page["components"])
+        return first_page
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -513,9 +524,10 @@ class RpcDevice:
         """Return a list of dynamic components."""
         if not self._supports_dynamic_components():
             return
-        components = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
-        self._parse_dynamic_components(components)
-        await self._retrieve_blutrv_components(components)
+        first_page = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
+        all_pages = await self.get_all_pages(first_page)
+        self._parse_dynamic_components(all_pages)
+        await self._retrieve_blutrv_components(all_pages)
 
     def _supports_dynamic_components(self) -> bool:
         """Return True if device supports dynamic components."""
