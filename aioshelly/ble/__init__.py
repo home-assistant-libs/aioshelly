@@ -13,11 +13,8 @@ from .const import (
     BLE_CODE,
     BLE_SCRIPT_NAME,
     VAR_ACTIVE,
-    VAR_DURATION_MS,
     VAR_EVENT_TYPE,
-    VAR_INTERVAL_MS,
     VAR_VERSION,
-    VAR_WINDOW_MS,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -36,14 +33,8 @@ async def async_stop_scanner(device: RpcDevice) -> None:
         await device.script_stop(script_id)
 
 
-async def async_start_scanner(  # noqa: PLR0913
-    device: RpcDevice,
-    active: bool,
-    event_type: str,
-    data_version: int,
-    interval_ms: int,
-    window_ms: int,
-    duration_ms: int,
+async def async_start_scanner(
+    device: RpcDevice, active: bool, event_type: str, data_version: int
 ) -> None:
     """Start scanner."""
     script_name_to_id = await _async_get_scripts_by_name(device)
@@ -59,9 +50,6 @@ async def async_start_scanner(  # noqa: PLR0913
         BLE_CODE.replace(VAR_ACTIVE, "true" if active else "false")
         .replace(VAR_EVENT_TYPE, event_type)
         .replace(VAR_VERSION, str(data_version))
-        .replace(VAR_INTERVAL_MS, str(interval_ms))
-        .replace(VAR_WINDOW_MS, str(window_ms))
-        .replace(VAR_DURATION_MS, str(duration_ms))
     )
 
     needs_putcode = False
