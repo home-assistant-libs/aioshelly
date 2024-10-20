@@ -973,6 +973,14 @@ END_OF_OPTIONS_MARKER = 0xFF
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
-VIRTUAL_COMPONENTS = {"blutrv", "boolean", "button", "enum", "number", "text"}
+VIRTUAL_COMPONENTS = {
+    "blutrv",
+    "boolean",
+    "bthomedevice",
+    "button",
+    "enum",
+    "number",
+    "text",
+}
 # Firmware 1.2.0 release date
 VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213
