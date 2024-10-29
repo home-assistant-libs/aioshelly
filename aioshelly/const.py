@@ -861,7 +861,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
-    ),    
+    ),
     MODEL_HT_G3: ShellyDevice(
         model="S3SN-0U12A",
         name="Shelly H&T Gen3",
