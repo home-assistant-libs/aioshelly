@@ -114,6 +114,7 @@ MODEL_1PM_MINI_G3 = "S3SW-001P8EU"
 MODEL_2PM_G3 = "S3SW-002P16EU"
 MODEL_BLU_GATEWAY_GEN3 = "S3GW-1DBT001"
 MODEL_DIMMER_10V_GEN3 = "S3DM-0010WW"
+MODEL_EM_G3 = "S3EM-002CXCEU"
 MODEL_HT_G3 = "S3SN-0U12A"
 MODEL_I4_GEN3 = "S3SN-0024X"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
@@ -854,6 +855,13 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
+    MODEL_EM_G3: ShellyDevice(
+        model="S3EM-002CXCEU",
+        name="Shelly EM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),    
     MODEL_HT_G3: ShellyDevice(
         model="S3SN-0U12A",
         name="Shelly H&T Gen3",
