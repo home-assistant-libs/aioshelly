@@ -702,7 +702,7 @@ DEVICES = {
     ),
     MODEL_PRO_2_V3_UL: ShellyDevice(
         model="SPSW-202XE12UL",
-        name="Shelly Pro 2",
+        name="Shelly Pro 2 UL",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
