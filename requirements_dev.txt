@@ -6,7 +6,7 @@ types-orjson
 types-requests
 pre-commit==4.0.1
 tox==4.23.2
-wheel==0.44.0
+wheel==0.45.0
 pytest==8.3.3
 pytest-asyncio==0.24.0
 pytest-cov==6.0.0
