@@ -22,3 +22,12 @@ def json_dumps(data: Any) -> str:
         option=orjson.OPT_NON_STR_KEYS,
         default=json_encoder_default,
     ).decode("utf-8")
+
+
+def json_bytes(data: Any) -> bytes:
+    """Dump json bytes."""
+    return orjson.dumps(
+        data,
+        option=orjson.OPT_NON_STR_KEYS,
+        default=json_encoder_default,
+    )
