@@ -48,7 +48,7 @@ from ..exceptions import (
     InvalidMessage,
     RpcCallError,
 )
-from ..json import json_dumps, json_loads
+from ..json import json_bytes, json_loads
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -531,7 +531,7 @@ class WsRPC(WsBase):
         if TYPE_CHECKING:
             assert self._client
 
-        await self._client.send_str(json_dumps(data))
+        await self._client.send_frame(json_bytes(data), WSMsgType.TEXT)
 
 
 class WsServer(WsBase):
