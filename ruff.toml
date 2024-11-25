@@ -3,7 +3,6 @@ target-version = "py311"
 lint.select = ["ALL"]
 
 lint.ignore = [
-    "ANN101",   # Missing type annotation for `self` in method
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
     "ASYNC109", # Async function definition with a `timeout` parameter
     "COM812",   # Trailing comma missing
@@ -19,9 +18,9 @@ lint.ignore = [
     "N818",     # Exception name should be named with an Error suffix
     "PLR0912",  # Too many branches
     "PLR0915",  # Too many statements
-    "TCH001",   # Move application import into a type-checking block
-    "TCH002",   # Move third-party import into a type-checking block
-    "TCH003",   # Move standard library import into a type-checking block
+    "TC001",   # Move application import into a type-checking block
+    "TC002",   # Move third-party import into a type-checking block
+    "TC003",   # Move standard library import into a type-checking block
     "TID252",   # Prefer absolute imports over relative imports from parent modules
     "TRY003",   # Avoid specifying long messages outside the exception class
     "TRY400",   # Use `logging.exception` instead of `logging.error`

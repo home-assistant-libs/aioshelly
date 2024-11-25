@@ -195,10 +195,10 @@ def _redact_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
         sntp["server"] = REDACTED_VALUES["sntp_server"]
 
     config_prefixes = ("switch:", "input:", "em:", "script:")
-    for key in config:
+    for key, value in config.items():
         if key.startswith(config_prefixes):
             key_name, id_ = key.split(":")
-            config[key]["name"] = f"{key_name} {id_}"
+            value["name"] = f"{key_name} {id_}"
 
     for id_ in range(5):
         if thermostat := config.get(f"thermostat:{id_}"):

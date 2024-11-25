@@ -134,12 +134,12 @@ class RPCCall:
     __slots__ = (
         "auth",
         "call_id",
-        "params",
-        "method",
-        "src",
         "dst",
+        "method",
+        "params",
         "resolve",
         "result",
+        "src",
     )
 
     def __init__(
