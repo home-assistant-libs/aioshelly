@@ -49,6 +49,8 @@ from .models import (
 )
 from .wsrpc import RPCSource, WsRPC, WsServer
 
+MAX_ITERATIONS = 10
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -320,7 +322,9 @@ class RpcDevice:
     async def get_all_pages(self, first_page: dict[str, Any]) -> dict[str, Any]:
         """Get all pages of paginated response to GetComponents."""
         total = first_page["total"]
-        while len(first_page["components"]) < total:
+        counter = 0
+        while len(first_page["components"]) < total and counter < MAX_ITERATIONS:
+            counter += 1
             offset = len(first_page["components"])
             next_page = await self.call_rpc(
                 "Shelly.GetComponents", {"dynamic_only": True, "offset": offset}
