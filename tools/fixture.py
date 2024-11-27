@@ -309,14 +309,14 @@ async def main() -> None:
     await coap_context.initialize(args.coap_port)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
-    if not args.init and not (args.gen1 or args.gen2 or args.gen3):
+    if not args.init and not (args.gen1 or args.gen2 or args.gen3 or args.gen4):
         parser.error("specify gen if no device init at startup")
-    if args.gen1 and args.gen2:
-        parser.error("--gen1 and --gen2 can't be used together")
-    elif args.gen1 and args.gen3:
-        parser.error("--gen1 and --gen3 can't be used together")
-    elif args.gen2 and args.gen3:
-        parser.error("--gen2 and --gen3 can't be used together")
+
+    gen_list = (args.gen1, args.gen2, args.gen3, args.gen4)
+    if len([gen for gen in gen_list if gen]) > 1:
+        parser.error(
+            "You can only use one of --gen1, --gen2, --gen3 or --gen4 at a time"
+        )
 
     gen = None
     if args.gen1:
@@ -325,6 +325,8 @@ async def main() -> None:
         gen = 2
     elif args.gen3:
         gen = 3
+    elif args.gen4:
+        gen = 4
 
     if args.debug:
         logging.basicConfig(level="DEBUG", force=True)
