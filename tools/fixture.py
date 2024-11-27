@@ -288,6 +288,9 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--gen3", "-g3", action="store_true", help="Force Gen 3 (RPC) device"
     )
     parser.add_argument(
+        "--gen4", "-g4", action="store_true", help="Force Gen 4 (RPC) device"
+    )
+    parser.add_argument(
         "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
     parser.add_argument(

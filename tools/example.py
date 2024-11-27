@@ -136,6 +136,9 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--gen3", "-g3", action="store_true", help="Force Gen 3 (RPC) device"
     )
     parser.add_argument(
+        "--gen4", "-g4", action="store_true", help="Force Gen 4 (RPC) device"
+    )
+    parser.add_argument(
         "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
     parser.add_argument(
@@ -145,7 +148,7 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "--update_ws",
         "-uw",
         type=str,
-        help="Update outbound WebSocket (Gen2/3) and exit",
+        help="Update outbound WebSocket (for RPC device) and exit",
     )
     parser.add_argument(
         "--listen_ip_address",
@@ -168,14 +171,14 @@ async def main() -> None:
     await coap_context.initialize(args.coap_port, args.listen_ip_address)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
-    if not args.init and not (args.gen1 or args.gen2 or args.gen3):
+    if not args.init and not (args.gen1 or args.gen2 or args.gen3 or args.gen4):
         parser.error("specify gen if no device init at startup")
-    if args.gen1 and args.gen2:
-        parser.error("--gen1 and --gen2 can't be used together")
-    elif args.gen1 and args.gen3:
-        parser.error("--gen1 and --gen3 can't be used together")
-    elif args.gen2 and args.gen3:
-        parser.error("--gen2 and --gen3 can't be used together")
+
+    gen_list = (args.gen1, args.gen2, args.gen3, args.gen4)
+    if len([gen for gen in gen_list if gen]) > 1:
+        parser.error(
+            "You can only use one of --gen1, --gen2, --gen3 or --gen4 at a time"
+        )
 
     gen = None
     if args.gen1:
@@ -184,13 +187,15 @@ async def main() -> None:
         gen = 2
     elif args.gen3:
         gen = 3
+    elif args.gen4:
+        gen = 4
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         # if gen is in args reduce logging for other gens
         if args.gen1:
             logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
-        elif args.gen2 or args.gen3:
+        elif args.gen2 or args.gen3 or args.gen4:
             logging.getLogger("aioshelly.block_device").setLevel(logging.INFO)
 
     if args.devices:
