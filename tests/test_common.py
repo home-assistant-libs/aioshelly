@@ -26,7 +26,8 @@ from .rpc_device import load_device_fixture
 @pytest.mark.parametrize(
     ("gen", "model", "firmware_version", "expected"),
     [
-        (4, "XYZ-G4", "20240913-112054/v1.0.0-gcb84623", False),
+        (5, "XYZ-G5", "20250913-112054/v1.0.0-gcb84623", False),
+        (4, "XYZ-G4", "20240913-112054/v1.0.0-gcb84623", True),
         (1, "SHSW-44", "20230913-112054/v1.14.0-gcb84623", False),
         (1, "SHSW-1", "20230913-112054/v1.14.0-gcb84623", True),
         (2, "SNDC-0D4P10WW", "20230703-112054/0.99.0-gcb84623", False),

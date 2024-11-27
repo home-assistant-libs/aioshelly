@@ -457,7 +457,7 @@ class RpcDevice:
 
     @property
     def gen(self) -> int:
-        """Device generation: GEN2/3 - RPC."""
+        """Device generation: GEN2/3/4 - RPC."""
         if self._shelly is None:
             raise NotInitialized
 
