@@ -42,7 +42,7 @@ async def create_device(
     options: ConnectionOptions,
     gen: int | None,
 ) -> Any:
-    """Create a Gen1/Gen2/Gen3 device."""
+    """Create a device."""
     if gen is None:
         if info := await get_info(
             aiohttp_session, options.ip_address, port=options.port
@@ -170,7 +170,7 @@ def print_block_device(device: BlockDevice) -> None:
 
 
 def print_rpc_device(device: RpcDevice) -> None:
-    """Print RPC (GEN2/3) device data."""
+    """Print RPC (GEN2/3/4) device data."""
     print(f"Status: {device.status}")
     print(f"Event: {device.event}")
     print(f"Connected: {device.connected}")
