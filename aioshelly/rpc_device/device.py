@@ -280,6 +280,7 @@ class RpcDevice:
         self._status = results[0]
         if has_dynamic:
             self._parse_dynamic_components(results[1])
+            await self._retrieve_blutrv_components(results[1])
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
@@ -309,7 +310,9 @@ class RpcDevice:
         if fetch_status:
             self._status = results.pop(0)
         if fetch_dynamic:
-            self._parse_dynamic_components(results.pop(0))
+            components = results.pop(0)
+            self._parse_dynamic_components(components)
+            await self._retrieve_blutrv_components(components)
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -509,6 +512,7 @@ class RpcDevice:
             return
         components = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
         self._parse_dynamic_components(components)
+        await self._retrieve_blutrv_components(components)
 
     def _supports_dynamic_components(self) -> bool:
         """Return True if device supports dynamic components."""
@@ -538,3 +542,26 @@ class RpcDevice:
                 for item in self._dynamic_components
             }
         )
+
+    async def _retrieve_blutrv_components(self, components: dict[str, Any]) -> None:
+        """Retrieve BLU TRV components."""
+        if TYPE_CHECKING:
+            assert self._config
+            assert self._status
+
+        for component in components.get("components", []):
+            _key = component["key"].split(":")
+            if _key[0] == "blutrv":
+                calls = [
+                    (
+                        "BluTRV.Call",
+                        {"id": _key[1], "method": "Trv.GetConfig", "params": {"id": 0}},
+                    ),
+                    (
+                        "BluTRV.Call",
+                        {"id": _key[1], "method": "Trv.GetStatus", "params": {"id": 0}},
+                    ),
+                ]
+                results = await self.call_rpc_multiple(calls)
+                self._config.update({component["key"]: results[0]})
+                self._status.update({component["key"]: results[1]})
