@@ -553,14 +553,8 @@ class RpcDevice:
             _key = component["key"].split(":")
             if _key[0] == "blutrv":
                 calls = [
-                    (
-                        "BluTRV.Call",
-                        {"id": _key[1], "method": "Trv.GetConfig", "params": {"id": 0}},
-                    ),
-                    (
-                        "BluTRV.Call",
-                        {"id": _key[1], "method": "Trv.GetStatus", "params": {"id": 0}},
-                    ),
+                    ("BluTrv.GetRemoteConfig", {"id": _key[1]}),
+                    ("BluTrv.GetRemoteStatus", {"id": _key[1]}),
                 ]
                 results = await self.call_rpc_multiple(calls)
                 self._config.update({component["key"]: results[0]})
