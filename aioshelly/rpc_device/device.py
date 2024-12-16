@@ -538,3 +538,10 @@ class RpcDevice:
                 for item in self._dynamic_components
             }
         )
+        self._status.update(
+            {
+                item["key"]: item["status"]
+                for item in self._dynamic_components
+                if "blutrv" in item["key"]
+            }
+        )
