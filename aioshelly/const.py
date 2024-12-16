@@ -976,7 +976,6 @@ FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 VIRTUAL_COMPONENTS = {
     "blutrv",
     "boolean",
-    "bthomedevice",
     "button",
     "enum",
     "number",
