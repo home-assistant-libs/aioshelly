@@ -542,6 +542,6 @@ class RpcDevice:
             {
                 item["key"]: item["status"]
                 for item in self._dynamic_components
-                if "blutrv" in item["key"]
+                if item["key"].split(":")[0] in ("blutrv", "bthomedevice")
             }
         )
