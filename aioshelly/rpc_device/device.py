@@ -19,6 +19,7 @@ from ..common import (
 )
 from ..const import (
     BLU_TRV_IDENTIFIER,
+    BLU_TRV_MODEL_ID,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
@@ -566,6 +567,12 @@ class RpcDevice:
                 # addr, name and model_id must be added from Shelly.GetComponents call
                 cfg.update({"addr": component["config"]["addr"]})
                 cfg.update({"name": component["config"]["name"]})
-                cfg.update({"model_id": component["attrs"].get("model_id")})
+                cfg.update(
+                    {
+                        "model_id": BLU_TRV_MODEL_ID.get(
+                            component["attrs"].get("model_id")
+                        )
+                    }
+                )
                 self._config.update({component["key"]: cfg})
                 self._status.update({component["key"]: results[1]["status"]["trv:0"]})
