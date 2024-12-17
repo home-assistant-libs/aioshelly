@@ -551,7 +551,7 @@ class RpcDevice:
             return
 
         if not self._config or not self._status:
-            raise ConnectionError
+            raise NotInitialized
 
         for component in components.get("components", []):
             _key = component["key"].split(":")
