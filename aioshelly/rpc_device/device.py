@@ -557,5 +557,5 @@ class RpcDevice:
                     ("BluTrv.GetRemoteStatus", {"id": _key[1]}),
                 ]
                 results = await self.call_rpc_multiple(calls)
-                self._config.update({component["key"]: results[0]})
-                self._status.update({component["key"]: results[1]})
+                self._config.update({component["key"]: results[0]["config"]["trv:0"]})
+                self._status.update({component["key"]: results[1]["status"]["trv:0"]})
