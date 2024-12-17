@@ -929,6 +929,8 @@ GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
     MODEL_VINTAGE_V2,
 }
 
+BLU_TRV_IDENTIFIER = "blutrv"
+
 
 class UndefinedType(Enum):
     """Singleton type for use with not set sentinel values."""

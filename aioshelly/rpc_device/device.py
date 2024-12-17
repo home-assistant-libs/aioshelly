@@ -18,11 +18,13 @@ from ..common import (
     process_ip_or_options,
 )
 from ..const import (
+    BLU_TRV_IDENTIFIER,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
+    MODEL_BLU_GATEWAY_GEN3,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
@@ -545,13 +547,16 @@ class RpcDevice:
 
     async def _retrieve_blutrv_components(self, components: dict[str, Any]) -> None:
         """Retrieve BLU TRV components."""
+        if self.model != MODEL_BLU_GATEWAY_GEN3:
+            return
+
         if TYPE_CHECKING:
             assert self._config
             assert self._status
 
         for component in components.get("components", []):
             _key = component["key"].split(":")
-            if _key[0] == "blutrv":
+            if _key[0] == BLU_TRV_IDENTIFIER:
                 calls = [
                     ("BluTrv.GetRemoteConfig", {"id": _key[1]}),
                     ("BluTrv.GetRemoteStatus", {"id": _key[1]}),
