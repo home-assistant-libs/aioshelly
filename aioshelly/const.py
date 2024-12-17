@@ -123,6 +123,19 @@ MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
 
+# BlueTooth
+MODEL_BLU_BUTTON_1 = 0x0001
+MODEL_BLU_DOORWINDOW = 0x0002
+MODEL_BLU_HT = 0x0003
+MODEL_BLU_DISTANCE = 0x0004
+MODEL_BLU_MOTION = 0x0005
+MODEL_BLU_WALL_SWITCH_4 = 0x0006
+MODEL_BLU_RC_BUTTON_4 = 0x0007
+MODEL_BLU_TRV = 0x0008
+MODEL_BLU_REMOTE = 0x0009
+MODEL_BLU_DISTANCE = 0x000A
+MODEL_BLU_WEATHER_STATION = 0x000B
+
 
 GEN1 = 1
 GEN2 = 2
@@ -166,6 +179,15 @@ class ShellyDevice:
     min_fw_date: int
     gen: int
     supported: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ShellyBLUDevice:
+    """Shelly BLU device."""
+
+    model_id: int
+    model: str
+    name: str
 
 
 DEVICES = {
@@ -918,6 +940,14 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
+}
+
+DEVICES_BLU = {
+    MODEL_BLU_BUTTON_1: ShellyBLUDevice(
+        model_id=MODEL_BLU_BUTTON_1,
+        model="SBBT-002C",
+        name="Shelly BLU Button1",
+    )
 }
 
 GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
