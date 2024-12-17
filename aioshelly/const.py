@@ -473,7 +473,7 @@ DEVICES = {
     MODEL_BLU_GATEWAY_GEN3: ShellyDevice(
         model="S3GW-1DBT001",
         name="Shelly BLU Gateway Gen3",
-        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        min_fw_date=20241216,
         gen=GEN3,
         supported=True,
     ),
