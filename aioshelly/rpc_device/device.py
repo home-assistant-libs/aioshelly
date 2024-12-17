@@ -563,9 +563,9 @@ class RpcDevice:
                 results = await self.call_rpc_multiple(calls)
 
                 cfg: dict[str, Any] = results[0]["config"]["trv:0"]
-                # addr and name must be added from Shelly.GetComponents call
-                # model_id can't be retrieved, remote device call (TRV.GetConfig) needed
+                # addr, name and model_id must be added from Shelly.GetComponents call
                 cfg.update({"addr": component["config"]["addr"]})
                 cfg.update({"name": component["config"]["name"]})
+                cfg.update({"model_id": component["attrs"].get("model_id")})
                 self._config.update({component["key"]: cfg})
                 self._status.update({component["key"]: results[1]["status"]["trv:0"]})
