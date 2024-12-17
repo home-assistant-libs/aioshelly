@@ -550,9 +550,8 @@ class RpcDevice:
         if self.model != MODEL_BLU_GATEWAY_GEN3:
             return
 
-        if TYPE_CHECKING:
-            assert self._config
-            assert self._status
+        if not self._config or not self._status:
+            raise ConnectionError
 
         for component in components.get("components", []):
             _key = component["key"].split(":")
