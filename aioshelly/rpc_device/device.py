@@ -557,5 +557,11 @@ class RpcDevice:
                     ("BluTrv.GetRemoteStatus", {"id": _key[1]}),
                 ]
                 results = await self.call_rpc_multiple(calls)
-                self._config.update({component["key"]: results[0]["config"]["trv:0"]})
+
+                cfg: dict[str, Any] = results[0]["config"]["trv:0"]
+                # addr and name must be added from Shelly.GetComponents call
+                # model_id can't be retrieved, remote device call (TRV.GetConfig) needed
+                cfg.update({"addr": component["config"]["addr"]})
+                cfg.update({"name": component["config"]["name"]})
+                self._config.update({component["key"]: cfg})
                 self._status.update({component["key"]: results[1]["status"]["trv:0"]})
