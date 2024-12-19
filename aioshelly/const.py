@@ -144,9 +144,12 @@ GEN2_MIN_FIRMWARE_DATE = 20230803
 # Firmware 1.0.99 release date
 GEN3_MIN_FIRMWARE_DATE = 20231102
 
+# Firmware 1.5.x release date
+# Temporary use beat release to allow BluTrv support
+GEN3_GATEWAY_MIN_FIRMWARE_DATE = 20241219
+
 # Firmware 1.4.x release date
 GEN4_MIN_FIRMWARE_DATE = 20240902
-
 
 # Fallback for unknown devices
 MIN_FIRMWARE_DATES = {
@@ -473,7 +476,7 @@ DEVICES = {
     MODEL_BLU_GATEWAY_GEN3: ShellyDevice(
         model="S3GW-1DBT001",
         name="Shelly BLU Gateway Gen3",
-        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        min_fw_date=GEN3_GATEWAY_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
     ),
