@@ -145,7 +145,7 @@ GEN2_MIN_FIRMWARE_DATE = 20230803
 GEN3_MIN_FIRMWARE_DATE = 20231102
 
 # Firmware 1.5.x release date
-# Temporary use beat release to allow BluTrv support
+# Temporary use beta release to allow BluTrv support
 GEN3_GATEWAY_MIN_FIRMWARE_DATE = 20241219
 
 # Firmware 1.4.x release date
