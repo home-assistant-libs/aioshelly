@@ -568,15 +568,9 @@ class RpcDevice:
 
             cfg: dict[str, Any] = results[0]["config"]["trv:0"]
             # addr, name and model_id must be added from Shelly.GetComponents call
-            _attrs = component.get("attrs")
+            _attrs = component.get("attrs", {})
             cfg.update({"addr": component["config"]["addr"]})
             cfg.update({"name": component["config"]["name"]})
-            cfg.update(
-                {
-                    "local_name": BLU_TRV_MODEL_ID.get(_attrs.get("model_id"))
-                    if _attrs
-                    else None
-                }
-            )
+            cfg.update({"local_name": BLU_TRV_MODEL_ID.get(_attrs.get("model_id"))})
             self._config.update({component["key"]: cfg})
             self._status.update({component["key"]: results[1]["status"]["trv:0"]})
