@@ -571,7 +571,7 @@ class RpcDevice:
             cfg.update({"addr": component["config"]["addr"]})
             cfg.update({"name": component["config"]["name"]})
             cfg.update(
-                {"model_id": BLU_TRV_MODEL_ID.get(component["attrs"]["model_id"])}
+                {"local_name": BLU_TRV_MODEL_ID.get(component["attrs"]["model_id"])}
             )
             self._config.update({component["key"]: cfg})
             self._status.update({component["key"]: results[1]["status"]["trv:0"]})
