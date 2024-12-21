@@ -18,11 +18,14 @@ from ..common import (
     process_ip_or_options,
 )
 from ..const import (
+    BLU_TRV_IDENTIFIER,
+    BLU_TRV_MODEL_ID,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
+    MODEL_BLU_GATEWAY_GEN3,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
@@ -280,6 +283,7 @@ class RpcDevice:
         self._status = results[0]
         if has_dynamic:
             self._parse_dynamic_components(results[1])
+            await self._retrieve_blutrv_components(results[1])
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
@@ -309,7 +313,9 @@ class RpcDevice:
         if fetch_status:
             self._status = results.pop(0)
         if fetch_dynamic:
-            self._parse_dynamic_components(results.pop(0))
+            components = results.pop(0)
+            self._parse_dynamic_components(components)
+            await self._retrieve_blutrv_components(components)
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -509,6 +515,7 @@ class RpcDevice:
             return
         components = await self.call_rpc("Shelly.GetComponents", {"dynamic_only": True})
         self._parse_dynamic_components(components)
+        await self._retrieve_blutrv_components(components)
 
     def _supports_dynamic_components(self) -> bool:
         """Return True if device supports dynamic components."""
@@ -538,3 +545,32 @@ class RpcDevice:
                 for item in self._dynamic_components
             }
         )
+
+    async def _retrieve_blutrv_components(self, components: dict[str, Any]) -> None:
+        """Retrieve BLU TRV components."""
+        if self.model != MODEL_BLU_GATEWAY_GEN3:
+            return
+
+        if not self._config or not self._status:
+            raise NotInitialized
+
+        for component in components.get("components", []):
+            _key = component["key"].split(":")
+
+            if _key[0] != BLU_TRV_IDENTIFIER:
+                continue
+
+            calls = [
+                ("BluTrv.GetRemoteConfig", {"id": _key[1]}),
+                ("BluTrv.GetRemoteStatus", {"id": _key[1]}),
+            ]
+            results = await self.call_rpc_multiple(calls)
+
+            cfg: dict[str, Any] = results[0]["config"]["trv:0"]
+            # addr, name and model_id must be added from Shelly.GetComponents call
+            _attrs = component.get("attrs", {})
+            cfg.update({"addr": component["config"]["addr"]})
+            cfg.update({"name": component["config"]["name"]})
+            cfg.update({"local_name": BLU_TRV_MODEL_ID.get(_attrs.get("model_id"))})
+            self._config.update({component["key"]: cfg})
+            self._status.update({component["key"]: results[1]["status"]["trv:0"]})
