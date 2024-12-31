@@ -354,7 +354,12 @@ class WsRPC(WsBase):
                         self._port,
                         err,
                     )
-                except ConnectionClosed:
+                except (ConnectionClosed, client_exceptions.ClientConnectionResetError):
+                    _LOGGER.debug(
+                        "Connection issue with device %s:%s",
+                        self._ip_address,
+                        self._port,
+                    )
                     break
                 except Exception:
                     _LOGGER.exception("Unexpected error while receiving message")
