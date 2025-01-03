@@ -71,6 +71,8 @@ if (!BLE.Scanner.isRunning()) {
   BLE.Scanner.Start({
     duration_ms: -1,
     active: %active%,
+    interval_ms: 200,
+    window_ms: 50,
   });
 }
 
