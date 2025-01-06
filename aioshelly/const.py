@@ -125,6 +125,7 @@ MODEL_X_MOD1 = "S3MX-0A"
 # Gen4 RPC based models
 MODEL_1PM_G4 = "S4SW-001P16EU"
 MODEL_2PM_G4 = "S4SW-002P16EU"
+MODEL_I4_G4 = "S4SN-0A24X"
 
 GEN1 = 1
 GEN2 = 2
@@ -930,6 +931,13 @@ DEVICES = {
     MODEL_2PM_G4: ShellyDevice(
         model="S4SW-002P16EU",
         name="Shelly 2PM Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+    ),
+    MODEL_I4_G4: ShellyDevice(
+        model="S4SN-0A24X",
+        name="Shelly I4 Gen4",
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
