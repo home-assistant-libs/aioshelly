@@ -122,7 +122,8 @@ MODEL_I4_GEN3 = "S3SN-0024X"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
-
+# Gen4 RPC based models
+MODEL_1PM_GEN4 = "S4SW-001P16EU"
 
 GEN1 = 1
 GEN2 = 2
@@ -916,6 +917,13 @@ DEVICES = {
         name="Shelly X MOD1",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
+        supported=True,
+    ),
+    MODEL_1PM_GEN4: ShellyDevice(
+        model="S4SW-001P16EU",
+        name="Shelly 1PM Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
         supported=True,
     ),
 }
