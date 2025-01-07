@@ -125,7 +125,9 @@ MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
+MODEL_1_MINI_G4 = "S4SW-001X8EU"
 MODEL_1PM_G4 = "S4SW-001P16EU"
+MODEL_1PM_MINI_G4 = "S4SW-001P8EU"
 MODEL_2PM_G4 = "S4SW-002P16EU"
 MODEL_I4_G4 = "S4SN-0A24X"
 
@@ -930,9 +932,30 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
+    MODEL_1_G4: ShellyDevice(
+        model=MODEL_1_G4,
+        name="Shelly 1 Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+    ),
+    MODEL_1_MINI_G4: ShellyDevice(
+        model=MODEL_1_MINI_G4,
+        name="Shelly 1 Mini Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+    ),
     MODEL_1PM_G4: ShellyDevice(
         model=MODEL_1PM_G4,
         name="Shelly 1PM Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+    ),
+    MODEL_1PM_MINI_G4: ShellyDevice(
+        model=MODEL_1PM_MINI_G4,
+        name="Shelly 1PM Mini Gen4",
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
@@ -947,13 +970,6 @@ DEVICES = {
     MODEL_I4_G4: ShellyDevice(
         model=MODEL_I4_G4,
         name="Shelly I4 Gen4",
-        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
-        gen=GEN4,
-        supported=True,
-    ),
-    MODEL_1_G4: ShellyDevice(
-        model=MODEL_1_G4,
-        name="Shelly 1 Gen4",
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
