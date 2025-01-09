@@ -280,10 +280,14 @@ class RpcDevice:
             # Only poll dynamic components if we have them
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls, DEVICE_POLL_TIMEOUT)
-        self._status = results[0]
+        if (status := results[0]) is None:
+            raise RpcCallError("empty response to Shelly.GetStatus")
+        self._status = status
         if has_dynamic:
-            self._parse_dynamic_components(results[1])
-            await self._retrieve_blutrv_components(results[1])
+            if (dynamic := results[1]) is None:
+                raise RpcCallError("empty response to Shelly.GetComponents")
+            self._parse_dynamic_components(dynamic)
+            await self._retrieve_blutrv_components(dynamic)
 
     async def _init_calls(self) -> None:
         """Make calls needed to initialize the device."""
@@ -426,11 +430,8 @@ class RpcDevice:
     @property
     def status(self) -> dict[str, Any]:
         """Get device status."""
-        if not self.initialized:
+        if not self.initialized or self._status is None:
             raise NotInitialized
-
-        if self._status is None:
-            raise InvalidAuthError
 
         return self._status
 
@@ -445,11 +446,8 @@ class RpcDevice:
     @property
     def config(self) -> dict[str, Any]:
         """Get device config."""
-        if not self.initialized:
+        if not self.initialized or self._config is None:
             raise NotInitialized
-
-        if self._config is None:
-            raise InvalidAuthError
 
         return self._config
 
