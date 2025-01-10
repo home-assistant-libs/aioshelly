@@ -574,17 +574,13 @@ class RpcDevice:
             if _key[0] != BLU_TRV_IDENTIFIER:
                 continue
 
-            calls = [
-                ("BluTrv.GetRemoteConfig", {"id": _key[1]}),
-                ("BluTrv.GetRemoteStatus", {"id": _key[1]}),
-            ]
-            results = await self.call_rpc_multiple(calls)
+            result = await self.call_rpc("BluTrv.GetRemoteConfig", {"id": _key[1]})
 
-            cfg: dict[str, Any] = results[0]["config"]["trv:0"]
+            cfg: dict[str, Any] = result["config"]["trv:0"]
             # addr, name and model_id must be added from Shelly.GetComponents call
             _attrs = component.get("attrs", {})
             cfg.update({"addr": component["config"]["addr"]})
             cfg.update({"name": component["config"]["name"]})
             cfg.update({"local_name": BLU_TRV_MODEL_ID.get(_attrs.get("model_id"))})
-            self._config.update({component["key"]: cfg})
-            self._status.update({component["key"]: results[1]["status"]["trv:0"]})
+            self._status[component["key"]] = component["status"]
+            self._status.setdefault("errors", [])
