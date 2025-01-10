@@ -583,4 +583,5 @@ class RpcDevice:
             cfg.update({"name": component["config"]["name"]})
             cfg.update({"local_name": BLU_TRV_MODEL_ID.get(_attrs.get("model_id"))})
             self._status[component["key"]] = component["status"]
+            # if there are no errors, the response does not contain an errors object
             self._status.setdefault("errors", [])
