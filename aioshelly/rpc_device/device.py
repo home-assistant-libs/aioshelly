@@ -422,10 +422,13 @@ class RpcDevice:
         return bool(self.shelly["auth_en"])
 
     async def call_rpc(
-        self, method: str, params: dict[str, Any] | None = None
+        self,
+        method: str,
+        params: dict[str, Any] | None = None,
+        timeout: float = DEVICE_IO_TIMEOUT,
     ) -> dict[str, Any]:
         """Call RPC method."""
-        return (await self.call_rpc_multiple(((method, params),)))[0]
+        return (await self.call_rpc_multiple(((method, params),), timeout))[0]
 
     async def call_rpc_multiple(
         self,
