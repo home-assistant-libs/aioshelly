@@ -68,12 +68,9 @@ async def init_device(device: BlockDevice | RpcDevice) -> bool:
     except InvalidAuthError as err:
         print(f"Invalid or missing authorization, error: {err!r}")
     except DeviceConnectionTimeoutError as err:
-        print(
-            f"Timeout error connecting to {device.ip_address}:{port}, "
-            f"error: {err!r}"
-        )
+        print(f"Timeout error connecting to {device.ip_address}:{port}, error: {err!r}")
     except DeviceConnectionError as err:
-        print(f"Error connecting to {device.ip_address}:{port}, " f"error: {err!r}")
+        print(f"Error connecting to {device.ip_address}:{port}, error: {err!r}")
     except MacAddressMismatchError as err:
         print(f"MAC address mismatch, error: {err!r}")
     except WrongShellyGen:
@@ -112,8 +109,7 @@ def device_updated(
     """Device updated callback."""
     print()
     print(
-        f"{datetime.now(tz=UTC).strftime('%H:%M:%S')} "
-        f"Device updated! ({update_type})"
+        f"{datetime.now(tz=UTC).strftime('%H:%M:%S')} Device updated! ({update_type})"
     )
 
     if update_type in (BlockUpdateType.ONLINE, RpcUpdateType.ONLINE):
