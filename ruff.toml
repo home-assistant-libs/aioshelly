@@ -3,6 +3,7 @@ target-version = "py311"
 lint.select = ["ALL"]
 
 lint.ignore = [
+    "A005",     # Module `json` shadows a Python standard-library module
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
     "ASYNC109", # Async function definition with a `timeout` parameter
     "COM812",   # Trailing comma missing
