@@ -20,6 +20,7 @@ from ..common import (
 from ..const import (
     BLU_TRV_IDENTIFIER,
     BLU_TRV_MODEL_ID,
+    BLU_TRV_TIMEOUT,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
@@ -420,6 +421,16 @@ class RpcDevice:
             raise WrongShellyGen
 
         return bool(self.shelly["auth_en"])
+
+    async def call_blu_trv(
+        self, idx: int, method: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Call BLU TRV."""
+        call: tuple[str, dict[str, Any]] = (
+            "BluTRV.Call",
+            {"id": idx, "method": method, "params": params},
+        )
+        return (await self.call_rpc_multiple((call,), BLU_TRV_TIMEOUT))[0]
 
     async def call_rpc(
         self, method: str, params: dict[str, Any] | None = None
