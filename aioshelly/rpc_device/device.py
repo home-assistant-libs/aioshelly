@@ -423,7 +423,7 @@ class RpcDevice:
         return bool(self.shelly["auth_en"])
 
     async def call_blu_trv(
-        self, idx: int, method: str, params: dict[str, Any]
+        self, method: str, idx: int, params: dict[str, Any]
     ) -> dict[str, Any]:
         """Call BLU TRV."""
         call: tuple[str, dict[str, Any]] = (
