@@ -1004,7 +1004,7 @@ UNDEFINED = UndefinedType._singleton  # noqa: SLF001
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
 # Timeout used for BLU TRV
-BLU_TRV_TIMEOUT = 20.0
+BLU_TRV_TIMEOUT = 40.0
 
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10.0
