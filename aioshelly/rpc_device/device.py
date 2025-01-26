@@ -95,13 +95,16 @@ class RpcDevice:
         self._config: dict[str, Any] | None = None
         self._dynamic_components: list[dict[str, Any]] = []
         self._wsrpc = WsRPC(
-            options.ip_address, self._on_notification, port=options.port
+            options.ip_address,
+            self._on_notification,
+            port=options.port,
         )
         sub_id = options.ip_address
         if options.device_mac:
             sub_id = options.device_mac
         self._unsub_ws: Callable | None = ws_context.subscribe_updates(
-            sub_id, partial(self._wsrpc.handle_frame, RPCSource.SERVER)
+            sub_id,
+            partial(self._wsrpc.handle_frame, RPCSource.SERVER),
         )
         self._update_listener: Callable | None = None
         self._initialize_lock = asyncio.Lock()
@@ -127,7 +130,10 @@ class RpcDevice:
         return cls(ws_context, aiohttp_session, options)
 
     def _on_notification(
-        self, source: RPCSource, method: str, params: dict[str, Any] | None = None
+        self,
+        source: RPCSource,
+        method: str,
+        params: dict[str, Any] | None = None,
     ) -> None:
         """Received status notification from device.
 
@@ -331,7 +337,8 @@ class RpcDevice:
             counter += 1
             offset = len(first_page["components"])
             next_page = await self.call_rpc(
-                "Shelly.GetComponents", {"dynamic_only": True, "offset": offset}
+                "Shelly.GetComponents",
+                {"dynamic_only": True, "offset": offset},
             )
             first_page["components"].extend(next_page["components"])
         return first_page
@@ -345,7 +352,8 @@ class RpcDevice:
     async def script_getcode(self, script_id: int) -> ShellyScriptCode:
         """Get script code from 'Script.GetCode'."""
         return cast(
-            ShellyScriptCode, await self.call_rpc("Script.GetCode", {"id": script_id})
+            ShellyScriptCode,
+            await self.call_rpc("Script.GetCode", {"id": script_id}),
         )
 
     async def script_putcode(self, script_id: int, code: str) -> None:
@@ -379,7 +387,10 @@ class RpcDevice:
         return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
 
     async def ws_setconfig(
-        self, enable: bool, server: str, ssl_ca: str = "*"
+        self,
+        enable: bool,
+        server: str,
+        ssl_ca: str = "*",
     ) -> ShellyWsSetConfig:
         """Set the outbound websocket config."""
         return cast(
@@ -408,7 +419,8 @@ class RpcDevice:
         if not ws_enable["restart_required"]:
             return False
         _LOGGER.info(
-            "Outbound websocket enabled, restarting device %s", self.ip_address
+            "Outbound websocket enabled, restarting device %s",
+            self.ip_address,
         )
         await self.trigger_reboot(3500)
         return True
@@ -554,13 +566,13 @@ class RpcDevice:
             assert self._status is not None
 
         self._config.update(
-            {item["key"]: item["config"] for item in self._dynamic_components}
+            {item["key"]: item["config"] for item in self._dynamic_components},
         )
         self._status.update(
             {
                 item["key"]: {"value": item["status"].get("value")}
                 for item in self._dynamic_components
-            }
+            },
         )
 
     async def _retrieve_blutrv_components(self, components: dict[str, Any]) -> None:

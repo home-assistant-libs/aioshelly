@@ -94,7 +94,8 @@ class BlockDevice:
         if options.device_mac:
             sub_id = options.device_mac[-6:]
         self._unsub_coap: Callable | None = coap_context.subscribe_updates(
-            sub_id, self._coap_message_received
+            sub_id,
+            self._coap_message_received,
         )
         self._update_listener: Callable | None = None
         self._coap_response_events: dict[str, asyncio.Event] = {}
@@ -150,7 +151,9 @@ class BlockDevice:
         ip = self.options.ip_address
         try:
             self._shelly = await get_info(
-                self.aiohttp_session, self.options.ip_address, self.options.device_mac
+                self.aiohttp_session,
+                self.options.ip_address,
+                self.options.device_mac,
             )
 
             if self.requires_auth and not self.options.auth:
@@ -208,7 +211,9 @@ class BlockDevice:
                 self._unsub_coap()
             except KeyError as err:
                 _LOGGER.error(
-                    "host %s: error during shutdown: %r", self.options.ip_address, err
+                    "host %s: error during shutdown: %r",
+                    self.options.ip_address,
+                    err,
                 )
             self._unsub_coap = None
 
@@ -307,7 +312,11 @@ class BlockDevice:
         return event
 
     async def http_request(
-        self, method: str, path: str, params: Any | None = None, retry: bool = True
+        self,
+        method: str,
+        path: str,
+        params: Any | None = None,
+        retry: bool = True,
     ) -> dict[str, Any]:
         """Device HTTP request."""
         if self.options.auth is None and self.requires_auth:
@@ -335,12 +344,16 @@ class BlockDevice:
             self._last_error = DeviceConnectionTimeoutError(err)
             if retry:
                 _LOGGER.debug(
-                    "host %s: http request timeout: %r", host, self._last_error
+                    "host %s: http request timeout: %r",
+                    host,
+                    self._last_error,
                 )
                 return await self.http_request(method, path, params, retry=False)
 
             _LOGGER.debug(
-                "host %s: http request retry timeout: %r", host, self._last_error
+                "host %s: http request retry timeout: %r",
+                host,
+                self._last_error,
             )
             raise self._last_error from err
         except CONNECT_ERRORS as err:
@@ -350,7 +363,9 @@ class BlockDevice:
                 return await self.http_request(method, path, params, retry=False)
 
             _LOGGER.debug(
-                "host %s: http request retry error: %r", host, self._last_error
+                "host %s: http request retry error: %r",
+                host,
+                self._last_error,
             )
             raise self._last_error from err
 
@@ -363,7 +378,9 @@ class BlockDevice:
         return await self.http_request("get", "settings", {"mode": mode})
 
     async def trigger_ota_update(
-        self, beta: bool = False, url: str | None = None
+        self,
+        beta: bool = False,
+        url: str | None = None,
     ) -> dict[str, Any]:
         """Trigger an ota update."""
         params = {"update": "true"}
@@ -494,7 +511,11 @@ class Block:
         return cls(device, blk_type, blk, sensors)
 
     def __init__(
-        self, device: BlockDevice, blk_type: str, blk: dict, sensors: dict[str, dict]
+        self,
+        device: BlockDevice,
+        blk_type: str,
+        blk: dict,
+        sensors: dict[str, dict],
     ) -> None:
         """Block initialize."""
         self.type = blk_type
@@ -509,7 +530,7 @@ class Block:
 
             if sensor[BLOCK_VALUE_TYPE] != BLOCK_VALUE_TYPE_TEMPERATURE:
                 raise ValueError(
-                    "Found duplicate description for non-temperature sensor"
+                    "Found duplicate description for non-temperature sensor",
                 )
 
             if sensor[BLOCK_VALUE_UNIT] == device.options.temperature_unit:
@@ -549,7 +570,9 @@ class Block:
     async def set_state(self, **kwargs: Any) -> dict[str, Any]:
         """Set state request (HTTP)."""
         return await self.device.http_request(
-            "get", f"{self.type}/{self.channel}", kwargs
+            "get",
+            f"{self.type}/{self.channel}",
+            kwargs,
         )
 
     async def toggle(self) -> dict[str, Any]:

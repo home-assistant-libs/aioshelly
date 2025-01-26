@@ -34,7 +34,10 @@ async def async_stop_scanner(device: RpcDevice) -> None:
 
 
 async def async_start_scanner(
-    device: RpcDevice, active: bool, event_type: str, data_version: int
+    device: RpcDevice,
+    active: bool,
+    event_type: str,
+    data_version: int,
 ) -> None:
     """Start scanner."""
     script_name_to_id = await _async_get_scripts_by_name(device)
@@ -80,7 +83,7 @@ def create_scanner(
         name,
         HaBluetoothConnector(
             # no active connections to shelly yet
-            client=None,  # type: ignore[arg-type]
+            client=None,
             source=source,
             can_connect=lambda: False,
         ),

@@ -235,7 +235,10 @@ class WsRPC(WsBase):
         try:
             self._client = await aiohttp_session.ws_connect(
                 URL.build(
-                    scheme="http", host=self._ip_address, port=self._port, path="/rpc"
+                    scheme="http",
+                    host=self._ip_address,
+                    port=self._port,
+                    path="/rpc",
                 ),
                 heartbeat=WS_HEARTBEAT,
             )
@@ -288,7 +291,7 @@ class WsRPC(WsBase):
                 "id": frame_id,
                 "src": self._session.src,
                 "error": {"code": 500, "message": "Not Implemented"},
-            }
+            },
         )
 
     def handle_frame(self, source: RPCSource, frame: dict[str, Any]) -> None:
@@ -296,7 +299,9 @@ class WsRPC(WsBase):
         if peer_src := frame.get("src"):
             if self._session.dst is not None and peer_src != self._session.dst:
                 _LOGGER.warning(
-                    "Remote src changed: %s -> %s", self._session.dst, peer_src
+                    "Remote src changed: %s -> %s",
+                    self._session.dst,
+                    peer_src,
                 )
             self._session.dst = peer_src
 
@@ -345,7 +350,10 @@ class WsRPC(WsBase):
                     msg = await self._client.receive()
                     frame = _receive_json_or_raise(msg)
                     _LOGGER.debug(
-                        "recv(%s:%s): %s", self._ip_address, self._port, frame
+                        "recv(%s:%s): %s",
+                        self._ip_address,
+                        self._port,
+                        frame,
                     )
                 except InvalidMessage as err:
                     _LOGGER.error(
@@ -406,7 +414,9 @@ class WsRPC(WsBase):
         return (await self.calls([(method, params)], timeout))[0]
 
     def _raise_for_unrecoverable_errors(
-        self, resp: dict[str, Any], allow_auth_retry: bool
+        self,
+        resp: dict[str, Any],
+        allow_auth_retry: bool,
     ) -> None:
         """Raise for unrecoverable errors."""
         try:
@@ -425,7 +435,9 @@ class WsRPC(WsBase):
         raise InvalidAuthError(msg)
 
     async def calls(
-        self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: float = 10.0
+        self,
+        calls: Iterable[tuple[str, dict[str, Any] | None]],
+        timeout: float = 10.0,
     ) -> list[dict[str, Any]]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
@@ -454,12 +466,14 @@ class WsRPC(WsBase):
                     assert self._auth_data is not None
                 auth = json_loads(resp["error"]["message"])
                 self._session.auth = self._auth_data.get_auth(
-                    auth["nonce"], auth.get("nc", 1)
+                    auth["nonce"],
+                    auth.get("nc", 1),
                 )
             to_retry.append(call)
 
         _, results = await self._rpc_calls(
-            [(call.method, call.params) for call in to_retry], timeout
+            [(call.method, call.params) for call in to_retry],
+            timeout,
         )
         for call in results:
             if (result := call.result) is UNDEFINED:
@@ -471,7 +485,9 @@ class WsRPC(WsBase):
         return successful
 
     async def _rpc_calls(
-        self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: float
+        self,
+        rpc_calls: Iterable[tuple[str, dict[str, Any] | None]],
+        timeout: float,
     ) -> tuple[bool, list[RPCCall]]:
         """Websocket RPC call.
 
@@ -587,7 +603,8 @@ class WsServer(WsBase):
 
                 if device_id in self.subscriptions:
                     _LOGGER.debug(
-                        "Calling WsRPC message update for device id %s", device_id
+                        "Calling WsRPC message update for device id %s",
+                        device_id,
                     )
                     self.subscriptions[device_id](frame)
                     continue

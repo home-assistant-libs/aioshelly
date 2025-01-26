@@ -9,5 +9,5 @@ def test_device_timeout_error() -> None:
     """Test DeviceConnectionTimeoutError."""
     with pytest.raises(DeviceConnectionError):
         raise DeviceConnectionTimeoutError(
-            "Ensure this inherits from DeviceConnectionError"
+            "Ensure this inherits from DeviceConnectionError",
         )

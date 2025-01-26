@@ -36,7 +36,10 @@ from .rpc_device import load_device_fixture
     ],
 )
 def test_is_firmware_supported(
-    gen: int, model: str, firmware_version: str, expected: bool
+    gen: int,
+    model: str,
+    firmware_version: str,
+    expected: bool,
 ) -> None:
     """Test is_firmware_supported function."""
     assert is_firmware_supported(gen, model, firmware_version) is expected
@@ -75,7 +78,10 @@ async def test_get_info() -> None:
     with aioresponses() as session_mock:
         session_mock.get(
             URL.build(
-                scheme="http", host=ip_address, port=DEFAULT_HTTP_PORT, path="/shelly"
+                scheme="http",
+                host=ip_address,
+                port=DEFAULT_HTTP_PORT,
+                path="/shelly",
             ),
             payload=mock_response,
         )
@@ -98,7 +104,10 @@ async def test_get_info_mac_mismatch() -> None:
     with aioresponses() as session_mock:
         session_mock.get(
             URL.build(
-                scheme="http", host=ip_address, port=DEFAULT_HTTP_PORT, path="/shelly"
+                scheme="http",
+                host=ip_address,
+                port=DEFAULT_HTTP_PORT,
+                path="/shelly",
             ),
             payload=mock_response,
         )
@@ -130,7 +139,10 @@ async def test_get_info_exc(exc: Exception, expected_exc: Exception) -> None:
     with aioresponses() as session_mock:
         session_mock.get(
             URL.build(
-                scheme="http", host=ip_address, port=DEFAULT_HTTP_PORT, path="/shelly"
+                scheme="http",
+                host=ip_address,
+                port=DEFAULT_HTTP_PORT,
+                path="/shelly",
             ),
             exception=exc,
         )

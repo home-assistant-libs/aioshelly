@@ -82,7 +82,7 @@ class CoapMessage:
             self.payload = json_loads(data.decode())
         except (JSONDecodeError, UnicodeDecodeError) as err:
             raise InvalidMessage(
-                f"Message type {self.code} is not a valid JSON format: {payload!s}"
+                f"Message type {self.code} is not a valid JSON format: {payload!s}",
             ) from err
 
         if self.code == PERIODIC_COAP_TYPE_CODE:
@@ -225,7 +225,9 @@ class COAP(asyncio.DatagramProtocol):
             self.subscriptions[msg.ip](msg)
 
     def subscribe_updates(
-        self, ip_or_device_id: str, message_received: Callable
+        self,
+        ip_or_device_id: str,
+        message_received: Callable,
     ) -> Callable:
         """Subscribe to received updates."""
         _LOGGER.debug("Adding device %s to CoAP message subscriptions", ip_or_device_id)

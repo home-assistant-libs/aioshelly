@@ -45,7 +45,9 @@ async def create_device(
     """Create a device."""
     if gen is None:
         if info := await get_info(
-            aiohttp_session, options.ip_address, port=options.port
+            aiohttp_session,
+            options.ip_address,
+            port=options.port,
         ):
             gen = info.get("gen", 1)
         else:
@@ -109,7 +111,7 @@ def device_updated(
     """Device updated callback."""
     print()
     print(
-        f"{datetime.now(tz=UTC).strftime('%H:%M:%S')} Device updated! ({update_type})"
+        f"{datetime.now(tz=UTC).strftime('%H:%M:%S')} Device updated! ({update_type})",
     )
 
     if update_type in (BlockUpdateType.ONLINE, RpcUpdateType.ONLINE):
@@ -180,7 +182,9 @@ def close_connections(_exit_code: int = 0) -> None:
 
 
 async def update_outbound_ws(
-    options: ConnectionOptions, init: bool, ws_url: str
+    options: ConnectionOptions,
+    init: bool,
+    ws_url: str,
 ) -> None:
     """Update outbound WebSocket URL (Gen2/3)."""
     async with ClientSession() as aiohttp_session:

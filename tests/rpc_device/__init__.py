@@ -16,6 +16,7 @@ async def load_device_fixture(device: str, filename: str) -> dict[str, Any]:
     """Load a device fixture."""
     fixture_path = get_device_fixture_path(device, filename)
     json_bytes = await asyncio.get_running_loop().run_in_executor(
-        None, fixture_path.read_bytes
+        None,
+        fixture_path.read_bytes,
     )
     return loads(json_bytes)

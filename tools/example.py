@@ -81,7 +81,10 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     """Get parsed passed in arguments."""
     parser = argparse.ArgumentParser(description="aioshelly example")
     parser.add_argument(
-        "--ip_address", "-ip", type=str, help="Test single device by IP address"
+        "--ip_address",
+        "-ip",
+        type=str,
+        help="Test single device by IP address",
     )
     parser.add_argument(
         "--device_port",
@@ -121,28 +124,49 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         ),
     )
     parser.add_argument(
-        "--init", "-i", action="store_true", help="Init device(s) at startup"
+        "--init",
+        "-i",
+        action="store_true",
+        help="Init device(s) at startup",
     )
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
 
     parser.add_argument(
-        "--gen1", "-g1", action="store_true", help="Force Gen1 (CoAP) device"
+        "--gen1",
+        "-g1",
+        action="store_true",
+        help="Force Gen1 (CoAP) device",
     )
     parser.add_argument(
-        "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
+        "--gen2",
+        "-g2",
+        action="store_true",
+        help="Force Gen 2 (RPC) device",
     )
     parser.add_argument(
-        "--gen3", "-g3", action="store_true", help="Force Gen 3 (RPC) device"
+        "--gen3",
+        "-g3",
+        action="store_true",
+        help="Force Gen 3 (RPC) device",
     )
     parser.add_argument(
-        "--gen4", "-g4", action="store_true", help="Force Gen 4 (RPC) device"
+        "--gen4",
+        "-g4",
+        action="store_true",
+        help="Force Gen 4 (RPC) device",
     )
     parser.add_argument(
-        "--debug", "-deb", action="store_true", help="Enable debug level for logging"
+        "--debug",
+        "-deb",
+        action="store_true",
+        help="Enable debug level for logging",
     )
     parser.add_argument(
-        "--mac", "-m", type=str, help="Optional device MAC to subscribe for updates"
+        "--mac",
+        "-m",
+        type=str,
+        help="Optional device MAC to subscribe for updates",
     )
     parser.add_argument(
         "--update_ws",
@@ -177,7 +201,7 @@ async def main() -> None:
     gen_list = (args.gen1, args.gen2, args.gen3, args.gen4)
     if len([gen for gen in gen_list if gen]) > 1:
         parser.error(
-            "You can only use one of --gen1, --gen2, --gen3 or --gen4 at a time"
+            "You can only use one of --gen1, --gen2, --gen3 or --gen4 at a time",
         )
 
     gen = None

@@ -9,7 +9,11 @@ from typing import Any
 from bluetooth_data_tools import parse_advertisement_data_tuple
 
 BLEGAPAdvertisementTupleType = tuple[
-    str | None, list[str], dict[str, bytes], dict[int, bytes], int | None
+    str | None,
+    list[str],
+    dict[str, bytes],
+    dict[int, bytes],
+    int | None,
 ]
 
 LOGGER = logging.getLogger(__name__)
@@ -38,9 +42,9 @@ def _parse_v1(adv: list[Any]) -> list[tuple[str, int, BLEGAPAdvertisementTupleTy
                 (
                     a2b_base64(advertisement_data_b64.encode("ascii")),
                     a2b_base64(scan_response_b64.encode("ascii")),
-                )
+                ),
             ),
-        )
+        ),
     ]
 
 
@@ -56,7 +60,7 @@ def _parse_v2(
                 (
                     a2b_base64(advertisement_data_b64.encode("ascii")),
                     a2b_base64(scan_response_b64.encode("ascii")),
-                )
+                ),
             ),
         )
         for address, rssi, advertisement_data_b64, scan_response_b64 in advs

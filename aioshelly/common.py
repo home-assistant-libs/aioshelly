@@ -67,7 +67,9 @@ async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOpt
     except ValueError:
         loop = asyncio.get_running_loop()
         options.ip_address = await loop.run_in_executor(
-            None, gethostbyname, options.ip_address
+            None,
+            gethostbyname,
+            options.ip_address,
         )
 
     return options
