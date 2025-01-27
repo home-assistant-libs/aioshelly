@@ -83,7 +83,7 @@ def create_scanner(
         name,
         HaBluetoothConnector(
             # no active connections to shelly yet
-            client=None,
+            client=None,  # type: ignore[arg-type]
             source=source,
             can_connect=lambda: False,
         ),
