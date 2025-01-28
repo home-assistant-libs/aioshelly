@@ -6,9 +6,9 @@ lint.ignore = [
     "A005",     # Module `json` shadows a Python standard-library module
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
     "ASYNC109", # Async function definition with a `timeout` parameter
-    "COM812",   # Trailing comma missing
-    "D203",     # 1 blank line required before class docstring
-    "D213",     # Multi-line docstring summary should start at the second line
+    "COM812",   # Trailing comma missing (conflicts with formatter)
+    "D203",     # 1 blank line required before class docstring (conflicts with `no-blank-line-before-class` (D211))
+    "D213",     # Multi-line docstring summary should start at the second line (conflicts with multi-line-summary-first-line` (D212))
     "EM101",    # Exception must not use a string literal, assign to variable first
     "EM102",    # Exception must not use an f-string literal, assign to variable first
     "FBT001",   # Boolean-typed positional argument in function definition
