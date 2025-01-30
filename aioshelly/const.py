@@ -120,6 +120,7 @@ MODEL_DIMMER_10V_GEN3 = "S3DM-0010WW"
 MODEL_EM_G3 = "S3EM-002CXCEU"
 MODEL_HT_G3 = "S3SN-0U12A"
 MODEL_I4_GEN3 = "S3SN-0024X"
+MODEL_OUT_PLUG_S_G3 = "S3PL-20112EU"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
@@ -910,6 +911,13 @@ DEVICES = {
     MODEL_I4_GEN3: ShellyDevice(
         model="S3SN-0024X",
         name="Shelly I4 Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_OUT_PLUG_S_G3: ShellyDevice(
+        model=MODEL_OUT_PLUG_S_G3,
+        name="Shelly Outdoor Plug S Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
