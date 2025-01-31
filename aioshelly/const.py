@@ -139,6 +139,7 @@ GEN2 = 2
 GEN3 = 3
 GEN4 = 4
 
+
 # Firmware 1.9.0 release date
 GEN1_MIN_FIRMWARE_DATE = 20201124
 
