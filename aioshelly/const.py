@@ -125,7 +125,6 @@ MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
 MODEL_X_BASE = "S3XT-0S"
-MODEL_X_THERMOSTAT_ST1820 = f"{MODEL_X_BASE}-ST1820"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
 MODEL_1_MINI_G4 = "S4SW-001X8EU"
@@ -992,13 +991,6 @@ DEVICES = {
         name="Shelly Flood Gen4",
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
-        supported=True,
-    ),
-    MODEL_X_THERMOSTAT_ST1820: ShellyDevice(
-        model=MODEL_X_THERMOSTAT_ST1820,
-        name="Shelly Thermostat ST1820",
-        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
-        gen=GEN3,
         supported=True,
     ),
 }
