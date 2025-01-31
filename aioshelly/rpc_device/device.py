@@ -26,8 +26,8 @@ from ..const import (
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     MODEL_BLU_GATEWAY_GEN3,
+    MODEL_X_BASE,
     NOTIFY_WS_CLOSED,
-    SHELLY_X_MODELS,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
@@ -339,7 +339,7 @@ class RpcDevice:
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
-        if self._model in SHELLY_X_MODELS:
+        if self.model == MODEL_X_BASE:
             return []
         data = await self.call_rpc("Script.List")
         scripts: list[ShellyScript] = data["scripts"]
@@ -499,16 +499,17 @@ class RpcDevice:
         return cast(str, self.shelly["ver"])
 
     @property
-    def _model(self) -> str:
+    def model(self) -> str:
         """Device model."""
         return cast(str, self.shelly["model"])
 
     @property
-    def model(self) -> str:
-        """Device model."""
-        if self._model in SHELLY_X_MODELS:
-            return f"{self._model}-{self.shelly['jwt']['p']}"
-        return self._model
+    def product(self) -> str | None:
+        """Device product."""
+        jwt = self.shelly.get("jwt")
+        if jwt:
+            return cast(str, jwt["p"])
+        return None
 
     @property
     def hostname(self) -> str:
