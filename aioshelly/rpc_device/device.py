@@ -554,7 +554,10 @@ class RpcDevice:
             assert self._status is not None
 
         self._config.update(
-            {item["key"]: item["config"] for item in self._dynamic_components}
+            {
+                item["key"]: {**item["config"], **item["attrs"]}
+                for item in self._dynamic_components
+            }
         )
         self._status.update(
             {
