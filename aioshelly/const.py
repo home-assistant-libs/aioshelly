@@ -124,6 +124,7 @@ MODEL_OUT_PLUG_S_G3 = "S3PL-20112EU"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_X_MOD1 = "S3MX-0A"
+MODEL_X_MOD_S3XT_0S = "S3XT-0S"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
 MODEL_1_MINI_G4 = "S4SW-001X8EU"
@@ -1007,6 +1008,10 @@ GEN1_MODELS_SUPPORTING_LIGHT_TRANSITION = {
 BLU_TRV_IDENTIFIER = "blutrv"
 BLU_TRV_MODEL_ID = {8: "SBTR-001AEU"}
 BLU_TRV_MODEL_NAME = {"SBTR-001AEU": "Shelly BLU TRV"}
+
+# Models that doesn't support BlueTooth Proxy
+# either because they not support BlueTooth or because they don't support scripts
+MODELS_NOT_SUPPORTING_BT_PROXY = [MODEL_WALL_DISPLAY, MODEL_X_MOD_S3XT_0S]
 
 
 class UndefinedType(Enum):
