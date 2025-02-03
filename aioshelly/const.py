@@ -1009,8 +1009,8 @@ BLU_TRV_IDENTIFIER = "blutrv"
 BLU_TRV_MODEL_ID = {8: "SBTR-001AEU"}
 BLU_TRV_MODEL_NAME = {"SBTR-001AEU": "Shelly BLU TRV"}
 
-# Models that doesn't support BlueTooth Proxy
-# either because they not support BlueTooth or because they don't support scripts
+# Models that doesn't support Bluetooth Proxy
+# either because they not support Bluetooth or because they don't support scripts
 MODELS_NOT_SUPPORTING_BT_PROXY = [MODEL_WALL_DISPLAY, MODEL_X_MOD_S3XT_0S]
 
 
