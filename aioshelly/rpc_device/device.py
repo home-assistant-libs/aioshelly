@@ -26,7 +26,6 @@ from ..const import (
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     MODEL_BLU_GATEWAY_GEN3,
-    MODEL_X_BASE,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
@@ -339,8 +338,6 @@ class RpcDevice:
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
-        if self.model == MODEL_X_BASE:
-            return []
         data = await self.call_rpc("Script.List")
         scripts: list[ShellyScript] = data["scripts"]
         return scripts
