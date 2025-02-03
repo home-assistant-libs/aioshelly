@@ -501,6 +501,11 @@ class RpcDevice:
         return cast(str, self.shelly["model"])
 
     @property
+    def xmodinfo(self) -> dict:
+        """Device XMOD properties."""
+        return cast(dict, self.shelly.get("jwt", {}))
+
+    @property
     def hostname(self) -> str:
         """Device hostname."""
         return cast(str, self.shelly["id"])
