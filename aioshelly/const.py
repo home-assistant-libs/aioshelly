@@ -103,26 +103,26 @@ MODEL_PRO_DUAL_COVER = "SPSH-002PE16EU"
 MODEL_PRO_EM = "SPEM-002CEBEU50"
 MODEL_PRO_EM3 = "SPEM-003CEBEU"
 MODEL_PRO_EM3_120 = "SPEM-003CEBEU120"
-MODEL_PRO_EM3_400 = "SPEM-003CEBEU400"
 MODEL_PRO_EM3_3CT63 = "SPEM-003CEBEU63"
+MODEL_PRO_EM3_400 = "SPEM-003CEBEU400"
 MODEL_PRO_RGBWW_PM = "SPDC-0D5PE16EU"
 MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
 # Gen3 RPC based models
-MODEL_1_GEN3 = "S3SW-001X16EU"
+MODEL_1_G3 = "S3SW-001X16EU"
 MODEL_1_MINI_G3 = "S3SW-001X8EU"
-MODEL_1PM_GEN3 = "S3SW-001P16EU"
+MODEL_1PM_G3 = "S3SW-001P16EU"
 MODEL_1PM_MINI_G3 = "S3SW-001P8EU"
 MODEL_2PM_G3 = "S3SW-002P16EU"
-MODEL_3EM_63_GEN3 = "S3EM-003CXCEU63"
-MODEL_BLU_GATEWAY_GEN3 = "S3GW-1DBT001"
-MODEL_DALI_DIMMER_GEN3 = "S3DM-0A1WW"
-MODEL_DIMMER_10V_GEN3 = "S3DM-0010WW"
+MODEL_3EM_63_G3 = "S3EM-003CXCEU63"
+MODEL_BLU_GATEWAY_G3 = "S3GW-1DBT001"
+MODEL_DALI_DIMMER_G3 = "S3DM-0A1WW"
+MODEL_DIMMER_10V_G3 = "S3DM-0010WW"
 MODEL_EM_G3 = "S3EM-002CXCEU"
 MODEL_HT_G3 = "S3SN-0U12A"
-MODEL_I4_GEN3 = "S3SN-0024X"
+MODEL_I4_G3 = "S3SN-0024X"
 MODEL_OUT_PLUG_S_G3 = "S3PL-20112EU"
-MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
+MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_X_MOD1 = "S3MX-0A"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
@@ -130,8 +130,8 @@ MODEL_1_MINI_G4 = "S4SW-001X8EU"
 MODEL_1PM_G4 = "S4SW-001P16EU"
 MODEL_1PM_MINI_G4 = "S4SW-001P8EU"
 MODEL_2PM_G4 = "S4SW-002P16EU"
+MODEL_FLOOD_G4 = "S4SN-0071A"
 MODEL_I4_G4 = "S4SN-0A24X"
-MODEL_FLOOD_GEN4 = "S4SN-0071A"
 
 GEN1 = 1
 GEN2 = 2
@@ -482,8 +482,8 @@ DEVICES = {
         gen=GEN2,
         supported=True,
     ),
-    MODEL_BLU_GATEWAY_GEN3: ShellyDevice(
-        model=MODEL_BLU_GATEWAY_GEN3,
+    MODEL_BLU_GATEWAY_G3: ShellyDevice(
+        model=MODEL_BLU_GATEWAY_G3,
         name="Shelly BLU Gateway Gen3",
         min_fw_date=GEN3_GATEWAY_MIN_FIRMWARE_DATE,
         gen=GEN3,
@@ -839,8 +839,8 @@ DEVICES = {
         gen=GEN2,
         supported=True,
     ),
-    MODEL_1_GEN3: ShellyDevice(
-        model=MODEL_1_GEN3,
+    MODEL_1_G3: ShellyDevice(
+        model=MODEL_1_G3,
         name="Shelly 1 Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
@@ -853,8 +853,8 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
-    MODEL_1PM_GEN3: ShellyDevice(
-        model=MODEL_1PM_GEN3,
+    MODEL_1PM_G3: ShellyDevice(
+        model=MODEL_1PM_G3,
         name="Shelly 1PM Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
@@ -874,22 +874,22 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
-    MODEL_3EM_63_GEN3: ShellyDevice(
-        model=MODEL_3EM_63_GEN3,
+    MODEL_3EM_63_G3: ShellyDevice(
+        model=MODEL_3EM_63_G3,
         name="Shelly 3EM-63 Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
     ),
-    MODEL_DALI_DIMMER_GEN3: ShellyDevice(
-        model=MODEL_DALI_DIMMER_GEN3,
+    MODEL_DALI_DIMMER_G3: ShellyDevice(
+        model=MODEL_DALI_DIMMER_G3,
         name="Shelly DALI Dimmer Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
     ),
-    MODEL_DIMMER_10V_GEN3: ShellyDevice(
-        model=MODEL_DIMMER_10V_GEN3,
+    MODEL_DIMMER_10V_G3: ShellyDevice(
+        model=MODEL_DIMMER_10V_G3,
         name="Shelly Dimmer 0/1-10V PM Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
@@ -909,8 +909,8 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
-    MODEL_I4_GEN3: ShellyDevice(
-        model=MODEL_I4_GEN3,
+    MODEL_I4_G3: ShellyDevice(
+        model=MODEL_I4_G3,
         name="Shelly I4 Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
@@ -986,8 +986,8 @@ DEVICES = {
         gen=GEN4,
         supported=True,
     ),
-    MODEL_FLOOD_GEN4: ShellyDevice(
-        model=MODEL_FLOOD_GEN4,
+    MODEL_FLOOD_G4: ShellyDevice(
+        model=MODEL_FLOOD_G4,
         name="Shelly Flood Gen4",
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
