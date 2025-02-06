@@ -284,7 +284,9 @@ class RpcDevice:
         results = await self.call_rpc_multiple(calls, DEVICE_POLL_TIMEOUT)
         if (status := results[0]) is None:
             raise RpcCallError("empty response to Shelly.GetStatus")
-        self._status = status
+        if self._status is None:
+            raise NotInitialized
+        self._status.update(status)
         if has_dynamic:
             if (dynamic := results[1]) is None:
                 raise RpcCallError("empty response to Shelly.GetComponents")
