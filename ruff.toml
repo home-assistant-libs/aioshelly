@@ -37,6 +37,7 @@ lint.ignore = [
     "D103",
     "D104",
     "S101",
+    "SLF001",
 ]
 
 [lint.mccabe]
