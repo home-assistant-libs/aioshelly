@@ -562,7 +562,7 @@ class RpcDevice:
 
         self._config.update(
             {
-                item["key"]: {**item["config"], **item["attrs"]}
+                item["key"]: {**item["config"], **item.get("attrs", {})}
                 for item in self._dynamic_components
             }
         )
