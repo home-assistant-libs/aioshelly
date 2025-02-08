@@ -137,5 +137,5 @@ async def ws_rpc(
 @pytest_asyncio.fixture
 async def ws_rpc_with_auth(ws_rpc: WsRPCMocker) -> AsyncGenerator[WsRPCMocker, None]:
     """Fixture for an RPC WebSocket with authentication."""
-    ws_rpc._auth_data = AuthData("any", "any", "any")  # noqa: SLF001
+    ws_rpc._auth_data = AuthData("any", "any", "any")
     yield ws_rpc
