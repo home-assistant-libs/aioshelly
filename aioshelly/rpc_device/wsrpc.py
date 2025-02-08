@@ -312,7 +312,12 @@ class WsRPC(WsBase):
             else:
                 # this is a notification
                 _LOGGER.debug("Notification: %s %s", method, params)
-                self._on_notification(source, method, params)
+                try:
+                    self._on_notification(source, method, params)
+                except Exception as err:
+                    _LOGGER.exception(
+                        "Error handling notification frame: %s", frame, exc_info=err
+                    )
 
             return
 
