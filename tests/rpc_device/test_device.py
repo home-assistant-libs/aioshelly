@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+from aioshelly.exceptions import NotInitialized
 from aioshelly.rpc_device.device import RpcDevice, mergedicts
 
 from . import load_device_fixture
@@ -78,7 +79,7 @@ async def test_parse_dynamic_components_with_attrs() -> None:
 
 @pytest.mark.asyncio
 async def test_retrieve_blutrv_components() -> None:
-    """Test _retrieve_blutrv_components() method."""
+    """Test _retrieve_blutrv_components method."""
     device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
 
     device._config = await load_device_fixture(
@@ -114,3 +115,24 @@ async def test_retrieve_blutrv_components() -> None:
     assert device.status["blutrv:200"]["pos"] == 0
     assert device.status["blutrv:200"]["rssi"] == -58
     assert device.status["blutrv:200"]["errors"] == []
+
+
+@pytest.mark.asyncio
+async def test_retrieve_blutrv_components_wrong_device() -> None:
+    """Test _retrieve_blutrv_components method with wrong device."""
+    device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
+
+    device._shelly = {"model": "Some Shelly device"}
+
+    await device._retrieve_blutrv_components({"lorem": "ipsum"})
+
+
+@pytest.mark.asyncio
+async def test_retrieve_blutrv_components_not_initialized() -> None:
+    """Test _retrieve_blutrv_components method with not initialized device."""
+    device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
+
+    device._shelly = {"model": "S3GW-1DBT001"}
+
+    with pytest.raises(NotInitialized):
+        await device._retrieve_blutrv_components({"lorem": "ipsum"})
