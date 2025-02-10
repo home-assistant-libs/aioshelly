@@ -100,6 +100,10 @@ async def test_retrieve_blutrv_components() -> None:
 
     await device._retrieve_blutrv_components(components)
 
+    assert device.call_rpc.assert_called_once
+    assert device.call_rpc.call_args[0][0] == "BluTrv.GetRemoteConfig"
+    assert device.call_rpc.call_args[0][1] == {"id": 200}
+
     assert device.config["blutrv:200"]["local_name"] == "SBTR-001AEU"
     assert device.config["blutrv:200"]["name"] == "Shelly BLU TRV [DDEEFF]"
     assert device.config["blutrv:200"]["addr"] == "aa:bb:cc:dd:ee:ff"
