@@ -1,4 +1,4 @@
 mypy==1.14.1
 orjson>=3.8.1
 pydocstyle==6.3.0
-ruff==0.9.4
+ruff==0.9.5
