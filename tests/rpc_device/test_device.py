@@ -33,8 +33,8 @@ async def test_parse_dynamic_components() -> None:
     """Test RPC device _parse_dynamic_components() method."""
     device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
 
-    device._status = {}
-    device._config = {}
+    device._status = {"ble": {}}
+    device._config = {"ble": {"enable": True}}
 
     device._parse_dynamic_components(
         {
@@ -57,8 +57,8 @@ async def test_parse_dynamic_components_with_attrs() -> None:
     """Test RPC device _parse_dynamic_components() method with attrs."""
     device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
 
-    device._status = {}
-    device._config = {}
+    device._status = {"ble": {}}
+    device._config = {"ble": {"enable": True}}
 
     device._parse_dynamic_components(
         {
@@ -75,6 +75,15 @@ async def test_parse_dynamic_components_with_attrs() -> None:
 
     assert device._status["number:200"] == VIRT_COMP_STATUS
     assert device._config["number:200"] == {**VIRT_COMP_CONFIG, **VIRT_COMP_ATTRS}
+
+
+@pytest.mark.asyncio
+async def test_parse_dynamic_components_not_initialized() -> None:
+    """Test RPC device _parse_dynamic_components method with not initialized device."""
+    device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
+
+    with pytest.raises(NotInitialized):
+        device._parse_dynamic_components({"lorem": "ipsum"})
 
 
 @pytest.mark.asyncio
