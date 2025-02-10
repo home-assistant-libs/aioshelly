@@ -587,7 +587,7 @@ class RpcDevice:
             if _key[0] != BLU_TRV_IDENTIFIER:
                 continue
 
-            result = await self.call_rpc("BluTrv.GetRemoteConfig", {"id": _key[1]})
+            result = await self.call_rpc("BluTrv.GetRemoteConfig", {"id": int(_key[1])})
 
             cfg: dict[str, Any] = result["config"]["trv:0"]
             # addr, name and model_id must be added from Shelly.GetComponents call
