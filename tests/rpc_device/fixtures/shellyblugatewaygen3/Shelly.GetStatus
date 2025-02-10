@@ -1,0 +1,58 @@
+{
+    "ble": {},
+    "blugw": {},
+    "blutrv:200": {
+        "battery": 100,
+        "current_C": 21,
+        "errors": [],
+        "id": 200,
+        "last_updated_ts": 1739225228,
+        "packet_id": 109,
+        "paired": true,
+        "pos": 0,
+        "rpc": true,
+        "rssi": -74,
+        "rsv": 14,
+        "target_C": 19
+    },
+    "bthome": {},
+    "cloud": {
+        "connected": false
+    },
+    "mqtt": {
+        "connected": false
+    },
+    "sys": {
+        "available_updates": {
+            "stable": {
+                "version": "1.4.99-blugwg3prod4"
+            }
+        },
+        "btrelay_rev": 0,
+        "cfg_rev": 32,
+        "fs_free": 598016,
+        "fs_size": 1048576,
+        "kvs_rev": 0,
+        "last_sync_ts": 1739224031,
+        "mac": "AABBCCDDEEFF",
+        "ram_free": 81164,
+        "ram_min_free": 54072,
+        "ram_size": 256492,
+        "reset_reason": 3,
+        "restart_required": false,
+        "schedule_rev": 0,
+        "time": "23:07",
+        "unixtime": 1739225237,
+        "uptime": 203997,
+        "webhook_rev": 1
+    },
+    "wifi": {
+        "rssi": -51,
+        "ssid": "Wifi-Network-Name",
+        "sta_ip": "192.168.2.210",
+        "status": "got ip"
+    },
+    "ws": {
+        "connected": false
+    }
+}

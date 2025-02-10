@@ -1,0 +1,88 @@
+{
+    "ble": {
+        "enable": true,
+        "rpc": {
+            "enable": true
+        }
+    },
+    "blugw": {
+        "sys_led_enable": true
+    },
+    "blutrv:200": {
+        "addr": "f8:44:77:1c:86:7e",
+        "default_boost_duration": 900,
+        "default_override_duration": 2147483647,
+        "default_override_target_C": 8,
+        "enable": true,
+        "flags": [
+            "floor_heating",
+            "auto_calibrate",
+            "anticlog"
+        ],
+        "id": 0,
+        "local_name": "SBTR-001AEU",
+        "min_valve_position": 0,
+        "name": "Shelly BLU TRV [7744F8]",
+        "override_enable": true
+    },
+    "bthome": {},
+    "cloud": {
+        "enable": false,
+        "server": "shelly-api-eu.shelly.cloud:6022/jrpc"
+    },
+    "mqtt": {
+        "client_id": "shelly-blu-gateway-gen3-78742c",
+        "enable": false,
+        "enable_control": true,
+        "enable_rpc": true,
+        "rpc_ntf": true,
+        "server": "mqtt.test.server",
+        "ssl_ca": null,
+        "status_ntf": true,
+        "topic_prefix": "shellies-gen3/shelly-blu-gateway-gen3-78742c",
+        "use_client_cert": false,
+        "user": "mqtt_client"
+    },
+    "sys": {
+        "cfg_rev": 32,
+        "debug": {
+            "file_level": null,
+            "level": 2,
+            "mqtt": {
+                "enable": false
+            },
+            "udp": {
+                "addr": null
+            },
+            "websocket": {
+                "enable": false
+            }
+        },
+        "device": {
+            "discoverable": true,
+            "eco_mode": false,
+            "fw_id": "20250203-144328/1.5.0-beta2-gbf89ed5",
+            "mac": "AABBCCDDEEFF",
+            "name": "Test Name"
+        },
+        "location": {
+            "lat": 52.2201,
+            "lon": 21.0121,
+            "tz": "Europe/Warsaw"
+        },
+        "rpc_udp": {
+            "dst_addr": null,
+            "listen_port": null
+        },
+        "sntp": {
+            "server": "sntp.test.server"
+        },
+        "ui_data": {}
+    },
+    "wifi": "Wifi-Network-Name",
+    "ws": {
+        "enable": false,
+        "server": null,
+        "ssl_ca": "ca.pem"
+    }
+}
