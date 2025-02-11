@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
+from aioshelly.ble import async_ble_supported
 from aioshelly.block_device import BLOCK_VALUE_UNIT, COAP, BlockDevice, BlockUpdateType
 from aioshelly.common import ConnectionOptions, get_info
 from aioshelly.const import (
@@ -187,6 +188,15 @@ async def update_outbound_ws(
         device: RpcDevice = await create_device(aiohttp_session, options, init, 2)
         print(f"Updating outbound weboskcet URL to {ws_url}")
         print(f"Restart required: {await device.update_outbound_websocket(ws_url)}")
+
+
+async def check_if_ble_supported(options: ConnectionOptions, gen: int | None) -> None:
+    """Check if BLE is supported."""
+    async with ClientSession() as aiohttp_session:
+        device: RpcDevice = await create_device(aiohttp_session, options, gen)
+        await device.initialize()
+        print(f"BLE supported: {await async_ble_supported(device)}")
+        await device.shutdown()
 
 
 async def wait_for_keyboard_interrupt() -> None:

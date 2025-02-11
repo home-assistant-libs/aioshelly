@@ -12,6 +12,9 @@ from .backend.scanner import ShellyBLEScanner
 from .const import (
     BLE_CODE,
     BLE_SCRIPT_NAME,
+    RPC_CALL_ERR_INVALID_ARG,
+    RPC_CALL_ERR_METHOD_NOT_FOUND,
+    RPC_CALL_ERR_NO_HANDLER,
     VAR_ACTIVE,
     VAR_EVENT_TYPE,
     VAR_VERSION,
@@ -80,7 +83,7 @@ def create_scanner(
         name,
         HaBluetoothConnector(
             # no active connections to shelly yet
-            client=None,  # type: ignore[arg-type]
+            client=None,
             source=source,
             can_connect=lambda: False,
         ),
@@ -104,4 +107,38 @@ async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
         return False
     LOGGER.info("BLE enabled, restarting device %s:%s", device.ip_address, device.port)
     await device.trigger_reboot(3500)
+    return True
+
+
+async def async_ble_supported(device: RpcDevice) -> bool:
+    """Check if BLE is supported.
+
+    Try to read a script to check if the device supports scripts,
+    if it supports scripts, it should return the script
+    or a specific error code if the script does not exist.
+    {"code":-105,"message":"Argument 'id', value -1 not found!"}
+
+    Errors by devices that do not support scripts:
+
+    Shelly Wall display:
+    {"code":-114,"message":"Method Script.GetCode failed: Method not found!"}
+
+    Shelly X MOD1
+    {"code":404,"message":"No handler for Script.GetCode"}
+    """
+    try:
+        await device.script_getcode(1)
+    except RpcCallError as err:
+        # The device supports scripts, but the script does not exist
+        if err.code == RPC_CALL_ERR_INVALID_ARG:
+            return True
+        # The device does not support scripts
+        if err.code in [
+            RPC_CALL_ERR_METHOD_NOT_FOUND,
+            RPC_CALL_ERR_NO_HANDLER,
+        ]:
+            return False
+        raise
+
+    # The device returned a script, it supports scripts
     return True
