@@ -162,3 +162,14 @@ async def test_get_dynamic_components(rpc_device: RpcDevice) -> None:
     assert rpc_device.last_error is None
     assert rpc_device.xmod_info == {}
     assert rpc_device.requires_auth is True
+
+
+@pytest.mark.asyncio
+async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> None:
+    """Test get_dynamic_components method when dynamic components are not supported."""
+    rpc_device.initialized = True
+    rpc_device._shelly = {"fw_id": "20231209-144328/1.0.0-gbf89ed5"}
+
+    await rpc_device.get_dynamic_components()
+
+    assert rpc_device._dynamic_components == []
