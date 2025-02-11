@@ -8,6 +8,10 @@ BLE_SCRIPT_NAME = "aioshelly_ble_integration"
 
 BLE_SCAN_RESULT_VERSION = 2
 
+RPC_CALL_ERR_METHOD_NOT_FOUND = -114
+RPC_CALL_ERR_INVALID_ARG = -105
+RPC_CALL_ERR_NO_HANDLER = 404
+
 VAR_EVENT_TYPE = "%event_type%"
 VAR_ACTIVE = "%active%"
 VAR_VERSION = "%version%"
