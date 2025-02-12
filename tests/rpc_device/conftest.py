@@ -159,7 +159,6 @@ async def rpc_device(
 
     rpc_device = await RpcDevice.create(client_session, ws_context, "10.10.10.10")
     rpc_device._wsrpc = ws_rpc
-    rpc_device.call_rpc = AsyncMock()
     rpc_device.call_rpc_multiple = AsyncMock()
 
     yield rpc_device

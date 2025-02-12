@@ -134,13 +134,15 @@ async def test_get_dynamic_components(rpc_device: RpcDevice) -> None:
     remote_config = await load_device_fixture(
         "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
     )
-    rpc_device.call_rpc.side_effect = [components, remote_config]
+    rpc_device.call_rpc_multiple.side_effect = [[components], [remote_config]]
 
     await rpc_device.get_dynamic_components()
 
-    assert rpc_device.call_rpc.call_count == 2
-    assert rpc_device.call_rpc.call_args[0][0] == "BluTrv.GetRemoteConfig"
-    assert rpc_device.call_rpc.call_args[0][1] == {"id": 200}
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    assert (
+        rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "BluTrv.GetRemoteConfig"
+    )
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 200}
 
     assert rpc_device.config["blutrv:200"]["local_name"] == "SBTR-001AEU"
     assert rpc_device.config["blutrv:200"]["name"] == "Shelly BLU TRV [DDEEFF]"
@@ -180,8 +182,11 @@ async def test_device_initialize(rpc_device: RpcDevice) -> None:
         "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
     )
 
-    rpc_device.call_rpc.side_effect = [device_info, remote_config]
-    rpc_device.call_rpc_multiple.return_value = [config, status, components]
+    rpc_device.call_rpc_multiple.side_effect = [
+        [device_info],
+        [config, status, components],
+        [remote_config],
+    ]
 
     await rpc_device.initialize()
 
