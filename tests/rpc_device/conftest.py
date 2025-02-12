@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest_asyncio
 from aiohttp.client import ClientSession
@@ -11,7 +11,7 @@ from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMessage, WSMsgType
 from orjson import dumps
 
-from aioshelly.rpc_device.device import RpcDevice
+from aioshelly.rpc_device.device import RpcDevice, WsServer
 from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, AuthData, RPCSource, WsRPC
 
 
@@ -143,9 +143,19 @@ async def ws_rpc_with_auth(ws_rpc: WsRPCMocker) -> AsyncGenerator[WsRPCMocker, N
 
 
 @pytest_asyncio.fixture
-async def rpc_device() -> AsyncGenerator[RpcDevice, None]:
+async def ws_context() -> AsyncGenerator[WsServer, None]:
+    """Fixture for a WsServer."""
+    mock = MagicMock(spec=WsServer)
+
+    yield mock
+
+
+@pytest_asyncio.fixture
+async def rpc_device(
+    client_session: ClientSession, ws_context: WsServer
+) -> AsyncGenerator[RpcDevice, None]:
     """Fixture for RpcDevice."""
-    rpc_device = await RpcDevice.create(Mock(), Mock(), "10.10.10.10")
+    rpc_device = await RpcDevice.create(client_session, ws_context, "10.10.10.10")
     rpc_device.call_rpc = AsyncMock()
 
     yield rpc_device
