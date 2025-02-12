@@ -1,6 +1,10 @@
 """Tests for rpc_device.device module."""
 
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import pytest
+import pytest_asyncio
 
 from aioshelly.exceptions import NotInitialized
 from aioshelly.rpc_device.device import RpcDevice, mergedicts
@@ -16,6 +20,36 @@ VIRT_COMP_CONFIG = {
     "meta": {"ui": {"view": "slider", "unit": "%", "step": 1}},
 }
 VIRT_COMP_ATTRS = {"role": "current_humidity"}
+
+
+@pytest_asyncio.fixture
+async def blu_gateway_device_info() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for BLU Gateway Gen3 device info."""
+    yield await load_device_fixture("shellyblugatewaygen3", "Shelly.GetDeviceInfo")
+
+
+@pytest_asyncio.fixture
+async def blu_gateway_config() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for BLU Gateway Gen3 config."""
+    yield await load_device_fixture("shellyblugatewaygen3", "Shelly.GetConfig")
+
+
+@pytest_asyncio.fixture
+async def blu_gateway_status() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for BLU Gateway Gen3 status."""
+    yield await load_device_fixture("shellyblugatewaygen3", "Shelly.GetStatus")
+
+
+@pytest_asyncio.fixture
+async def blu_gateway_components() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for BLU Gateway Gen3 components."""
+    yield await load_device_fixture("shellyblugatewaygen3", "Shelly.GetComponents")
+
+
+@pytest_asyncio.fixture
+async def blu_gateway_remote_config() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for BLU Gateway Gen3 remote config."""
+    yield await load_device_fixture("shellyblugatewaygen3", "BluTrv.GetRemoteConfig")
 
 
 def test_mergedicts() -> None:
@@ -116,25 +150,23 @@ async def test_supports_dynamic_components(
 
 
 @pytest.mark.asyncio
-async def test_get_dynamic_components(rpc_device: RpcDevice) -> None:
+async def test_get_dynamic_components(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
     """Test get_dynamic_components method."""
     rpc_device.initialized = True
-    rpc_device._shelly = await load_device_fixture(
-        "shellyblugatewaygen3", "Shelly.GetDeviceInfo"
-    )
-    rpc_device._config = await load_device_fixture(
-        "shellyblugatewaygen3", "Shelly.GetConfig"
-    )
-    rpc_device._status = await load_device_fixture(
-        "shellyblugatewaygen3", "Shelly.GetStatus"
-    )
-    components = await load_device_fixture(
-        "shellyblugatewaygen3", "Shelly.GetComponents"
-    )
-    remote_config = await load_device_fixture(
-        "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
-    )
-    rpc_device.call_rpc_multiple.side_effect = [[components], [remote_config]]
+    rpc_device._shelly = blu_gateway_device_info
+    rpc_device._config = blu_gateway_config
+    rpc_device._status = blu_gateway_status
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
 
     await rpc_device.get_dynamic_components()
 
@@ -168,24 +200,19 @@ async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> No
 
 
 @pytest.mark.asyncio
-async def test_device_initialize(rpc_device: RpcDevice) -> None:
-    """Test get_dynamic_components method when dynamic components are not supported."""
-    device_info = await load_device_fixture(
-        "shellyblugatewaygen3", "Shelly.GetDeviceInfo"
-    )
-    config = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetConfig")
-    status = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetStatus")
-    components = await load_device_fixture(
-        "shellyblugatewaygen3", "Shelly.GetComponents"
-    )
-    remote_config = await load_device_fixture(
-        "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
-    )
-
+async def test_device_initialize(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize method."""
     rpc_device.call_rpc_multiple.side_effect = [
-        [device_info],
-        [config, status, components],
-        [remote_config],
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
     ]
 
     await rpc_device.initialize()
