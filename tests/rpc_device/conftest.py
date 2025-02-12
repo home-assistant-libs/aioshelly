@@ -11,6 +11,7 @@ from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMessage, WSMsgType
 from orjson import dumps
 
+from aioshelly.common import ConnectionOptions
 from aioshelly.rpc_device.device import RpcDevice, WsServer
 from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, AuthData, RPCSource, WsRPC
 
@@ -157,7 +158,13 @@ async def rpc_device(
     """Fixture for RpcDevice."""
     await ws_rpc.disconnect()
 
-    rpc_device = await RpcDevice.create(client_session, ws_context, "10.10.10.10")
+    options = ConnectionOptions(
+        "10.10.10.10",
+        "username",
+        "password",
+    )
+
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
     rpc_device._wsrpc = ws_rpc
     rpc_device.call_rpc_multiple = AsyncMock()
 
