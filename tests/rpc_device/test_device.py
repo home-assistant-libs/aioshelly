@@ -120,7 +120,7 @@ async def test_get_dynamic_components(rpc_device: RpcDevice) -> None:
     """Test get_dynamic_components method."""
     rpc_device.initialized = True
     rpc_device._shelly = await load_device_fixture(
-        "shellyblugatewaygen3", "shelly.json"
+        "shellyblugatewaygen3", "Shelly.GetDeviceInfo"
     )
     rpc_device._config = await load_device_fixture(
         "shellyblugatewaygen3", "Shelly.GetConfig"
@@ -153,16 +153,6 @@ async def test_get_dynamic_components(rpc_device: RpcDevice) -> None:
     assert rpc_device.status["blutrv:200"]["rssi"] == -58
     assert rpc_device.status["blutrv:200"]["errors"] == []
 
-    # test device properties
-    assert rpc_device.firmware_supported is True
-    assert rpc_device.name == "Test Name"
-    assert rpc_device.hostname == "shellyblugwg3-aabbccddeeff"
-    assert rpc_device.version == "1.5.0-beta2"
-    assert rpc_device.gen == 3
-    assert rpc_device.last_error is None
-    assert rpc_device.xmod_info == {}
-    assert rpc_device.requires_auth is True
-
 
 @pytest.mark.asyncio
 async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> None:
@@ -173,3 +163,34 @@ async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> No
     await rpc_device.get_dynamic_components()
 
     assert rpc_device._dynamic_components == []
+
+
+@pytest.mark.asyncio
+async def test_device_initialize(rpc_device: RpcDevice) -> None:
+    """Test get_dynamic_components method when dynamic components are not supported."""
+    device_info = await load_device_fixture(
+        "shellyblugatewaygen3", "Shelly.GetDeviceInfo"
+    )
+    config = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetConfig")
+    status = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetStatus")
+    components = await load_device_fixture(
+        "shellyblugatewaygen3", "Shelly.GetComponents"
+    )
+    remote_config = await load_device_fixture(
+        "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
+    )
+
+    rpc_device.call_rpc.side_effect = [device_info, remote_config]
+    rpc_device.call_rpc_multiple.return_value = [config, status, components]
+
+    await rpc_device.initialize()
+
+    assert rpc_device.connected is True
+    assert rpc_device.firmware_supported is True
+    assert rpc_device.name == "Test Name"
+    assert rpc_device.hostname == "shellyblugwg3-aabbccddeeff"
+    assert rpc_device.version == "1.5.0-beta2"
+    assert rpc_device.gen == 3
+    assert rpc_device.last_error is None
+    assert rpc_device.xmod_info == {}
+    assert rpc_device.requires_auth is True

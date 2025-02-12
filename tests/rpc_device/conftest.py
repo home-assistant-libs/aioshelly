@@ -152,10 +152,14 @@ async def ws_context() -> AsyncGenerator[WsServer, None]:
 
 @pytest_asyncio.fixture
 async def rpc_device(
-    client_session: ClientSession, ws_context: WsServer
+    client_session: ClientSession, ws_context: WsServer, ws_rpc: WsRPCMocker
 ) -> AsyncGenerator[RpcDevice, None]:
     """Fixture for RpcDevice."""
+    await ws_rpc.disconnect()
+
     rpc_device = await RpcDevice.create(client_session, ws_context, "10.10.10.10")
+    rpc_device._wsrpc = ws_rpc
     rpc_device.call_rpc = AsyncMock()
+    rpc_device.call_rpc_multiple = AsyncMock()
 
     yield rpc_device
