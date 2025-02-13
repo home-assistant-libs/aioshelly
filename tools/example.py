@@ -13,6 +13,7 @@ from pathlib import Path
 
 from aiohttp import ClientSession
 from common import (
+    check_if_ble_supported,
     close_connections,
     coap_context,
     connect_and_print_device,
@@ -158,6 +159,12 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         default=None,
         help="Listen ip address for incoming CoAP packets",
     )
+    parser.add_argument(
+        "--ble-supported",
+        "-bs",
+        action="store_true",
+        help="Check if BLE is supported by the device",
+    )
 
     arguments = parser.parse_args()
 
@@ -212,6 +219,8 @@ async def main() -> None:
         )
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)
+        elif args.ble_supported:
+            await check_if_ble_supported(options, gen)
         else:
             await test_single(options, args.init, gen)
     else:
