@@ -1027,6 +1027,8 @@ UNDEFINED = UndefinedType._singleton  # noqa: SLF001
 
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
+MODELS_NOT_SUPPORTING_BT_PROXY = [MODEL_WALL_DISPLAY]
+
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10.0
 
