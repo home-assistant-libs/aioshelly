@@ -20,6 +20,7 @@ VIRT_COMP_CONFIG = {
     "meta": {"ui": {"view": "slider", "unit": "%", "step": 1}},
 }
 VIRT_COMP_ATTRS = {"role": "current_humidity"}
+WEBSOCKET_URL = "ws://10.10.10.10:8123/api/shelly/ws"
 
 
 @pytest_asyncio.fixture
@@ -226,3 +227,66 @@ async def test_device_initialize(
     assert rpc_device.last_error is None
     assert rpc_device.xmod_info == {}
     assert rpc_device.requires_auth is True
+
+
+@pytest.mark.asyncio
+async def test_device_not_initialized(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice not initialized."""
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "gen")
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "shelly")
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "config")
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "status")
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "event")
+
+
+@pytest.mark.asyncio
+async def test_update_outbound_websocket(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice update_outbound_websocket method."""
+    result = await rpc_device.update_outbound_websocket(WEBSOCKET_URL)
+
+    assert result is True
+    assert rpc_device.call_rpc_multiple.call_count == 3
+    assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
+    assert rpc_device.call_rpc_multiple.call_args_list[1][0][0][0][0] == "Ws.SetConfig"
+    assert rpc_device.call_rpc_multiple.call_args_list[2][0][0][0][0] == "Shelly.Reboot"
+
+
+@pytest.mark.asyncio
+async def test_update_outbound_websocket_not_needed(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice update_outbound_websocket method."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [{"enable": True, "server": WEBSOCKET_URL}]
+    ]
+
+    result = await rpc_device.update_outbound_websocket(WEBSOCKET_URL)
+
+    assert result is False
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
+
+
+@pytest.mark.asyncio
+async def test_update_outbound_websocket_restart_not_needed(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice update_outbound_websocket method."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [{"enable": False}],
+        [{"restart_required": False}],
+    ]
+
+    result = await rpc_device.update_outbound_websocket(WEBSOCKET_URL)
+
+    assert result is False
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
+    assert rpc_device.call_rpc_multiple.call_args_list[1][0][0][0][0] == "Ws.SetConfig"
