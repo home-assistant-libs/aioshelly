@@ -271,7 +271,7 @@ async def test_update_outbound_websocket_not_needed(rpc_device: RpcDevice) -> No
 
     assert result is False
     assert rpc_device.call_rpc_multiple.call_count == 1
-    assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Ws.GetConfig"
 
 
 @pytest.mark.asyncio
@@ -290,3 +290,103 @@ async def test_update_outbound_websocket_restart_not_needed(
     assert rpc_device.call_rpc_multiple.call_count == 2
     assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
     assert rpc_device.call_rpc_multiple.call_args_list[1][0][0][0][0] == "Ws.SetConfig"
+
+
+@pytest.mark.asyncio
+async def test_ble_getconfig(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice ble_getconfig method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {"enable": True, "rpc": {"enable": True}}
+    ]
+
+    result = await rpc_device.ble_getconfig()
+
+    assert result == {"enable": True, "rpc": {"enable": True}}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "BLE.GetConfig"
+
+
+@pytest.mark.asyncio
+async def test_ble_setconfig(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice ble_setconfig method."""
+    await rpc_device.ble_setconfig(True, True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "BLE.SetConfig"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "config": {"enable": True, "rpc": {"enable": True}}
+    }
+
+
+@pytest.mark.asyncio
+async def test_script_stop(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_stop method."""
+    await rpc_device.script_stop(12)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.Stop"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 12}
+
+
+@pytest.mark.asyncio
+async def test_script_start(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_start method."""
+    await rpc_device.script_start(11)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.Start"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 11}
+
+
+@pytest.mark.asyncio
+async def test_script_create(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_create method."""
+    await rpc_device.script_create("test_script")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.Create"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"name": "test_script"}
+
+
+@pytest.mark.asyncio
+async def test_script_putcode(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_putcode method."""
+    await rpc_device.script_putcode(9, "lorem ipsum")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.PutCode"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 9,
+        "code": "lorem ipsum",
+    }
+
+
+@pytest.mark.asyncio
+async def test_script_getcode(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_getcode method."""
+    rpc_device.call_rpc_multiple.return_value = [{"data": "super duper script"}]
+
+    result = await rpc_device.script_getcode(8)
+
+    assert result == {"data": "super duper script"}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 8}
+
+
+@pytest.mark.asyncio
+async def test_script_list(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_list method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {
+            "scripts": [
+                {"id": 1, "name": "my_script", "enable": False, "running": True},
+            ]
+        }
+    ]
+
+    result = await rpc_device.script_list()
+
+    assert result == [{"id": 1, "name": "my_script", "enable": False, "running": True}]
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.List"
