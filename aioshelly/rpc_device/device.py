@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable, Iterable
 from enum import Enum, auto
 from functools import partial
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from aiohttp import ClientSession
 
@@ -556,9 +556,8 @@ class RpcDevice:
             if any(supported in component["key"] for supported in VIRTUAL_COMPONENTS)
         ]
 
-        if TYPE_CHECKING:
-            assert self._config is not None
-            assert self._status is not None
+        if not self._config or not self._status:
+            raise NotInitialized
 
         self._config.update(
             {
@@ -587,7 +586,7 @@ class RpcDevice:
             if _key[0] != BLU_TRV_IDENTIFIER:
                 continue
 
-            result = await self.call_rpc("BluTrv.GetRemoteConfig", {"id": _key[1]})
+            result = await self.call_rpc("BluTrv.GetRemoteConfig", {"id": int(_key[1])})
 
             cfg: dict[str, Any] = result["config"]["trv:0"]
             # addr, name and model_id must be added from Shelly.GetComponents call
