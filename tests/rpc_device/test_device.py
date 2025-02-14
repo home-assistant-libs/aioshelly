@@ -390,3 +390,26 @@ async def test_script_list(rpc_device: RpcDevice) -> None:
     assert result == [{"id": 1, "name": "my_script", "enable": False, "running": True}]
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.List"
+
+
+@pytest.mark.asyncio
+async def test_get_all_pages(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice get_all_pages method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {"total": 2, "components": [{"key": "component2"}]}
+    ]
+
+    result = await rpc_device.get_all_pages(
+        {"total": 2, "components": [{"key": "component1"}]}
+    )
+
+    assert result == {
+        "total": 2,
+        "components": [{"key": "component1"}, {"key": "component2"}],
+    }
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.GetComponents"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "dynamic_only": True,
+        "offset": 1,
+    }
