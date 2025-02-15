@@ -10,7 +10,7 @@ from aiohttp.client import ClientSession
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import NOTIFY_WS_CLOSED
-from aioshelly.exceptions import MacAddressMismatchError, NotInitialized
+from aioshelly.exceptions import MacAddressMismatchError, NotInitialized, RpcCallError
 from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
 from aioshelly.rpc_device.wsrpc import RPCSource, WsServer
 
@@ -260,9 +260,10 @@ async def test_update_outbound_websocket(rpc_device: RpcDevice) -> None:
 
     assert result is True
     assert rpc_device.call_rpc_multiple.call_count == 3
-    assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
-    assert rpc_device.call_rpc_multiple.call_args_list[1][0][0][0][0] == "Ws.SetConfig"
-    assert rpc_device.call_rpc_multiple.call_args_list[2][0][0][0][0] == "Shelly.Reboot"
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Ws.GetConfig"
+    assert call_args_list[1][0][0][0][0] == "Ws.SetConfig"
+    assert call_args_list[2][0][0][0][0] == "Shelly.Reboot"
 
 
 @pytest.mark.asyncio
@@ -293,8 +294,9 @@ async def test_update_outbound_websocket_restart_not_needed(
 
     assert result is False
     assert rpc_device.call_rpc_multiple.call_count == 2
-    assert rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0] == "Ws.GetConfig"
-    assert rpc_device.call_rpc_multiple.call_args_list[1][0][0][0][0] == "Ws.SetConfig"
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Ws.GetConfig"
+    assert call_args_list[1][0][0][0][0] == "Ws.SetConfig"
 
 
 @pytest.mark.asyncio
@@ -499,3 +501,93 @@ async def test_device_mac_address_mismatch(
 
     with pytest.raises(MacAddressMismatchError):
         await rpc_device.initialize()
+
+
+@pytest.mark.asyncio
+async def test_device_poll(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice poll method."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+    rpc_device._shelly = blu_gateway_device_info
+    rpc_device._status = {"lorem": "ipsum"}
+    rpc_device._config = {"lorem": "ipsum"}
+    rpc_device._dynamic_components = [{"key": "component1"}]
+
+    await rpc_device.poll()
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Shelly.GetStatus"
+    assert call_args_list[0][0][0][1][0] == "Shelly.GetComponents"
+    assert call_args_list[1][0][0][0][0] == "BluTrv.GetRemoteConfig"
+
+
+@pytest.mark.asyncio
+async def test_device_poll_not_initialized(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice poll method when NotInitialized."""
+    with pytest.raises(NotInitialized):
+        await rpc_device.poll()
+
+
+@pytest.mark.asyncio
+async def test_device_poll_call_error(
+    rpc_device: RpcDevice,
+    blu_gateway_status: dict[str, Any],
+) -> None:
+    """Test RpcDevice poll method when RpcCallError."""
+    rpc_device.call_rpc_multiple.return_value = [None]
+
+    with pytest.raises(RpcCallError):
+        await rpc_device.poll()
+
+    rpc_device.call_rpc_multiple.return_value = [blu_gateway_status, None]
+    rpc_device._dynamic_components = [{"key": "component1"}]
+    rpc_device._status = {"lorem": "ipsum"}
+
+    with pytest.raises(RpcCallError):
+        await rpc_device.poll()
+
+
+@pytest.mark.asyncio
+async def test_update_config(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice update_config method."""
+    await rpc_device.update_config()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.GetConfig"
+
+
+@pytest.mark.asyncio
+async def test_update_status(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice update_status method."""
+    await rpc_device.update_status()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.GetStatus"
+
+
+@pytest.mark.asyncio
+async def test_trigger_ota_update(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice trigger_ota_update method."""
+    await rpc_device.trigger_ota_update(beta=True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.Update"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"stage": "beta"}
+
+
+def test_subscribe_updates(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice subscribe_updates method."""
+    rpc_device.subscribe_updates(Mock())
+
+    assert rpc_device.update_status is not None
