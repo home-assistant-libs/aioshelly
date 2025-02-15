@@ -37,7 +37,6 @@ from ..exceptions import (
     NotInitialized,
     RpcCallError,
     ShellyError,
-    WrongShellyGen,
 )
 from .models import (
     ShellyBLEConfig,
@@ -418,9 +417,6 @@ class RpcDevice:
     @property
     def requires_auth(self) -> bool:
         """Device check for authentication."""
-        if "auth_en" not in self.shelly:
-            raise WrongShellyGen
-
         return bool(self.shelly["auth_en"])
 
     async def call_rpc(
