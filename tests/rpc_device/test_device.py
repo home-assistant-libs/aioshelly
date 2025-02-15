@@ -607,7 +607,7 @@ async def test_device_mac_address_mismatch(
 
 
 @pytest.mark.asyncio
-async def test_device_poll(
+async def test_poll(
     rpc_device: RpcDevice,
     blu_gateway_device_info: dict[str, Any],
     blu_gateway_status: dict[str, Any],
@@ -634,7 +634,7 @@ async def test_device_poll(
 
 
 @pytest.mark.asyncio
-async def test_device_poll_not_initialized(
+async def test_poll_not_initialized(
     rpc_device: RpcDevice,
 ) -> None:
     """Test RpcDevice poll method when NotInitialized."""
@@ -643,7 +643,7 @@ async def test_device_poll_not_initialized(
 
 
 @pytest.mark.asyncio
-async def test_device_poll_call_error(
+async def test_poll_call_error(
     rpc_device: RpcDevice,
     blu_gateway_status: dict[str, Any],
 ) -> None:
