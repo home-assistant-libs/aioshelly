@@ -309,13 +309,13 @@ async def test_device_already_initialized(
 
 
 @pytest.mark.parametrize(
-    ("exc", "result"),
+    ("exc", "result_exc", "result_str"),
     [
-        (InvalidAuthError, InvalidAuthError),
-        (RpcCallError(404), DeviceConnectionError),
-        (ClientError, DeviceConnectionError),
-        (DeviceConnectionError, DeviceConnectionError),
-        (OSError, DeviceConnectionError),
+        (InvalidAuthError, InvalidAuthError, ""),
+        (RpcCallError(404, "test error"), DeviceConnectionError, "test error"),
+        (ClientError, DeviceConnectionError, ""),
+        (DeviceConnectionError, DeviceConnectionError, ""),
+        (OSError, DeviceConnectionError, ""),
     ],
 )
 @pytest.mark.asyncio
@@ -324,7 +324,8 @@ async def test_device_exception_on_init(
     ws_context: WsServer,
     blu_gateway_device_info: dict[str, Any],
     exc: Exception,
-    result: Exception,
+    result_exc: Exception,
+    result_str: str,
 ) -> None:
     """Test RpcDevice initialize with an exception."""
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
@@ -333,7 +334,7 @@ async def test_device_exception_on_init(
     rpc_device._wsrpc = AsyncMock(spec=WsRPC)
     rpc_device._wsrpc.calls.side_effect = [[blu_gateway_device_info], exc]
 
-    with pytest.raises(result):
+    with pytest.raises(result_exc, match=result_str):
         await rpc_device.initialize()
 
 
