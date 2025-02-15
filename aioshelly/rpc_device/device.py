@@ -283,13 +283,13 @@ class RpcDevice:
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
         results = await self.call_rpc_multiple(calls, DEVICE_POLL_TIMEOUT)
         if (status := results[0]) is None:
-            raise RpcCallError("empty response to Shelly.GetStatus")
+            raise RpcCallError(0, "empty response to Shelly.GetStatus")
         if self._status is None:
             raise NotInitialized
         self._status.update(status)
         if has_dynamic:
             if (dynamic := results[1]) is None:
-                raise RpcCallError("empty response to Shelly.GetComponents")
+                raise RpcCallError(0, "empty response to Shelly.GetComponents")
             self._parse_dynamic_components(dynamic)
             await self._retrieve_blutrv_components(dynamic)
 
