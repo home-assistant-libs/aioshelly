@@ -1,0 +1,110 @@
+{
+    "components": [
+        {
+            "key": "blutrv:200",
+            "status": {
+                "id": 200,
+                "target_C": 19,
+                "current_C": 21,
+                "pos": 0,
+                "rssi": -58,
+                "battery": 100,
+                "packet_id": 29,
+                "last_updated_ts": 1739224517,
+                "paired": true,
+                "rpc": true,
+                "rsv": 14
+            },
+            "config": {
+                "id": 200,
+                "addr": "aa:bb:cc:dd:ee:ff",
+                "name": "Shelly BLU TRV [DDEEFF]",
+                "key": null,
+                "trv": "bthomedevice:200",
+                "temp_sensors": [],
+                "dw_sensors": [],
+                "override_delay": 30,
+                "meta": {}
+            },
+            "attrs": {
+                "flags": 17,
+                "model_id": 8
+            }
+        },
+        {
+            "key": "bthomedevice:200",
+            "status": {
+                "id": 200,
+                "rssi": -58,
+                "battery": 100,
+                "packet_id": 29,
+                "last_updated_ts": 1739224517,
+                "paired": true,
+                "rpc": true,
+                "rsv": 14
+            },
+            "config": {
+                "id": 200,
+                "addr": "aa:bb:cc:dd:ee:ff",
+                "name": "Shelly BLU TRV [DDEEFF]",
+                "key": null,
+                "meta": null
+            },
+            "attrs": {
+                "flags": 17,
+                "model_id": 8
+            }
+        },
+        {
+            "key": "bthomesensor:200",
+            "status": {
+                "id": 200,
+                "value": 100,
+                "last_updated_ts": 1739224517
+            },
+            "config": {
+                "id": 200,
+                "addr": "aa:bb:cc:dd:ee:ff",
+                "name": null,
+                "obj_id": 1,
+                "idx": 0,
+                "meta": null
+            }
+        },
+        {
+            "key": "bthomesensor:202",
+            "status": {
+                "id": 202,
+                "value": 19,
+                "last_updated_ts": 1739224517
+            },
+            "config": {
+                "id": 202,
+                "addr": "aa:bb:cc:dd:ee:ff",
+                "name": null,
+                "obj_id": 69,
+                "idx": 0,
+                "meta": null
+            }
+        },
+        {
+            "key": "bthomesensor:203",
+            "status": {
+                "id": 203,
+                "value": 0,
+                "last_updated_ts": 1739224517
+            },
+            "config": {
+                "id": 203,
+                "addr": "aa:bb:cc:dd:ee:ff",
+                "name": null,
+                "obj_id": 69,
+                "idx": 1,
+                "meta": null
+            }
+        }
+    ],
+    "cfg_rev": 32,
+    "offset": 0,
+    "total": 5
+}

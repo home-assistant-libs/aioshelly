@@ -11,6 +11,8 @@ from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMessage, WSMsgType
 from orjson import dumps
 
+from aioshelly.common import ConnectionOptions
+from aioshelly.rpc_device.device import RpcDevice, WsServer
 from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, AuthData, RPCSource, WsRPC
 
 
@@ -139,3 +141,31 @@ async def ws_rpc_with_auth(ws_rpc: WsRPCMocker) -> AsyncGenerator[WsRPCMocker, N
     """Fixture for an RPC WebSocket with authentication."""
     ws_rpc._auth_data = AuthData("any", "any", "any")
     yield ws_rpc
+
+
+@pytest_asyncio.fixture
+async def ws_context() -> AsyncGenerator[WsServer, None]:
+    """Fixture for a WsServer."""
+    mock = MagicMock(spec=WsServer)
+
+    yield mock
+
+
+@pytest_asyncio.fixture
+async def rpc_device(
+    client_session: ClientSession, ws_context: WsServer, ws_rpc: WsRPCMocker
+) -> AsyncGenerator[RpcDevice, None]:
+    """Fixture for RpcDevice."""
+    await ws_rpc.disconnect()
+
+    options = ConnectionOptions(
+        "10.10.10.10",
+        "username",
+        "password",
+    )
+
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device._wsrpc = ws_rpc
+    rpc_device.call_rpc_multiple = AsyncMock()
+
+    yield rpc_device

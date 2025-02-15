@@ -1,0 +1,44 @@
+{
+    "v": 14,
+    "ts": 1739221213,
+    "config": {
+        "sys": {
+            "device": {
+                "name": ""
+            },
+            "location": {
+                "lat": 11.1111,
+                "lon": 22.2222
+            },
+            "ui": {
+                "lock": false,
+                "t_units": "C",
+                "flip": false,
+                "brightness": 7
+            },
+            "ble": {
+                "interval_ms": 333,
+                "beacon_count": 5
+            },
+            "cfg_rev": 34
+        },
+        "temperature:0": {
+            "id": 0,
+            "offset_C": 0
+        },
+        "trv:0": {
+            "id": 0,
+            "enable": true,
+            "override_enable": true,
+            "min_valve_position": 0,
+            "default_boost_duration": 900,
+            "default_override_duration": 2147483647,
+            "default_override_target_C": 8,
+            "flags": [
+                "floor_heating",
+                "auto_calibrate",
+                "anticlog"
+            ]
+        }
+    }
+}

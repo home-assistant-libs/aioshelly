@@ -1,0 +1,13 @@
+{
+    "name": "Shelly BLU Gateway Gen3 [DDEEFF]",
+    "id": "shellyblugwg3-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "slot": 0,
+    "model": "S3GW-1DBT001",
+    "gen": 3,
+    "fw_id": "20250203-144328/1.5.0-beta2-gbf89ed5",
+    "ver": "1.5.0-beta2",
+    "app": "BluGwG3",
+    "auth_en": true,
+    "auth_domain": "shellyblugwg3-aabbccddeeff"
+}
