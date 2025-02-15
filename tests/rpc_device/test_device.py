@@ -6,13 +6,21 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from aiohttp import ClientError
 from aiohttp.client import ClientSession
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import NOTIFY_WS_CLOSED
-from aioshelly.exceptions import MacAddressMismatchError, NotInitialized, RpcCallError
+from aioshelly.exceptions import (
+    DeviceConnectionError,
+    InvalidAuthError,
+    MacAddressMismatchError,
+    NotInitialized,
+    RpcCallError,
+    WrongShellyGen,
+)
 from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
-from aioshelly.rpc_device.wsrpc import RPCSource, WsServer
+from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
 
@@ -206,7 +214,19 @@ async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> No
 
 
 @pytest.mark.asyncio
-async def test_device_initialize(
+async def test_wrong_shelly_gen_exception(
+    rpc_device: RpcDevice, blu_gateway_device_info: dict[str, Any]
+) -> None:
+    """Test WrongShellyGen exception."""
+    blu_gateway_device_info.pop("auth_en")
+    rpc_device._shelly = blu_gateway_device_info
+
+    with pytest.raises(WrongShellyGen):
+        hasattr(rpc_device, "requires_auth")
+
+
+@pytest.mark.asyncio
+async def test_device_initialize_and_shutdown(
     rpc_device: RpcDevice,
     blu_gateway_device_info: dict[str, Any],
     blu_gateway_config: dict[str, Any],
@@ -214,15 +234,18 @@ async def test_device_initialize(
     blu_gateway_remote_config: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
-    """Test RpcDevice initialize method."""
+    """Test RpcDevice initialize and shutdown methods."""
     rpc_device.call_rpc_multiple.side_effect = [
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
     ]
+    rpc_device.subscribe_updates(Mock())
 
     await rpc_device.initialize()
 
+    assert rpc_device._update_listener is not None
+    assert rpc_device._unsub_ws is not None
     assert rpc_device.connected is True
     assert rpc_device.firmware_supported is True
     assert rpc_device.name == "Test Name"
@@ -232,6 +255,86 @@ async def test_device_initialize(
     assert rpc_device.last_error is None
     assert rpc_device.xmod_info == {}
     assert rpc_device.requires_auth is True
+
+    await rpc_device.shutdown()
+
+    assert rpc_device._update_listener is None
+    assert rpc_device._unsub_ws is None
+
+
+@pytest.mark.asyncio
+async def test_device_initialize_lock(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice initialize."""
+    rpc_device._initialize_lock = Mock(locked=Mock(return_value=True))
+
+    with pytest.raises(RuntimeError):
+        await rpc_device.initialize()
+
+
+@pytest.mark.asyncio
+async def test_device_already_initialized(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
+
+    await rpc_device.initialize()
+
+    assert rpc_device.initialized is True
+    assert rpc_device.status is not None
+
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+
+    # call initialize() once again
+    await rpc_device.initialize()
+
+    assert rpc_device.initialized is True
+    assert rpc_device.status is not None
+
+
+@pytest.mark.parametrize(
+    ("exc", "result"),
+    [
+        (InvalidAuthError, InvalidAuthError),
+        (RpcCallError(404), DeviceConnectionError),
+        (ClientError, DeviceConnectionError),
+        (DeviceConnectionError, DeviceConnectionError),
+        (OSError, DeviceConnectionError),
+    ],
+)
+@pytest.mark.asyncio
+async def test_device_exception_on_init(
+    client_session: ClientSession,
+    ws_context: WsServer,
+    blu_gateway_device_info: dict[str, Any],
+    exc: Exception,
+    result: Exception,
+) -> None:
+    """Test RpcDevice initialize with an exception."""
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
+    rpc_device._wsrpc.calls.side_effect = [[blu_gateway_device_info], exc]
+
+    with pytest.raises(result):
+        await rpc_device.initialize()
 
 
 @pytest.mark.asyncio
@@ -584,10 +687,3 @@ async def test_trigger_ota_update(rpc_device: RpcDevice) -> None:
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.Update"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"stage": "beta"}
-
-
-def test_subscribe_updates(rpc_device: RpcDevice) -> None:
-    """Test RpcDevice subscribe_updates method."""
-    rpc_device.subscribe_updates(Mock())
-
-    assert rpc_device.update_status is not None
