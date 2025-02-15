@@ -116,7 +116,7 @@ async def async_ble_supported(device: RpcDevice) -> bool:
     Try to read a script to check if the device supports scripts,
     if it supports scripts, it should return the script
     or a specific error code if the script does not exist.
-    {"code":-105,"message":"Argument 'id', value -1 not found!"}
+    {"code":-105,"message":"Argument 'id', value 1 not found!"}
 
     Errors by devices that do not support scripts:
 
