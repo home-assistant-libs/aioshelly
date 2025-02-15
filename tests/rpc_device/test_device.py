@@ -2,12 +2,17 @@
 
 from collections.abc import AsyncGenerator
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from aiohttp.client import ClientSession
 
-from aioshelly.exceptions import NotInitialized
-from aioshelly.rpc_device.device import RpcDevice, mergedicts
+from aioshelly.common import ConnectionOptions
+from aioshelly.const import NOTIFY_WS_CLOSED
+from aioshelly.exceptions import MacAddressMismatchError, NotInitialized
+from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
+from aioshelly.rpc_device.wsrpc import RPCSource, WsServer
 
 from . import load_device_fixture
 
@@ -413,3 +418,84 @@ async def test_get_all_pages(rpc_device: RpcDevice) -> None:
         "dynamic_only": True,
         "offset": 1,
     }
+
+
+@pytest.mark.asyncio
+async def test_on_notification_ws_closed(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification method when WS is closed."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+
+    rpc_device._on_notification(RPCSource.CLIENT, NOTIFY_WS_CLOSED)
+
+    assert rpc_device._update_listener.call_count == 1
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.DISCONNECTED
+
+
+@pytest.mark.asyncio
+async def test_on_notification_notify_full_status(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification method with NotifyFullStatus."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+
+    rpc_device._on_notification(RPCSource.CLIENT, "NotifyFullStatus", {"test": True})
+
+    assert rpc_device._update_listener.call_count == 1
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.STATUS
+    assert rpc_device.status == {"test": True}
+
+
+@pytest.mark.asyncio
+async def test_on_notification_notify_status(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification method with NotifyStatus."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+    rpc_device._status = {"sys": {}}
+
+    rpc_device._on_notification(RPCSource.CLIENT, "NotifyStatus", {"test": True})
+
+    assert rpc_device._update_listener.call_count == 1
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.STATUS
+    assert rpc_device.status == {"sys": {}, "test": True}
+
+
+@pytest.mark.asyncio
+async def test_on_notification_notify_event(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification method with NotifyEvent."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+
+    rpc_device._on_notification(RPCSource.CLIENT, "NotifyEvent", {"test": True})
+
+    assert rpc_device._update_listener.call_count == 1
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.EVENT
+    assert rpc_device.event == {"test": True}
+
+
+@pytest.mark.asyncio
+async def test_on_notification_battery_device_online(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification method with RpcUpdateType.ONLINE."""
+    rpc_device._update_listener = Mock()
+
+    rpc_device._on_notification(RPCSource.SERVER, "NotifyStatus", {"test": True})
+
+    assert rpc_device._update_listener.call_count == 1
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.ONLINE
+
+
+@pytest.mark.asyncio
+async def test_device_mac_address_mismatch(
+    client_session: ClientSession,
+    ws_context: WsServer,
+    blu_gateway_device_info: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize method."""
+    options = ConnectionOptions("10.10.10.10", device_mac="112233445566")
+
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device.call_rpc_multiple = AsyncMock()
+
+    rpc_device.call_rpc_multiple.return_value = [blu_gateway_device_info]
+
+    with pytest.raises(MacAddressMismatchError):
+        await rpc_device.initialize()
