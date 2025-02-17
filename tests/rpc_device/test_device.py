@@ -8,6 +8,7 @@ import pytest
 import pytest_asyncio
 from aiohttp import ClientError
 from aiohttp.client import ClientSession
+from aiohttp.client_exceptions import ServerDisconnectedError
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.const import NOTIFY_WS_CLOSED
@@ -17,7 +18,6 @@ from aioshelly.exceptions import (
     MacAddressMismatchError,
     NotInitialized,
     RpcCallError,
-    WrongShellyGen,
 )
 from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
@@ -214,15 +214,16 @@ async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> No
 
 
 @pytest.mark.asyncio
-async def test_wrong_shelly_gen_exception(
-    rpc_device: RpcDevice, blu_gateway_device_info: dict[str, Any]
-) -> None:
-    """Test WrongShellyGen exception."""
-    blu_gateway_device_info.pop("auth_en")
-    rpc_device._shelly = blu_gateway_device_info
+async def test_shelly_gen1(client_session: ClientSession, ws_context: WsServer) -> None:
+    """Test Shelly Gen1 device."""
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
-    with pytest.raises(WrongShellyGen):
-        hasattr(rpc_device, "requires_auth")
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
+    rpc_device._wsrpc.connect.side_effect = ServerDisconnectedError
+
+    with pytest.raises(DeviceConnectionError):
+        await rpc_device.initialize()
 
 
 @pytest.mark.asyncio
