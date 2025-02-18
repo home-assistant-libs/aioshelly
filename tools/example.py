@@ -13,6 +13,7 @@ from pathlib import Path
 
 from aiohttp import ClientSession
 from common import (
+    check_rpc_device_supports_scripts,
     close_connections,
     coap_context,
     connect_and_print_device,
@@ -158,6 +159,12 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         default=None,
         help="Listen ip address for incoming CoAP packets",
     )
+    parser.add_argument(
+        "--supports_scripts",
+        "-ss",
+        action="store_true",
+        help="Check if device supports scripts",
+    )
 
     arguments = parser.parse_args()
 
@@ -212,6 +219,8 @@ async def main() -> None:
         )
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)
+        elif args.supports_scripts:
+            await check_rpc_device_supports_scripts(options, gen)
         else:
             await test_single(options, args.init, gen)
     else:
