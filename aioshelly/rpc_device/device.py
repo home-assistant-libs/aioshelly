@@ -50,6 +50,10 @@ from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
 
+RPC_CALL_ERR_METHOD_NOT_FOUND = -114
+RPC_CALL_ERR_INVALID_ARG = -105
+RPC_CALL_ERR_NO_HANDLER = 404
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -596,3 +600,36 @@ class RpcDevice:
             # if there are no errors, the response does not contain an errors object
             status.setdefault("errors", [])
             self._status.update({component["key"]: status})
+
+    async def supports_scripts(self) -> bool:
+        """Check if the device supports scripts.
+
+        Try to read a script to check if the device supports scripts,
+        if it supports scripts, it should return the script
+        or a specific error code if the script does not exist.
+        {"code":-105,"message":"Argument 'id', value 1 not found!"}
+
+        Errors by devices that do not support scripts:
+
+        Shelly Wall display:
+        {"code":-114,"message":"Method Script.GetCode failed: Method not found!"}
+
+        Shelly X MOD1
+        {"code":404,"message":"No handler for Script.GetCode"}
+        """
+        try:
+            await self.script_getcode(1)
+        except RpcCallError as err:
+            # The device supports scripts, but the script does not exist
+            if err.code == RPC_CALL_ERR_INVALID_ARG:
+                return True
+            # The device does not support scripts
+            if err.code in [
+                RPC_CALL_ERR_METHOD_NOT_FOUND,
+                RPC_CALL_ERR_NO_HANDLER,
+            ]:
+                return False
+            raise
+
+        # The device returned a script, it supports scripts
+        return True
