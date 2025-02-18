@@ -194,3 +194,14 @@ async def wait_for_keyboard_interrupt() -> None:
     sig_event = asyncio.Event()
     signal.signal(signal.SIGINT, lambda _exit_code, _frame: sig_event.set())
     await sig_event.wait()
+
+
+async def check_rpc_device_supports_scripts(
+    options: ConnectionOptions, gen: int | None
+) -> None:
+    """Check if RPC device supports scripts."""
+    async with ClientSession() as aiohttp_session:
+        device: RpcDevice = await create_device(aiohttp_session, options, gen)
+        await device.initialize()
+        print(f"Supports scripts: {await device.supports_scripts()}")
+        await device.shutdown()
