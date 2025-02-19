@@ -591,6 +591,27 @@ async def test_on_notification_battery_device_online(rpc_device: RpcDevice) -> N
 
 
 @pytest.mark.asyncio
+async def test_on_notification_no_listener(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification without listener."""
+    # no listener
+    rpc_device._update_listener = Mock()
+    rpc_device._update_listener.__bool__ = lambda _: False
+
+    rpc_device._on_notification(RPCSource.SERVER, "NotifyStatus", {"test": True})
+
+    rpc_device._update_listener.assert_not_called()
+
+    # add listener and verify it is called
+    update_listener = Mock()
+    rpc_device.subscribe_updates(update_listener)
+
+    rpc_device._on_notification(RPCSource.SERVER, "NotifyStatus", {"test": True})
+
+    assert update_listener.call_count == 1
+    assert update_listener.call_args[0][1] is RpcUpdateType.ONLINE
+
+
+@pytest.mark.asyncio
 async def test_device_mac_address_mismatch(
     client_session: ClientSession,
     ws_context: WsServer,
@@ -689,3 +710,28 @@ async def test_trigger_ota_update(rpc_device: RpcDevice) -> None:
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.Update"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"stage": "beta"}
+
+
+@pytest.mark.asyncio
+async def test_incorrect_shutdown(
+    client_session: ClientSession,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test multiple shutdown calls at incorrect order.
+
+    https://github.com/home-assistant-libs/aioshelly/pull/535
+    """
+    ws_context = WsServer()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    rpc_device1 = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device2 = await RpcDevice.create(client_session, ws_context, options)
+
+    # shutdown for device2 remove subscription for device1 from ws_context
+    await rpc_device2.shutdown()
+
+    assert "error during shutdown: KeyError('AABBCCDDEEFF')" not in caplog.text
+
+    await rpc_device1.shutdown()
+
+    assert "error during shutdown: KeyError('AABBCCDDEEFF')" in caplog.text
