@@ -47,7 +47,7 @@ function timerCallback() {
 
 function bleCallback(event, res) {
   if (event !== BLE.Scanner.SCAN_RESULT) {
-    return
+    return;
   }
 
   if (queue.length > maxQueue) {
