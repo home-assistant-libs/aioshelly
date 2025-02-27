@@ -60,7 +60,9 @@ def mergedicts(dest: dict, source: dict) -> None:
     """
     for k, v in source.items():
         if k in dest and type(v) is dict:  # - only accepts `dict` type
-            mergedicts(dest[k], v)
+            if (target := dest[k]) is None:
+                target = dest[k] = {}
+            mergedicts(target, v)
         else:
             dest[k] = v
 
