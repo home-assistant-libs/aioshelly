@@ -74,6 +74,55 @@ def test_mergedicts() -> None:
     assert dest == {"a": 1, "b": {"c": 4, "d": 3, "e": 5}}
 
 
+def test_mergedicts_to_none() -> None:
+    """Test merge a dict to a None."""
+    # transition is None in dest
+    dest = {
+        "ts": 1740607224.75,
+        "light:0": {
+            "id": 0,
+            "brightness": 0,
+            "output": False,
+            "source": "transition",
+            "transition": None,
+        },
+        "sensor:0": {"id": 0, "temperature": 0},
+    }
+    # transition is dict in source
+    source = {
+        "ts": 1740607225.26,
+        "light:0": {
+            "id": 0,
+            "brightness": 0,
+            "output": False,
+            "source": "HTTP_in",
+            "transition": {
+                "duration": 0.5,
+                "started_at": 1740607225.26,
+                "target": {"brightness": 0, "output": False},
+            },
+        },
+    }
+
+    mergedicts(dest, source)
+
+    assert dest == {
+        "ts": 1740607225.26,
+        "light:0": {
+            "id": 0,
+            "brightness": 0,
+            "output": False,
+            "source": "HTTP_in",
+            "transition": {
+                "duration": 0.5,
+                "started_at": 1740607225.26,
+                "target": {"brightness": 0, "output": False},
+            },
+        },
+        "sensor:0": {"id": 0, "temperature": 0},
+    }
+
+
 @pytest.mark.asyncio
 async def test_parse_dynamic_components(rpc_device: RpcDevice) -> None:
     """Test RPC device _parse_dynamic_components() method."""
