@@ -784,3 +784,49 @@ async def test_incorrect_shutdown(
     await rpc_device1.shutdown()
 
     assert "error during shutdown: KeyError('AABBCCDDEEFF')" in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("side_effect", "supports_scripts"),
+    [
+        (RpcCallError(-105, "Argument 'id', value 1 not found!"), True),
+        (RpcCallError(-114, "Method Script.GetCode failed: Method not found!"), False),
+        (RpcCallError(404, "No handler for Script.GetCode"), False),
+        (
+            [
+                {
+                    "id": 5,
+                    "src": "shellyplus2pm-a8032ab720ac",
+                    "dst": "aios-2293750469632",
+                    "result": {"data": "script"},
+                }
+            ],
+            True,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_supports_scripts(
+    rpc_device: RpcDevice,
+    side_effect: Exception | dict[str, Any],
+    supports_scripts: bool,
+) -> None:
+    """Test supports_scripts method."""
+    rpc_device.call_rpc_multiple.side_effect = [side_effect]
+
+    result = await rpc_device.supports_scripts()
+
+    assert result == supports_scripts
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 1}
+
+
+@pytest.mark.asyncio
+async def test_supports_scripts_raises_unkown_errors(rpc_device: RpcDevice) -> None:
+    """Test supports_scripts raises for unknown errors."""
+    message = "Missing required argument 'id'!"
+    rpc_device.call_rpc_multiple.side_effect = [RpcCallError(-103, message)]
+
+    with pytest.raises(RpcCallError, match=message):
+        await rpc_device.supports_scripts()
