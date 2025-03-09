@@ -9,7 +9,7 @@ from __future__ import annotations
 def bluetooth_mac_from_primary_mac(primary_mac: str) -> str:
     """Get Bluetooth MAC from primary MAC.
 
-    MAC address must be in format "0-F{16}"
+    MAC address must be in format "[0-F]{16}"
 
     :param primary_mac: Primary MAC address
     :return: Bluetooth MAC address
