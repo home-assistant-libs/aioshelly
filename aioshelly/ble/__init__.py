@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from habluetooth import HaBluetoothConnector
+from habluetooth import BluetoothScanningMode, HaBluetoothConnector
 
 from ..exceptions import RpcCallError
 from ..rpc_device import RpcDevice
@@ -73,6 +73,8 @@ async def async_start_scanner(
 def create_scanner(
     source: str,
     name: str,
+    requested_mode: BluetoothScanningMode | None = None,
+    current_mode: BluetoothScanningMode | None = None,
 ) -> ShellyBLEScanner:
     """Create scanner."""
     return ShellyBLEScanner(
@@ -85,6 +87,8 @@ def create_scanner(
             can_connect=lambda: False,
         ),
         False,
+        requested_mode=requested_mode,
+        current_mode=current_mode,
     )
 
 
