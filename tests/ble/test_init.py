@@ -19,13 +19,21 @@ async def ha_manager() -> MagicMock:
 
 
 @pytest.mark.asyncio
-async def test_create_scanner() -> None:
+@pytest.mark.parametrize(
+    ("requested_mode", "current_mode"),
+    [
+        (BluetoothScanningMode.ACTIVE, BluetoothScanningMode.ACTIVE),
+        (BluetoothScanningMode.PASSIVE, BluetoothScanningMode.PASSIVE),
+        (BluetoothScanningMode.ACTIVE, BluetoothScanningMode.PASSIVE),
+        (BluetoothScanningMode.PASSIVE, BluetoothScanningMode.ACTIVE),
+    ],
+)
+async def test_create_scanner(
+    requested_mode: BluetoothScanningMode, current_mode: BluetoothScanningMode
+) -> None:
     """Test create scanner."""
     scanner = create_scanner(
-        "AA:BB:CC:DD:EE:FF",
-        "shelly",
-        BluetoothScanningMode.ACTIVE,
-        BluetoothScanningMode.ACTIVE,
+        "AA:BB:CC:DD:EE:FF", "shelly", requested_mode, current_mode
     )
-    assert scanner.requested_mode == BluetoothScanningMode.ACTIVE
-    assert scanner.current_mode == BluetoothScanningMode.ACTIVE
+    assert scanner.requested_mode == requested_mode
+    assert scanner.current_mode == current_mode
