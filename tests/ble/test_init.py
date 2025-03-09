@@ -37,3 +37,11 @@ async def test_create_scanner(
     )
     assert scanner.requested_mode == requested_mode
     assert scanner.current_mode == current_mode
+
+
+@pytest.mark.asyncio
+async def test_create_scanner_back_compat() -> None:
+    """Test create scanner works without modes."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    assert scanner.requested_mode is None
+    assert scanner.current_mode is None
