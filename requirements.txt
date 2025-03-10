@@ -1,5 +1,5 @@
 bluetooth-data-tools>=1.19.0
 aiohttp>=3.11.1
-habluetooth>=2.1.0
+habluetooth>=3.22.0
 yarl
 orjson>=3.8.1
