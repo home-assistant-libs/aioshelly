@@ -1071,3 +1071,6 @@ FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 VIRTUAL_COMPONENTS = {"boolean", "button", "enum", "number", "text"}
 # Firmware 1.2.0 release date
 VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213
+
+# value confirmed by Shelly team
+BLU_TRV_TIMEOUT = 60
