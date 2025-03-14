@@ -830,3 +830,21 @@ async def test_supports_scripts_raises_unkown_errors(rpc_device: RpcDevice) -> N
 
     with pytest.raises(RpcCallError, match=message):
         await rpc_device.supports_scripts()
+
+
+@pytest.mark.asyncio
+async def test_trigger_blu_trv_calibration(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice trigger_blu_trv_calibration() method."""
+    await rpc_device.trigger_blu_trv_calibration(200)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.Calibrate",
+        "params": {"id": 0},
+    }
+    assert call_args_list[0][0][1] == 60

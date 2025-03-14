@@ -20,6 +20,7 @@ from ..common import (
 from ..const import (
     BLU_TRV_IDENTIFIER,
     BLU_TRV_MODEL_ID,
+    BLU_TRV_TIMEOUT,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
@@ -271,6 +272,15 @@ class RpcDevice:
     async def trigger_reboot(self, delay_ms: int = 1000) -> None:
         """Trigger a device reboot."""
         await self.call_rpc("Shelly.Reboot", {"delay_ms": delay_ms})
+
+    async def trigger_blu_trv_calibration(self, trv_id: int) -> None:
+        """Trigger calibration for BLU TRV."""
+        params = {
+            "id": trv_id,
+            "method": "Trv.Calibrate",
+            "params": {"id": 0},
+        }
+        await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
