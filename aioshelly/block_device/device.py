@@ -356,7 +356,7 @@ class BlockDevice:
 
         resp_json = await resp.json(loads=json_loads)
         _LOGGER.debug("aiohttp response: %s", resp_json)
-        return cast("dict", resp_json)
+        return cast(dict, resp_json)
 
     async def switch_light_mode(self, mode: str) -> dict[str, Any]:
         """Change device mode color/white."""
@@ -447,22 +447,22 @@ class BlockDevice:
     @property
     def firmware_version(self) -> str:
         """Device firmware version."""
-        return cast("str", self.shelly["fw"])
+        return cast(str, self.shelly["fw"])
 
     @property
     def model(self) -> str:
         """Device model."""
-        return cast("str", self.shelly["type"])
+        return cast(str, self.shelly["type"])
 
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        return cast("str", self.settings["device"]["hostname"])
+        return cast(str, self.settings["device"]["hostname"])
 
     @property
     def name(self) -> str:
         """Device name."""
-        return cast("str", self.settings["name"] or self.hostname)
+        return cast(str, self.settings["name"] or self.hostname)
 
     @property
     def last_error(self) -> ShellyError | None:
@@ -520,12 +520,12 @@ class Block:
     @property
     def index(self) -> str:
         """Block index."""
-        return cast("str", self.blk["I"])
+        return cast(str, self.blk["I"])
 
     @property
     def description(self) -> str:
         """Block description."""
-        return cast("str", self.blk["D"])
+        return cast(str, self.blk["D"])
 
     @property
     def channel(self) -> str | None:

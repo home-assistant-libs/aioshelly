@@ -383,7 +383,7 @@ class RpcDevice:
 
     async def ble_getconfig(self) -> ShellyBLEConfig:
         """Get the BLE config with BLE.GetConfig."""
-        return cast("ShellyBLEConfig", await self.call_rpc("BLE.GetConfig"))
+        return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
 
     async def ws_setconfig(
         self, enable: bool, server: str, ssl_ca: str = "*"
@@ -399,7 +399,7 @@ class RpcDevice:
 
     async def ws_getconfig(self) -> ShellyWsConfig:
         """Get the outbound websocket config."""
-        return cast("ShellyWsConfig", await self.call_rpc("Ws.GetConfig"))
+        return cast(ShellyWsConfig, await self.call_rpc("Ws.GetConfig"))
 
     async def update_outbound_websocket(self, server: str) -> bool:
         """Update the outbound websocket (if needed).
@@ -487,37 +487,37 @@ class RpcDevice:
         if self._shelly is None:
             raise NotInitialized
 
-        return cast("int", self._shelly["gen"])
+        return cast(int, self._shelly["gen"])
 
     @property
     def firmware_version(self) -> str:
         """Device firmware version."""
-        return cast("str", self.shelly["fw_id"])
+        return cast(str, self.shelly["fw_id"])
 
     @property
     def version(self) -> str:
         """Device version."""
-        return cast("str", self.shelly["ver"])
+        return cast(str, self.shelly["ver"])
 
     @property
     def model(self) -> str:
         """Device model."""
-        return cast("str", self.shelly["model"])
+        return cast(str, self.shelly["model"])
 
     @property
     def xmod_info(self) -> dict[str, Any]:
         """Device XMOD properties."""
-        return cast("dict", self.shelly.get("jwt", {}))
+        return cast(dict, self.shelly.get("jwt", {}))
 
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        return cast("str", self.shelly["id"])
+        return cast(str, self.shelly["id"])
 
     @property
     def name(self) -> str:
         """Device name."""
-        return cast("str", self.config["sys"]["device"].get("name") or self.hostname)
+        return cast(str, self.config["sys"]["device"].get("name") or self.hostname)
 
     @property
     def connected(self) -> bool:

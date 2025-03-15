@@ -191,7 +191,7 @@ class COAP(asyncio.DatagramProtocol):
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """When the socket is set up."""
-        self.transport = cast("asyncio.DatagramTransport", transport)
+        self.transport = cast(asyncio.DatagramTransport, transport)
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         """Handle incoming datagram messages."""
