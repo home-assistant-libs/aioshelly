@@ -352,7 +352,7 @@ class RpcDevice:
     async def script_getcode(self, script_id: int) -> ShellyScriptCode:
         """Get script code from 'Script.GetCode'."""
         return cast(
-            ShellyScriptCode, await self.call_rpc("Script.GetCode", {"id": script_id})
+            "ShellyScriptCode", await self.call_rpc("Script.GetCode", {"id": script_id})
         )
 
     async def script_putcode(self, script_id: int, code: str) -> None:
@@ -374,7 +374,7 @@ class RpcDevice:
     async def ble_setconfig(self, enable: bool, enable_rpc: bool) -> ShellyBLESetConfig:
         """Enable or disable ble with BLE.SetConfig."""
         return cast(
-            ShellyBLESetConfig,
+            "ShellyBLESetConfig",
             await self.call_rpc(
                 "BLE.SetConfig",
                 {"config": {"enable": enable, "rpc": {"enable": enable_rpc}}},
@@ -383,14 +383,14 @@ class RpcDevice:
 
     async def ble_getconfig(self) -> ShellyBLEConfig:
         """Get the BLE config with BLE.GetConfig."""
-        return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
+        return cast("ShellyBLEConfig", await self.call_rpc("BLE.GetConfig"))
 
     async def ws_setconfig(
         self, enable: bool, server: str, ssl_ca: str = "*"
     ) -> ShellyWsSetConfig:
         """Set the outbound websocket config."""
         return cast(
-            ShellyWsSetConfig,
+            "ShellyWsSetConfig",
             await self.call_rpc(
                 "Ws.SetConfig",
                 {"config": {"enable": enable, "server": server, "ssl_ca": ssl_ca}},
@@ -399,7 +399,7 @@ class RpcDevice:
 
     async def ws_getconfig(self) -> ShellyWsConfig:
         """Get the outbound websocket config."""
-        return cast(ShellyWsConfig, await self.call_rpc("Ws.GetConfig"))
+        return cast("ShellyWsConfig", await self.call_rpc("Ws.GetConfig"))
 
     async def update_outbound_websocket(self, server: str) -> bool:
         """Update the outbound websocket (if needed).
@@ -487,37 +487,37 @@ class RpcDevice:
         if self._shelly is None:
             raise NotInitialized
 
-        return cast(int, self._shelly["gen"])
+        return cast("int", self._shelly["gen"])
 
     @property
     def firmware_version(self) -> str:
         """Device firmware version."""
-        return cast(str, self.shelly["fw_id"])
+        return cast("str", self.shelly["fw_id"])
 
     @property
     def version(self) -> str:
         """Device version."""
-        return cast(str, self.shelly["ver"])
+        return cast("str", self.shelly["ver"])
 
     @property
     def model(self) -> str:
         """Device model."""
-        return cast(str, self.shelly["model"])
+        return cast("str", self.shelly["model"])
 
     @property
     def xmod_info(self) -> dict[str, Any]:
         """Device XMOD properties."""
-        return cast(dict, self.shelly.get("jwt", {}))
+        return cast("dict", self.shelly.get("jwt", {}))
 
     @property
     def hostname(self) -> str:
         """Device hostname."""
-        return cast(str, self.shelly["id"])
+        return cast("str", self.shelly["id"])
 
     @property
     def name(self) -> str:
         """Device name."""
-        return cast(str, self.config["sys"]["device"].get("name") or self.hostname)
+        return cast("str", self.config["sys"]["device"].get("name") or self.hostname)
 
     @property
     def connected(self) -> bool:

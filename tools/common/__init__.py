@@ -142,9 +142,9 @@ def print_device(device: BlockDevice | RpcDevice) -> None:
         print(f"Device firmware not supported: {device.firmware_version}")
 
     if device.gen in BLOCK_GENERATIONS:
-        print_block_device(cast(BlockDevice, device))
+        print_block_device(cast("BlockDevice", device))
     elif device.gen in RPC_GENERATIONS:
-        print_rpc_device(cast(RpcDevice, device))
+        print_rpc_device(cast("RpcDevice", device))
 
 
 def print_block_device(device: BlockDevice) -> None:
