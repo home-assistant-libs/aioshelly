@@ -27,7 +27,6 @@ target-version = "py311"
 lint.select = ["ALL"]
 
 lint.ignore = [
-    "A005",     # Module `json` shadows a Python standard-library module
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
     "ASYNC109", # Async function definition with a `timeout` parameter
     "COM812",   # Trailing comma missing (conflicts with formatter)
@@ -39,10 +38,8 @@ lint.ignore = [
     "FBT002",   # Boolean default positional argument in function definition
     "FBT003",   # Boolean positional value in function call
     "G201",     # Logging `.exception(...)` should be used instead of `.error(..., exc_info=True)`
-    "ISC001",   # Single line implicit string concatenation
     "N818",     # Exception name should be named with an Error suffix
     "PLR0912",  # Too many branches
-    "PLR0915",  # Too many statements
     "TC001",   # Move application import into a type-checking block
     "TC002",   # Move third-party import into a type-checking block
     "TC003",   # Move standard library import into a type-checking block
@@ -56,10 +53,6 @@ lint.ignore = [
 ]
 "tests/**/*" = [
     "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
     "PLR0913",
     "PLR2004",
     "S101",
