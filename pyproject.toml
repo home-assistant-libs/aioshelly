@@ -1,8 +1,47 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=77.0"]
+
+[project]
+name = "aioshelly"
+version = "13.4.0"
+license = "Apache-2.0"
+description = "Asynchronous library to control Shelly devices."
+readme = "README.md"
+authors = [{ name = "Paulus Schoutsen", email = "paulus@home-assistant.io" }]
+requires-python = ">=3.11"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "aiohttp>=3.11.1",
+  "bluetooth-data-tools>=1.19.0",
+  "habluetooth>=3.22.0",
+  "orjson>=3.8.1",
+  "yarl",
+]
+
+[project.urls]
+"Source code" = "https://github.com/home-assistant-libs/aioshelly"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "tools*"]
+
+[tool.setuptools.package-data]
+aioshelly = ["py.typed"]
+
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.mypy]
-python_version = 3.11
+python_version = "3.11"
 show_error_codes = true
 follow_imports = "silent"
 ignore_missing_imports = true
