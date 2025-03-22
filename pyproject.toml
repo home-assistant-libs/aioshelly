@@ -32,7 +32,7 @@ dependencies = [
 "Source code" = "https://github.com/home-assistant-libs/aioshelly"
 
 [tool.setuptools.packages.find]
-exclude = ["tests*", "tools*"]
+include = ["aioshelly*"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
