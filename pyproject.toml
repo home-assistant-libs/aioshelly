@@ -34,9 +34,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 exclude = ["tests*", "tools*"]
 
-[tool.setuptools.package-data]
-aioshelly = ["py.typed"]
-
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 
