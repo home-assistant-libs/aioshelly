@@ -4,7 +4,7 @@ aioresponses==0.7.8
 requests
 types-orjson
 types-requests
-pre-commit==4.1.0
+pre-commit==4.2.0
 tox==4.24.2
 pytest==8.3.5
 pytest-asyncio==0.25.3
