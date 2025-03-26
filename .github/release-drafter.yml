@@ -1,11 +1,56 @@
+name-template: "Version $RESOLVED_VERSION"
+tag-template: "$RESOLVED_VERSION"
+
 categories:
-  - title: "⚠ Breaking Changes"
+  - title: "🚨 Breaking changes"
+    label: "breaking-change"
+
+  - title: "✨ New features"
+    label: "new-feature"
+
+  - title: "🐛 Bug fixes"
+    label: "bugfix"
+
+  - title: "🚀 Enhancements"
     labels:
-      - "breaking-change"
-  - title: "⬆️ Dependencies"
+      - "enhancement"
+      - "refactor"
+      - "performance"
+
+  - title: "🧰 Maintenance"
+    labels:
+      - "maintenance"
+      - "ci"
+
+  - title: "📚 Documentation"
+    labels:
+      - "documentation"
+
+  - title: "⬆️ Dependency updates"
     collapse-after: 1
     labels:
       - "dependencies"
+
+version-resolver:
+  major:
+    labels:
+      - "major"
+      - "breaking-change"
+  minor:
+    labels:
+      - "minor"
+      - "new-feature"
+  patch:
+    labels:
+      - "bugfix"
+      - "ci"
+      - "dependencies"
+      - "documentation"
+      - "enhancement"
+      - "performance"
+      - "refactor"
+  default: patch
+
 template: |
   ## What's Changed
 
