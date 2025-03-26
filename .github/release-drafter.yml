@@ -1,3 +1,6 @@
+name-template: "Version $RESOLVED_VERSION"
+tag-template: "$RESOLVED_VERSION"
+
 categories:
   - title: "🚨 Breaking changes"
     label: "breaking-change"
