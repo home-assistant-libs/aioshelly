@@ -43,6 +43,10 @@ class InvalidAuthError(ShellyError):
     """Raised to indicate invalid or missing authentication error."""
 
 
+class InvalidHostError(ShellyError):
+    """Raised to indicate invalid host error."""
+
+
 class MacAddressMismatchError(ShellyError):
     """Raised if input MAC address does not match the device MAC address."""
 

@@ -17,6 +17,7 @@ from aioshelly.const import DEFAULT_HTTP_PORT
 from aioshelly.exceptions import (
     DeviceConnectionError,
     DeviceConnectionTimeoutError,
+    InvalidHostError,
     MacAddressMismatchError,
 )
 
@@ -137,5 +138,18 @@ async def test_get_info_exc(exc: Exception, expected_exc: Exception) -> None:
 
         with pytest.raises(expected_exc):
             await get_info(session, ip_address, "AABBCCDDEEFF")
+
+    await session.close()
+
+
+@pytest.mark.asyncio
+async def test_get_info_invalid_error() -> None:
+    """Test get_info function with an invalid host exception."""
+    session = ClientSession()
+
+    with pytest.raises(
+        InvalidHostError, match="Host 'http://10.10.10.10' cannot contain ':'"
+    ):
+        await get_info(session, "http://10.10.10.10", "AABBCCDDEEFF")
 
     await session.close()
