@@ -616,10 +616,9 @@ class RpcDevice:
     async def supports_scripts(self) -> bool:
         """Check if the device supports scripts.
 
-        Try to read a script to check if the device supports scripts,
-        if it supports scripts, it should return the script
-        or a specific error code if the script does not exist.
-        {"code":-105,"message":"Argument 'id', value 1 not found!"}
+        Try to read an invalid script ID to check if the device supports scripts,
+        if it supports scripts, it should return a specific error code:
+        {"code":-105,"message":"Argument 'id', value -1 not found!"}
 
         Errors by devices that do not support scripts:
 
@@ -630,7 +629,7 @@ class RpcDevice:
         {"code":404,"message":"No handler for Script.GetCode"}
         """
         try:
-            await self.script_getcode(1)
+            await self.script_getcode(-1)
         except RpcCallError as err:
             # The device supports scripts, but the script does not exist
             if err.code == RPC_CALL_ERR_INVALID_ARG:
@@ -643,5 +642,6 @@ class RpcDevice:
                 return False
             raise
 
-        # The device returned a script, it supports scripts
-        return True
+        # Tried to fetch an invalid script ID, but no error was raised
+        # This means the device does not supports scripts
+        return False
