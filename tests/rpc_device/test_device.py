@@ -532,7 +532,7 @@ async def test_script_getcode(rpc_device: RpcDevice) -> None:
     assert result == {"data": "super duper script"}
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 8}
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 8, "offset": 0}
 
 
 @pytest.mark.asyncio
@@ -819,7 +819,11 @@ async def test_supports_scripts(
     assert result == supports_scripts
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 1}
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 1,
+        "len": 1,
+        "offset": 0,
+    }
 
 
 @pytest.mark.asyncio
