@@ -789,20 +789,10 @@ async def test_incorrect_shutdown(
 @pytest.mark.parametrize(
     ("side_effect", "supports_scripts"),
     [
-        (RpcCallError(-105, "Argument 'id', value 1 not found!"), True),
+        (RpcCallError(-105, "Argument 'id', value -1 not found!"), True),
         (RpcCallError(-114, "Method Script.GetCode failed: Method not found!"), False),
         (RpcCallError(404, "No handler for Script.GetCode"), False),
-        (
-            [
-                {
-                    "id": 5,
-                    "src": "shellyplus2pm-a8032ab720ac",
-                    "dst": "aios-2293750469632",
-                    "result": {"data": "script"},
-                }
-            ],
-            True,
-        ),
+        (AsyncMock(return_value=None), False),
     ],
 )
 @pytest.mark.asyncio
@@ -819,7 +809,7 @@ async def test_supports_scripts(
     assert result == supports_scripts
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 1}
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": -1}
 
 
 @pytest.mark.asyncio
