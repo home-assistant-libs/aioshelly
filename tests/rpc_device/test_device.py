@@ -821,7 +821,7 @@ async def test_supports_scripts(
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
         "id": 1,
-        "len": 1,
+        "len": 0,
         "offset": 0,
     }
 
