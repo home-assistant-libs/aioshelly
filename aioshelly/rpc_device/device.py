@@ -359,11 +359,19 @@ class RpcDevice:
         scripts: list[ShellyScript] = data["scripts"]
         return scripts
 
-    async def script_getcode(self, script_id: int) -> ShellyScriptCode:
-        """Get script code from 'Script.GetCode'."""
-        return cast(
-            ShellyScriptCode, await self.call_rpc("Script.GetCode", {"id": script_id})
-        )
+    async def script_getcode(
+        self, script_id: int, offset: int = 0, bytes_to_read: int | None = None
+    ) -> ShellyScriptCode:
+        """Get script code from 'Script.GetCode'.
+
+        offset: The offset in bytes to start reading from.
+        bytes_to_read: The number of bytes to read from the script.
+        If None, read the whole script.
+        """
+        params = {"id": script_id, "offset": offset}
+        if bytes_to_read is not None:
+            params["len"] = bytes_to_read
+        return cast(ShellyScriptCode, await self.call_rpc("Script.GetCode", params))
 
     async def script_putcode(self, script_id: int, code: str) -> None:
         """Set script code from 'Script.PutCode'."""
@@ -616,8 +624,8 @@ class RpcDevice:
     async def supports_scripts(self) -> bool:
         """Check if the device supports scripts.
 
-        Try to read a script to check if the device supports scripts,
-        if it supports scripts, it should return the script
+        Try to read 0 byte from a script to check if the device supports scripts,
+        if it supports scripts, it should reply with '{"data":"", "left":0}'
         or a specific error code if the script does not exist.
         {"code":-105,"message":"Argument 'id', value 1 not found!"}
 
@@ -630,7 +638,7 @@ class RpcDevice:
         {"code":404,"message":"No handler for Script.GetCode"}
         """
         try:
-            await self.script_getcode(1)
+            await self.script_getcode(1, bytes_to_read=0)
         except RpcCallError as err:
             # The device supports scripts, but the script does not exist
             if err.code == RPC_CALL_ERR_INVALID_ARG:
@@ -643,5 +651,5 @@ class RpcDevice:
                 return False
             raise
 
-        # The device returned a script, it supports scripts
+        # The device returned a script response, it supports scripts
         return True
