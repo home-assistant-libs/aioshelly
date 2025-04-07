@@ -282,6 +282,26 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def blu_trv_set_external_temperature(
+        self, trv_id: int, temperature: float
+    ) -> None:
+        """Set external temperatire for BLU TRV."""
+        params = {
+            "id": trv_id,
+            "method": "Trv.SetExternalTemperature",
+            "params": {"id": 0, "t_C": temperature},
+        }
+        await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
+
+    async def blu_trv_set_valve_position(self, trv_id: int, position: int) -> None:
+        """Set valve position for BLU TRV."""
+        params = {
+            "id": trv_id,
+            "method": "Trv.SetPosition",
+            "params": {"id": 0, "pos": position},
+        }
+        await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
+
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
         self._status = await self.call_rpc("Shelly.GetStatus")
