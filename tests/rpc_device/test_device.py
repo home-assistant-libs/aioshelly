@@ -852,3 +852,55 @@ async def test_trigger_blu_trv_calibration(
         "params": {"id": 0},
     }
     assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
+async def test_blu_trv_set_external_temperature(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_set_external_temperature() method."""
+    await rpc_device.blu_trv_set_external_temperature(200, 22.6)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.SetExternalTemperature",
+        "params": {"id": 0, "t_C": 22.6},
+    }
+    assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
+async def test_blu_trv_set_valve_position(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_set_valve_position() method."""
+    await rpc_device.blu_trv_set_valve_position(200, 55.0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.SetPosition",
+        "params": {"id": 0, "pos": 55},
+    }
+    assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
+async def test_number_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice number_set() method."""
+    await rpc_device.number_set(12, 33.2)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Number.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "value": 33.2,
+    }
