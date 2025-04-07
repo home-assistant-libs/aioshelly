@@ -314,7 +314,7 @@ class RpcDevice:
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
     async def blu_trv_clear_boost(self, trv_id: int) -> None:
-        """Vlear boost mode for BLU TRV."""
+        """Clear boost mode for BLU TRV."""
         params = {
             "id": trv_id,
             "method": "Trv.ClearBoost",
