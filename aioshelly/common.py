@@ -23,7 +23,9 @@ from .const import (
 from .exceptions import (
     DeviceConnectionError,
     DeviceConnectionTimeoutError,
+    InvalidHostError,
     MacAddressMismatchError,
+    ShellyError,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,9 +82,7 @@ async def get_info(
     port: int = DEFAULT_HTTP_PORT,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
-    error: (
-        DeviceConnectionError | DeviceConnectionTimeoutError | MacAddressMismatchError
-    )
+    error: ShellyError
     try:
         async with aiohttp_session.get(
             URL.build(scheme="http", host=ip_address, port=port, path="/shelly"),
@@ -93,6 +93,10 @@ async def get_info(
     except TimeoutError as err:
         error = DeviceConnectionTimeoutError(err)
         _LOGGER.debug("host %s:%s: timeout error: %r", ip_address, port, error)
+        raise error from err
+    except ValueError as err:
+        error = InvalidHostError(err)
+        _LOGGER.debug("host %s is invalid: %r", ip_address, error)
         raise error from err
     except CONNECT_ERRORS as err:
         error = DeviceConnectionError(err)
