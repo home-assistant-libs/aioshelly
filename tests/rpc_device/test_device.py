@@ -887,6 +887,8 @@ async def test_blu_trv_set_valve_position(
         "method": "Trv.SetPosition",
         "params": {"id": 0, "pos": 55},
     }
+    # the valve position value should be an integer
+    assert isinstance(call_args_list[0][0][0][0][1]["params"]["pos"], int)
     assert call_args_list[0][0][1] == 60
 
 
