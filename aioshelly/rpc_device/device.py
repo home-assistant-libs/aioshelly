@@ -293,12 +293,12 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
-    async def blu_trv_set_valve_position(self, trv_id: int, position: int) -> None:
+    async def blu_trv_set_valve_position(self, trv_id: int, position: float) -> None:
         """Set the valve position for BLU TRV."""
         params = {
             "id": trv_id,
             "method": "Trv.SetPosition",
-            "params": {"id": 0, "pos": position},
+            "params": {"id": 0, "pos": int(position)},
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
