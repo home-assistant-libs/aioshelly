@@ -34,6 +34,17 @@ lint = [
   "pydocstyle==6.3.0",
   "ruff==0.11.5",
 ]
+dev = [
+  "aioresponses==0.7.8",
+  "requests",
+  "types-orjson",
+  "types-requests",
+  "pre-commit==4.2.0",
+  "tox==4.25.0",
+  "pytest==8.3.5",
+  "pytest-asyncio==0.26.0",
+  "pytest-cov==6.1.1",
+]
 
 [project.urls]
 "Source code" = "https://github.com/home-assistant-libs/aioshelly"
@@ -143,5 +154,5 @@ ignore_errors = True
 commands =
   python -m pytest --cov=aioshelly --cov-report=xml --cov-report=term-missing
 deps =
-  -rrequirements_dev.txt
+  .[dev]
 """
