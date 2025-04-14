@@ -282,6 +282,17 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def blu_trv_set_target_temperature(
+        self, trv_id: int, temperature: float
+    ) -> None:
+        """Set the target temperatire for BLU TRV."""
+        params = {
+            "id": trv_id,
+            "method": "Trv.SetTarget",
+            "params": {"id": 0, "target_C": temperature},
+        }
+        await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
+
     async def blu_trv_set_external_temperature(
         self, trv_id: int, temperature: float
     ) -> None:
