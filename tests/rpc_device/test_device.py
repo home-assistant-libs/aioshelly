@@ -855,6 +855,24 @@ async def test_trigger_blu_trv_calibration(
 
 
 @pytest.mark.asyncio
+async def test_blu_trv_set_target_temperature(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_set_target_temperature() method."""
+    await rpc_device.blu_trv_set_target_temperature(200, 21.5)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.SetTarget",
+        "params": {"id": 0, "target_C": 21.5},
+    }
+    assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
 async def test_blu_trv_set_external_temperature(
     rpc_device: RpcDevice,
 ) -> None:
