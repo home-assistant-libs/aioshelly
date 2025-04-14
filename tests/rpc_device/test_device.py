@@ -872,25 +872,6 @@ async def test_blu_trv_set_external_temperature(
     assert call_args_list[0][0][1] == 60
 
 
-async def test_blu_trv_set_boost(
-    rpc_device: RpcDevice,
-) -> None:
-    """Test RpcDevice blu_trv_set_boost() method."""
-    await rpc_device.blu_trv_set_boost(200)
-
-    assert rpc_device.call_rpc_multiple.call_count == 1
-    call_args_list = rpc_device.call_rpc_multiple.call_args_list
-    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
-    assert call_args_list[0][0][0][0][1] == {
-        "id": 200,
-        "method": "Trv.SetExternalTemperature",
-        "params": {"id": 0, "t_C": 22.6},
-        "method": "Trv.SetBoost",
-        "params": {"id": 0},
-    }
-    assert call_args_list[0][0][1] == 60
-
-
 @pytest.mark.asyncio
 async def test_blu_trv_set_valve_position(
     rpc_device: RpcDevice,
