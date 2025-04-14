@@ -302,6 +302,26 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def blu_trv_set_boost(self, trv_id: int, duration: int | None = None) -> None:
+        """Start boost mode for BLU TRV."""
+        params = {
+            "id": trv_id,
+            "method": "Trv.SetBoost",
+        }
+        params["params"] = (
+            {"id": 0} if duration is None else {"id": 0, "duration": duration}
+        )
+        await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
+
+    async def blu_trv_clear_boost(self, trv_id: int) -> None:
+        """Clear boost mode for BLU TRV."""
+        params = {
+            "id": trv_id,
+            "method": "Trv.ClearBoost",
+            "params": {"id": 0},
+        }
+        await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
+
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
         params = {

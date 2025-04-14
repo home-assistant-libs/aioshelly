@@ -893,6 +893,60 @@ async def test_blu_trv_set_valve_position(
 
 
 @pytest.mark.asyncio
+async def test_blu_trv_set_boost(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_set_boost() method."""
+    await rpc_device.blu_trv_set_boost(200)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.SetBoost",
+        "params": {"id": 0},
+    }
+    assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
+async def test_blu_trv_set_boost_duration(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_set_boost() method with duration."""
+    await rpc_device.blu_trv_set_boost(200, 33)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.SetBoost",
+        "params": {"id": 0, "duration": 33},
+    }
+    assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
+async def test_blu_trv_clear_boost(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_clear_boost() method."""
+    await rpc_device.blu_trv_clear_boost(200)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTRV.Call"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 200,
+        "method": "Trv.ClearBoost",
+        "params": {"id": 0},
+    }
+    assert call_args_list[0][0][1] == 60
+
+
+@pytest.mark.asyncio
 async def test_number_set(
     rpc_device: RpcDevice,
 ) -> None:
