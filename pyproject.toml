@@ -120,7 +120,6 @@ commands =
   ruff check ./
   pydocstyle aioshelly
 deps =
-  -rrequirements.txt
   -rrequirements_lint.txt
 
 [testenv:mypy]
@@ -129,7 +128,6 @@ ignore_errors = True
 commands =
   mypy aioshelly
 deps =
-  -rrequirements.txt
   -rrequirements_lint.txt
 
 [testenv:tests]
@@ -138,6 +136,5 @@ ignore_errors = True
 commands =
   python -m pytest --cov=aioshelly --cov-report=xml --cov-report=term-missing
 deps =
-  -rrequirements.txt
   -rrequirements_dev.txt
 """
