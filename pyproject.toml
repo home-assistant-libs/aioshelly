@@ -28,6 +28,13 @@ dependencies = [
   "yarl",
 ]
 
+[project.optional-dependencies]
+lint = [
+  "mypy==1.15.0",
+  "pydocstyle==6.3.0",
+  "ruff==0.11.5",
+]
+
 [project.urls]
 "Source code" = "https://github.com/home-assistant-libs/aioshelly"
 
@@ -120,7 +127,7 @@ commands =
   ruff check ./
   pydocstyle aioshelly
 deps =
-  -rrequirements_lint.txt
+  .[lint]
 
 [testenv:mypy]
 basepython = python3
@@ -128,7 +135,7 @@ ignore_errors = True
 commands =
   mypy aioshelly
 deps =
-  -rrequirements_lint.txt
+  .[lint]
 
 [testenv:tests]
 basepython = python3

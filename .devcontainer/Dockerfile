@@ -11,6 +11,7 @@ RUN if [ "${INSTALL_NODE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/l
 
 # [Optional] If your pip requirements rarely change, uncomment this section to add them to the image.
 COPY requirements*.txt /tmp/pip-tmp/
+RUN pip3 --disable-pip-version-check --no-cache-dir install .[lint]
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements_dev.txt \
    && rm -rf /tmp/pip-tmp
 

@@ -1,5 +1,3 @@
--r requirements.txt
--r requirements_lint.txt
 aioresponses==0.7.8
 requests
 types-orjson
