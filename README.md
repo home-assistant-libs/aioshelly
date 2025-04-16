@@ -25,6 +25,12 @@ Run the following command inside this folder
 pip install --upgrade .
 ```
 
+## Install development requirements
+Run the following command inside this folder
+```bash
+pip install .[dev] .[lint]
+```
+
 ## Examples
 ### Gen1 Device (Block/CoAP) example:
 
