@@ -333,6 +333,14 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def enum_set(self, id_: int, value: str) -> None:
+        """Set the value for the enum component."""
+        params = {
+            "id": id_,
+            "value": value,
+        }
+        await self.call_rpc("Enum.Set", params=params)
+
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
         params = {
@@ -340,6 +348,14 @@ class RpcDevice:
             "value": value,
         }
         await self.call_rpc("Number.Set", params=params)
+
+    async def text_set(self, id_: int, value: str) -> None:
+        """Set the value for the text component."""
+        params = {
+            "id": id_,
+            "value": value,
+        }
+        await self.call_rpc("Text.Set", params=params)
 
     async def update_status(self) -> None:
         """Get device status from 'Shelly.GetStatus'."""
