@@ -978,3 +978,35 @@ async def test_number_set(
         "id": 12,
         "value": 33.2,
     }
+
+
+@pytest.mark.asyncio
+async def test_enum_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice enum_set() method."""
+    await rpc_device.enum_set(12, "option 1")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Enum.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "value": "option 1",
+    }
+
+
+@pytest.mark.asyncio
+async def test_text_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice text_set() method."""
+    await rpc_device.text_set(12, "lorem ipsum")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Text.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "value": "lorem ipsum",
+    }
