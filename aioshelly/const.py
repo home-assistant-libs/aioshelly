@@ -119,6 +119,7 @@ MODEL_AZ_PLUG = "S3PL-10112EU"
 MODEL_BLU_GATEWAY_G3 = "S3GW-1DBT001"
 MODEL_DALI_DIMMER_G3 = "S3DM-0A1WW"
 MODEL_DIMMER_10V_G3 = "S3DM-0010WW"
+MODEL_DIMMER_G3 = "S3DM-0A101WWL"
 MODEL_EM_G3 = "S3EM-002CXCEU"
 MODEL_HT_G3 = "S3SN-0U12A"
 MODEL_I4_G3 = "S3SN-0024X"
@@ -907,6 +908,13 @@ DEVICES = {
     MODEL_DIMMER_10V_G3: ShellyDevice(
         model=MODEL_DIMMER_10V_G3,
         name="Shelly Dimmer 0/1-10V PM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_DIMMER_G3: ShellyDevice(
+        model=MODEL_DIMMER_G3,
+        name="Shelly Dimmer Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
