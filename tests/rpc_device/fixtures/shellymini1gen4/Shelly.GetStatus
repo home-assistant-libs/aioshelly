@@ -1,0 +1,67 @@
+{
+    "ble": {},
+    "cloud": {
+        "connected": false
+    },
+    "input:0": {
+        "id": 0,
+        "state": false
+    },
+    "knx": {},
+    "mqtt": {
+        "connected": false
+    },
+    "switch:0": {
+        "id": 0,
+        "source": "WS_in",
+        "output": false,
+        "temperature": {
+            "tC": 64.4,
+            "tF": 147.9
+        }
+    },
+    "sys": {
+        "mac": "AABBCCDDEEFF",
+        "restart_required": false,
+        "time": "15:34",
+        "unixtime": 1745588095,
+        "last_sync_ts": 1745587071,
+        "uptime": 72831,
+        "ram_size": 336152,
+        "ram_free": 151636,
+        "ram_min_free": 132592,
+        "fs_size": 917504,
+        "fs_free": 479232,
+        "cfg_rev": 9,
+        "kvs_rev": 0,
+        "schedule_rev": 0,
+        "webhook_rev": 0,
+        "available_updates": {
+            "beta": {
+                "version": "1.6.0-beta1"
+            }
+        },
+        "alt": {
+            "Mini1G4": {
+                "name": "Shelly Mini 1 Gen4",
+                "desc": "Shelly Mini 1 Gen4 with Matter",
+                "beta": {
+                    "version": "1.6.0-beta1",
+                    "build_id": "20250410-085758/1.6.0-beta1-g2554734"
+                }
+            }
+        },
+        "reset_reason": 1,
+        "utc_offset": 7200
+    },
+    "wifi": {
+        "sta_ip": "192.168.2.186",
+        "status": "got ip",
+        "ssid": "WiFi-Network-Name",
+        "rssi": -65
+    },
+    "ws": {
+        "connected": false
+    },
+    "zigbee": {}
+}

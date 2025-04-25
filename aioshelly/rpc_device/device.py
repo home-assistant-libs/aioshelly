@@ -26,6 +26,7 @@ from ..const import (
     DEVICE_IO_TIMEOUT,
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
+    GEN4,
     MODEL_BLU_GATEWAY_G3,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS,
@@ -626,6 +627,17 @@ class RpcDevice:
     def firmware_supported(self) -> bool:
         """Return True if device firmware version is supported."""
         return is_firmware_supported(self.gen, self.model, self.firmware_version)
+
+    @property
+    def zigbee_enabled(self) -> bool:
+        """Return True if Zigbee is enabled."""
+        if self.gen != GEN4:
+            return False
+
+        if self._config is None:
+            raise NotInitialized
+
+        return bool(self._config.get("zigbee", {}).get("enable"))
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
