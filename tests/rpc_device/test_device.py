@@ -66,6 +66,30 @@ async def blu_gateway_remote_config() -> AsyncGenerator[dict[str, Any], None]:
     yield await load_device_fixture("shellyblugatewaygen3", "BluTrv.GetRemoteConfig")
 
 
+@pytest_asyncio.fixture
+async def mini_1_g4_device_info() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Mini 1 Gen4 device info."""
+    yield await load_device_fixture("shellymini1gen4", "Shelly.GetDeviceInfo")
+
+
+@pytest_asyncio.fixture
+async def mini_1_g4_config() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Mini 1 Gen4 config."""
+    yield await load_device_fixture("shellymini1gen4", "Shelly.GetConfig")
+
+
+@pytest_asyncio.fixture
+async def mini_1_g4_status() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Mini 1 Gen4 status."""
+    yield await load_device_fixture("shellymini1gen4", "Shelly.GetStatus")
+
+
+@pytest_asyncio.fixture
+async def mini_1_g4_components() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Mini 1 Gen4 components."""
+    yield await load_device_fixture("shellymini1gen4", "Shelly.GetComponents")
+
+
 def test_mergedicts() -> None:
     """Test the recursive dict merge."""
     dest = {"a": 1, "b": {"c": 2, "d": 3}}
@@ -305,6 +329,7 @@ async def test_device_initialize_and_shutdown(
     assert rpc_device.last_error is None
     assert rpc_device.xmod_info == {}
     assert rpc_device.requires_auth is True
+    assert rpc_device.zigbee_enabled is False
 
     await rpc_device.shutdown()
 
@@ -405,6 +430,9 @@ async def test_device_not_initialized(rpc_device: RpcDevice) -> None:
 
     with pytest.raises(NotInitialized):
         hasattr(rpc_device, "event")
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "zigbee_enabled")
 
 
 @pytest.mark.asyncio
@@ -1010,3 +1038,49 @@ async def test_text_set(
         "id": 12,
         "value": "lorem ipsum",
     }
+
+
+@pytest.mark.asyncio
+async def test_device_gen4_zigbee(
+    rpc_device: RpcDevice,
+    mini_1_g4_device_info: dict[str, Any],
+    mini_1_g4_config: dict[str, Any],
+    mini_1_g4_status: dict[str, Any],
+    mini_1_g4_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize and shutdown methods."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [mini_1_g4_device_info],
+        [mini_1_g4_config, mini_1_g4_status, mini_1_g4_components],
+    ]
+    rpc_device.subscribe_updates(Mock())
+
+    await rpc_device.initialize()
+
+    assert rpc_device._update_listener is not None
+    assert rpc_device._unsub_ws is not None
+    assert rpc_device.connected is True
+    assert rpc_device.firmware_supported is True
+    assert rpc_device.name == "Shelly 1 Mini Gen4 [DDEEFF]"
+    assert rpc_device.hostname == "shelly1minig4-aabbccddeeff"
+    assert rpc_device.version == "1.5.99-g4prod1"
+    assert rpc_device.gen == 4
+    assert rpc_device.last_error is None
+    assert rpc_device.xmod_info == {}
+    assert rpc_device.requires_auth is False
+    assert rpc_device.zigbee_enabled is True
+
+    await rpc_device.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_zigbee_enabled_not_initialized(
+    rpc_device: RpcDevice,
+    mini_1_g4_device_info: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize and shutdown methods."""
+    rpc_device.initialized = True
+    rpc_device._shelly = mini_1_g4_device_info
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "zigbee_enabled")

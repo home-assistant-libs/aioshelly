@@ -1,0 +1,13 @@
+{
+    "name": "Shelly 1 Mini Gen4 [DDEEFF]",
+    "id": "shelly1minig4-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "slot": 1,
+    "model": "S4SW-001X8EU",
+    "gen": 4,
+    "fw_id": "20250214-121701/1.5.99-g4prod1-gc32c24b",
+    "ver": "1.5.99-g4prod1",
+    "app": "Mini1G4ZB",
+    "auth_en": false,
+    "auth_domain": null
+}
