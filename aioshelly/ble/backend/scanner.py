@@ -31,11 +31,11 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
             return
 
         now = monotonic_time_coarse()
-        for address, rssi, parsed in parsed_advs:
-            self._async_on_advertisement(
+        for address, rssi, raw in parsed_advs:
+            self._async_on_raw_advertisement(
                 address,
                 rssi,
-                *parsed,
+                raw,
                 {},
                 now,
             )

@@ -23,7 +23,7 @@ classifiers = [
 dependencies = [
   "aiohttp>=3.11.1",
   "bluetooth-data-tools>=1.19.0",
-  "habluetooth>=3.22.0",
+  "habluetooth>=3.42.0",
   "orjson>=3.8.1",
   "yarl",
 ]
