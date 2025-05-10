@@ -110,9 +110,11 @@ MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
 MODEL_WALL_DISPLAY_X2 = "SAWD-2A1XX10EU1"
 # Gen3 RPC based models
 MODEL_1_G3 = "S3SW-001X16EU"
+MODEL_1L_G3 = "S3SW-0A1X1EUL"
 MODEL_1_MINI_G3 = "S3SW-001X8EU"
 MODEL_1PM_G3 = "S3SW-001P16EU"
 MODEL_1PM_MINI_G3 = "S3SW-001P8EU"
+MODEL_2L_G3 = "S3SW-0A2X4EUL"
 MODEL_2PM_G3 = "S3SW-002P16EU"
 MODEL_3EM_63_G3 = "S3EM-003CXCEU63"
 MODEL_AZ_PLUG = "S3PL-10112EU"
@@ -856,6 +858,13 @@ DEVICES = {
         gen=GEN3,
         supported=True,
     ),
+    MODEL_1L_G3: ShellyDevice(
+        model=MODEL_1L_G3,
+        name="Shelly 1L Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
     MODEL_1_MINI_G3: ShellyDevice(
         model=MODEL_1_MINI_G3,
         name="Shelly 1 Mini Gen3",
@@ -873,6 +882,13 @@ DEVICES = {
     MODEL_1PM_MINI_G3: ShellyDevice(
         model=MODEL_1PM_MINI_G3,
         name="Shelly 1PM Mini Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_2L_G3: ShellyDevice(
+        model=MODEL_2L_G3,
+        name="Shelly 2L Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
