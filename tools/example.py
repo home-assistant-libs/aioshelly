@@ -127,18 +127,40 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
 
-    parser.add_argument(
-        "--gen1", "-g1", action="store_true", help="Force Gen1 (CoAP) device"
+    gen = parser.add_mutually_exclusive_group()
+    gen.add_argument(
+        "--gen1",
+        "-g1",
+        action="store_const",
+        const=1,
+        dest="gen",
+        help="Force Gen1 (CoAP) device",
     )
-    parser.add_argument(
-        "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
+    gen.add_argument(
+        "--gen2",
+        "-g2",
+        action="store_const",
+        const=2,
+        dest="gen",
+        help="Force Gen 2 (RPC) device",
     )
-    parser.add_argument(
-        "--gen3", "-g3", action="store_true", help="Force Gen 3 (RPC) device"
+    gen.add_argument(
+        "--gen3",
+        "-g3",
+        action="store_const",
+        const=3,
+        dest="gen",
+        help="Force Gen 3 (RPC) device",
     )
-    parser.add_argument(
-        "--gen4", "-g4", action="store_true", help="Force Gen 4 (RPC) device"
+    gen.add_argument(
+        "--gen4",
+        "-g4",
+        action="store_const",
+        const=4,
+        dest="gen",
+        help="Force Gen 4 (RPC) device",
     )
+
     parser.add_argument(
         "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
@@ -178,24 +200,10 @@ async def main() -> None:
     await coap_context.initialize(args.coap_port, args.listen_ip_address)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
-    if not args.init and not (args.gen1 or args.gen2 or args.gen3 or args.gen4):
+    if not args.init and not args.gen:
         parser.error("specify gen if no device init at startup")
 
-    gen_list = (args.gen1, args.gen2, args.gen3, args.gen4)
-    if len([gen for gen in gen_list if gen]) > 1:
-        parser.error(
-            "You can only use one of --gen1, --gen2, --gen3 or --gen4 at a time"
-        )
-
-    gen = None
-    if args.gen1:
-        gen = 1
-    elif args.gen2:
-        gen = 2
-    elif args.gen3:
-        gen = 3
-    elif args.gen4:
-        gen = 4
+    gen = args.gen
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
