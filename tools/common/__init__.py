@@ -192,8 +192,11 @@ async def update_outbound_ws(
 async def wait_for_keyboard_interrupt() -> None:
     """Wait for keyboard interrupt (Ctrl-C)."""
     sig_event = asyncio.Event()
-    signal.signal(signal.SIGINT, lambda _exit_code, _frame: sig_event.set())
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGINT, lambda: sig_event.set())
     await sig_event.wait()
+    # In a real program, you may want to be more graceful here
+    sys.exit(1)
 
 
 async def check_rpc_device_supports_scripts(
