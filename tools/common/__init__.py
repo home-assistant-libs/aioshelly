@@ -195,8 +195,6 @@ async def wait_for_keyboard_interrupt() -> None:
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, lambda: sig_event.set())
     await sig_event.wait()
-    # In a real program, you may want to be more graceful here
-    sys.exit(1)
 
 
 async def check_rpc_device_supports_scripts(
