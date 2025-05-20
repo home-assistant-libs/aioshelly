@@ -97,6 +97,7 @@ MODEL_PRO_2PM_V2 = "SPSW-202PE16EU"
 MODEL_PRO_3 = "SPSW-003XE16EU"
 MODEL_PRO_4PM = "SPSW-004PE16EU"
 MODEL_PRO_4PM_V2 = "SPSW-104PE16EU"
+MODEL_PRO_4PM_V3 = "SPSW-204PE16EU"
 MODEL_PRO_DIMMER_1PM = "SPDM-001PE01EU"
 MODEL_PRO_DIMMER_2PM = "SPDM-002PE01EU"
 MODEL_PRO_DUAL_COVER = "SPSH-002PE16EU"
@@ -769,6 +770,13 @@ DEVICES = {
     ),
     MODEL_PRO_4PM_V2: ShellyDevice(
         model=MODEL_PRO_4PM_V2,
+        name="Shelly Pro 4PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_4PM_V3: ShellyDevice(
+        model=MODEL_PRO_4PM_V3,
         name="Shelly Pro 4PM",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
