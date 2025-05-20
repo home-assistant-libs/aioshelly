@@ -209,6 +209,9 @@ def _redact_rpc_data(data: dict[str, Any]) -> dict[str, Any]:
                 real_mac.lower(), REDACTED_VALUES["device_mac_lower"]
             )
 
+    config["wifi"]["ap"]["ssid"] = config["wifi"]["ap"]["ssid"].replace(
+        real_mac, REDACTED_VALUES["device_mac"]
+    )
     if config["wifi"]["sta"]["ssid"]:
         config["wifi"]["sta"]["ssid"] = REDACTED_VALUES["wifi"]
     if config["wifi"]["sta1"]["ssid"]:
