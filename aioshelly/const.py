@@ -1067,6 +1067,9 @@ UNDEFINED = UndefinedType._singleton  # noqa: SLF001
 
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
+# Number of retries for cit/s requests
+CIT_S_RETRIES = 3
+
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10.0
 
