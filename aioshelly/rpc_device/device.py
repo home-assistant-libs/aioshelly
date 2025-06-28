@@ -151,10 +151,10 @@ class RpcDevice:
 
         update_type = RpcUpdateType.UNKNOWN
         if params is not None:
-            if method == "NotifyFullStatus":
-                self._status = params
-                update_type = RpcUpdateType.STATUS
-            elif method == "NotifyStatus" and self._status is not None:
+            if (
+                method in ("NotifyStatus", "NotifyFullStatus")
+                and self._status is not None
+            ):
                 mergedicts(self._status, params)
                 update_type = RpcUpdateType.STATUS
             elif method == "NotifyEvent":
