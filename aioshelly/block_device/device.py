@@ -20,6 +20,7 @@ from ..common import (
     process_ip_or_options,
 )
 from ..const import (
+    CIT_S_RETRIES,
     CONNECT_ERRORS,
     DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
@@ -163,14 +164,10 @@ class BlockDevice:
                 # Older devices has incompatible CoAP protocol (v1)
                 # Skip CoAP to avoid parsing errors
                 if self.firmware_supported:
-                    event_d = await self._coap_request("d")
-                    # We need to wait for D to come in before we request S
-                    # Or else we might miss the answer to D
-                    await event_d.wait()
+                    await self._http_update_cit_d()
 
                     if self.coap_s is None:
-                        event_s = await self._coap_request("s")
-                        await event_s.wait()
+                        await self._update_cit_s()
 
             self.initialized = True
         except ClientResponseError as err:
@@ -295,6 +292,23 @@ class BlockDevice:
     async def update_shelly(self) -> None:
         """Device update for /shelly (HTTP)."""
         self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+
+    async def _http_update_cit_d(self) -> None:
+        """Update CoAP cit/d via HTTP."""
+        cit_d_res = await self.http_request("get", "cit/d")
+        self._update_d(cit_d_res)
+
+    async def _update_cit_s(self) -> None:
+        """Update CoAP cit/s with retry."""
+        for retry in range(CIT_S_RETRIES):
+            try:
+                async with asyncio.timeout(DEVICE_IO_TIMEOUT / 4):
+                    event_s = await self._coap_request("s")
+                    await event_s.wait()
+                    return
+            except TimeoutError:
+                if retry == CIT_S_RETRIES - 1:
+                    raise
 
     async def _coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
