@@ -7,7 +7,6 @@ import contextlib
 import hashlib
 import logging
 import socket
-import time
 from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass
@@ -18,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import (
     ClientSession,
     ClientWebSocketResponse,
+    DigestAuthMiddleware,
     WSMessage,
     WSMsgType,
     client_exceptions,
@@ -92,31 +92,8 @@ HA2 = hex_hash("dummy_method:dummy_uri")
 class AuthData:
     """RPC Auth data class."""
 
-    realm: str
     username: str
     password: str
-
-    def __post_init__(self) -> None:
-        """Call after initialization."""
-        self.ha1 = hex_hash(f"{self.username}:{self.realm}:{self.password}")
-
-    def get_auth(self, nonce: int | None = None, n_c: int = 1) -> dict[str, Any]:
-        """Get auth for RPC calls."""
-        cnonce = int(time.time())
-        if nonce is None:
-            nonce = cnonce - 1800
-
-        # https://shelly-api-docs.shelly.cloud/gen2/Overview/CommonDeviceTraits/#authentication-over-websocket
-        hashed = hex_hash(f"{self.ha1}:{nonce}:{n_c}:{cnonce}:auth:{HA2}")
-
-        return {
-            "realm": self.realm,
-            "username": self.username,
-            "nonce": nonce,
-            "cnonce": cnonce,
-            "response": hashed,
-            "algorithm": "SHA-256",
-        }
 
 
 @dataclass
@@ -125,17 +102,17 @@ class SessionData:
 
     src: str | None
     dst: str | None
-    auth: dict[str, Any] | None
+    middlewares: tuple[DigestAuthMiddleware] | None
 
 
 class RPCCall:
     """RPCCall class."""
 
     __slots__ = (
-        "auth",
         "call_id",
         "dst",
         "method",
+        "middlewares",
         "params",
         "resolve",
         "result",
@@ -151,7 +128,7 @@ class RPCCall:
         resolve: asyncio.Future[dict[str, Any]],
     ) -> None:
         """Initialize RPC class."""
-        self.auth = session.auth
+        self.middlewares = session.middlewares
         self.call_id = call_id
         self.params = params
         self.method = method
@@ -274,10 +251,10 @@ class WsRPC(WsBase):
 
         await self._client.close()
 
-    def set_auth_data(self, realm: str, username: str, password: str) -> None:
+    def set_auth_data(self, username: str, password: str) -> None:
         """Set authentication data and generate session auth."""
-        self._auth_data = AuthData(realm, username, password)
-        self._session.auth = self._auth_data.get_auth()
+        self._auth_data = DigestAuthMiddleware(username, password)
+        self._session.middlewares = (self._auth_data,)
 
     async def _handle_call(self, frame_id: str) -> None:
         if TYPE_CHECKING:
@@ -451,16 +428,6 @@ class WsRPC(WsBase):
                 continue
             resp = call.resolve.result()
             self._raise_for_unrecoverable_errors(resp, allow_auth_retry=True)
-            if not to_retry:
-                # Update auth from response and try with new auth data
-                # If we have multiple calls, we only need to update auth once
-                if TYPE_CHECKING:
-                    # _raise_for_unrecoverable_errors ensures that auth_data is not None
-                    assert self._auth_data is not None
-                auth = json_loads(resp["error"]["message"])
-                self._session.auth = self._auth_data.get_auth(
-                    auth["nonce"], auth.get("nc", 1)
-                )
             to_retry.append(call)
 
         _, results = await self._rpc_calls(
