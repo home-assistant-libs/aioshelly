@@ -102,17 +102,17 @@ class SessionData:
 
     src: str | None
     dst: str | None
-    middlewares: tuple[DigestAuthMiddleware] | None
+    auth: tuple[DigestAuthMiddleware] | None
 
 
 class RPCCall:
     """RPCCall class."""
 
     __slots__ = (
+        "auth",
         "call_id",
         "dst",
         "method",
-        "middlewares",
         "params",
         "resolve",
         "result",
@@ -128,7 +128,7 @@ class RPCCall:
         resolve: asyncio.Future[dict[str, Any]],
     ) -> None:
         """Initialize RPC class."""
-        self.middlewares = session.middlewares
+        self.auth = session.auth
         self.call_id = call_id
         self.params = params
         self.method = method
@@ -254,7 +254,7 @@ class WsRPC(WsBase):
     def set_auth_data(self, username: str, password: str) -> None:
         """Set authentication data and generate session auth."""
         self._auth_data = DigestAuthMiddleware(username, password)
-        self._session.middlewares = (self._auth_data,)
+        self._session.auth = (self._auth_data,)
 
     async def _handle_call(self, frame_id: str) -> None:
         if TYPE_CHECKING:
