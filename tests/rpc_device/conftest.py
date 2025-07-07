@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest_asyncio
+from aiohttp import DigestAuthMiddleware
 from aiohttp.client import ClientSession
 from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMessage, WSMsgType
@@ -13,7 +14,7 @@ from orjson import dumps
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.rpc_device.device import RpcDevice, WsServer
-from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, AuthData, RPCSource, WsRPC
+from aioshelly.rpc_device.wsrpc import DEFAULT_HTTP_PORT, RPCSource, WsRPC
 
 
 class ResponseMocker:
@@ -139,7 +140,7 @@ async def ws_rpc(
 @pytest_asyncio.fixture
 async def ws_rpc_with_auth(ws_rpc: WsRPCMocker) -> AsyncGenerator[WsRPCMocker, None]:
     """Fixture for an RPC WebSocket with authentication."""
-    ws_rpc._auth_data = AuthData("any", "any")
+    ws_rpc._auth_data = DigestAuthMiddleware("any", "any")
     yield ws_rpc
 
 

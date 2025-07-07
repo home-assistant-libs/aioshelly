@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import hashlib
 import logging
 import socket
 from asyncio import Task, tasks
@@ -78,22 +77,6 @@ def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
         raise InvalidMessage("Received message error")
 
     raise InvalidMessage(f"Received non-Text message: {msg.type}")
-
-
-def hex_hash(message: str) -> str:
-    """Get hex representation of sha256 hash of string."""
-    return hashlib.sha256(message.encode("utf-8")).hexdigest()
-
-
-HA2 = hex_hash("dummy_method:dummy_uri")
-
-
-@dataclass
-class AuthData:
-    """RPC Auth data class."""
-
-    username: str
-    password: str
 
 
 @dataclass
@@ -187,7 +170,7 @@ class WsRPC(WsBase):
     ) -> None:
         """Initialize WsRPC class."""
         super().__init__()
-        self._auth_data: AuthData | None = None
+        self._auth_data: DigestAuthMiddleware | None = None
         self._ip_address = ip_address
         self._port = port
         self._on_notification = on_notification
