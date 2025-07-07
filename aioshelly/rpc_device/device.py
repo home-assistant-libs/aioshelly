@@ -650,6 +650,10 @@ class RpcDevice:
 
     def _supports_dynamic_components(self) -> bool:
         """Return True if device supports dynamic components."""
+        if self._status is not None and self._status["sys"].get("wakeup_period", 0) > 0:
+            # Sleeping devices do not support dynamic components.
+            return False
+
         match = FIRMWARE_PATTERN.search(self.firmware_version)
         return match is not None and int(match[0]) >= VIRTUAL_COMPONENTS_MIN_FIRMWARE
 

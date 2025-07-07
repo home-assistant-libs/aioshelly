@@ -237,6 +237,20 @@ async def test_supports_dynamic_components(
 
 
 @pytest.mark.asyncio
+async def test_supports_dynamic_components_sleeping_device(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test _supports_dynamic_components method with a sleeping device."""
+    rpc_device._shelly = {
+        "model": "Some Model",
+        "fw_id": "20250203-144328/1.5.0-beta2-gbf89ed5",
+    }
+    rpc_device._status = {"sys": {"wakeup_period": 60}}
+
+    assert rpc_device._supports_dynamic_components() is False
+
+
+@pytest.mark.asyncio
 async def test_get_dynamic_components(
     rpc_device: RpcDevice,
     blu_gateway_device_info: dict[str, Any],
