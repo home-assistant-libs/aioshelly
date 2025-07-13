@@ -148,6 +148,10 @@ GEN4 = 4
 # Firmware 1.9.0 release date
 GEN1_MIN_FIRMWARE_DATE = 20201124
 
+# Firmware 1.10.0 release date
+# Introduced cit/d via HTTP request
+GEN1_HTTP_CIT_D_MIN_FIRMWARE_DATE = 20210302
+
 # Firmware 1.11.0 release date (introduction of light transition)
 # Due to date fluctuation for different models,
 # GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE was used.
@@ -1067,8 +1071,8 @@ UNDEFINED = UndefinedType._singleton  # noqa: SLF001
 
 MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 
-# Number of retries for cit/s requests
-CIT_S_RETRIES = 3
+# Number of retries for cit requests
+CIT_RETRIES = 3
 
 # Timeout used for Device IO
 DEVICE_IO_TIMEOUT = 10.0
