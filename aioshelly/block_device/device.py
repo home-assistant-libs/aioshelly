@@ -20,10 +20,12 @@ from ..common import (
     process_ip_or_options,
 )
 from ..const import (
-    CIT_S_RETRIES,
+    CIT_RETRIES,
     CONNECT_ERRORS,
     DEFAULT_HTTP_PORT,
     DEVICE_IO_TIMEOUT,
+    FIRMWARE_PATTERN,
+    GEN1_HTTP_CIT_D_MIN_FIRMWARE_DATE,
     HTTP_CALL_TIMEOUT,
     MODEL_RGBW2,
 )
@@ -164,7 +166,7 @@ class BlockDevice:
                 # Older devices has incompatible CoAP protocol (v1)
                 # Skip CoAP to avoid parsing errors
                 if self.firmware_supported:
-                    await self._http_update_cit_d()
+                    await self._update_cit_d()
 
                     if self.coap_s is None:
                         await self._update_cit_s()
@@ -293,21 +295,41 @@ class BlockDevice:
         """Device update for /shelly (HTTP)."""
         self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
 
-    async def _http_update_cit_d(self) -> None:
-        """Update CoAP cit/d via HTTP."""
-        cit_d_res = await self.http_request("get", "cit/d")
-        self._update_d(cit_d_res)
+    async def _update_cit_d(self) -> None:
+        """Update CoAP cit/d.
+
+        cit/d via HTTP introduced in firmware 1.10
+        If device does not support cit/d via HTTP,
+        fallback to cit/d via CoAP request.
+        """
+        match = FIRMWARE_PATTERN.search(self.firmware_version)
+        if match is not None and int(match[0]) >= GEN1_HTTP_CIT_D_MIN_FIRMWARE_DATE:
+            cit_d_res = await self.http_request("get", "cit/d")
+            self._update_d(cit_d_res)
+            return
+
+        await self._update_cit("d")
 
     async def _update_cit_s(self) -> None:
-        """Update CoAP cit/s with retry."""
-        for retry in range(CIT_S_RETRIES):
+        """Update CoAP cit/s."""
+        await self._update_cit("s")
+
+    async def _update_cit(self, path: str) -> None:
+        """Update CoAP cit with retry."""
+        for retry in range(CIT_RETRIES):
+            _LOGGER.debug(
+                "host %s: CoAP cit/%s request (retries=%s)",
+                self.ip_address,
+                path,
+                retry,
+            )
             try:
                 async with asyncio.timeout(DEVICE_IO_TIMEOUT / 4):
-                    event_s = await self._coap_request("s")
-                    await event_s.wait()
+                    event = await self._coap_request(path)
+                    await event.wait()
                     return
             except TimeoutError:
-                if retry == CIT_S_RETRIES - 1:
+                if retry == CIT_RETRIES - 1:
                     raise
 
     async def _coap_request(self, path: str) -> asyncio.Event:
