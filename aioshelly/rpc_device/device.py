@@ -641,7 +641,7 @@ class RpcDevice:
 
     @property
     def zigbee_firmware(self) -> bool:
-        """Return True if Zigbee firmware is used."""
+        """Return True if Zigbee firmware is active."""
         if self.gen != GEN4:
             return False
 
