@@ -639,6 +639,17 @@ class RpcDevice:
 
         return bool(self._config.get("zigbee", {}).get("enable"))
 
+    @property
+    def zigbee_firmware(self) -> bool:
+        """Return True if Zigbee firmware is used."""
+        if self.gen != GEN4:
+            return False
+
+        if self._config is None:
+            raise NotInitialized
+
+        return "zigbee" in self._config
+
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
         if not self._supports_dynamic_components():
