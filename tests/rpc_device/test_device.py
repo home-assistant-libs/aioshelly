@@ -344,6 +344,7 @@ async def test_device_initialize_and_shutdown(
     assert rpc_device.xmod_info == {}
     assert rpc_device.requires_auth is True
     assert rpc_device.zigbee_enabled is False
+    assert rpc_device.zigbee_firmware is False
 
     await rpc_device.shutdown()
 
@@ -1083,18 +1084,46 @@ async def test_device_gen4_zigbee(
     assert rpc_device.xmod_info == {}
     assert rpc_device.requires_auth is False
     assert rpc_device.zigbee_enabled is True
+    assert rpc_device.zigbee_firmware is True
 
     await rpc_device.shutdown()
 
 
 @pytest.mark.asyncio
-async def test_zigbee_enabled_not_initialized(
+async def test_device_gen4_zigbee_disabled(
+    rpc_device: RpcDevice,
+    mini_1_g4_device_info: dict[str, Any],
+    mini_1_g4_config: dict[str, Any],
+    mini_1_g4_status: dict[str, Any],
+    mini_1_g4_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice with Zigbee firmware when Zigbee is disabled."""
+    mini_1_g4_config["zigbee"] = {"enable": False}
+    rpc_device.call_rpc_multiple.side_effect = [
+        [mini_1_g4_device_info],
+        [mini_1_g4_config, mini_1_g4_status, mini_1_g4_components],
+    ]
+    rpc_device.subscribe_updates(Mock())
+
+    await rpc_device.initialize()
+
+    assert rpc_device.zigbee_enabled is False
+    assert rpc_device.zigbee_firmware is True
+
+    await rpc_device.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_zigbee_properties_not_initialized(
     rpc_device: RpcDevice,
     mini_1_g4_device_info: dict[str, Any],
 ) -> None:
-    """Test RpcDevice initialize and shutdown methods."""
+    """Test RpcDevice not initialized when accessing zigbee properties."""
     rpc_device.initialized = True
     rpc_device._shelly = mini_1_g4_device_info
 
     with pytest.raises(NotInitialized):
         hasattr(rpc_device, "zigbee_enabled")
+
+    with pytest.raises(NotInitialized):
+        hasattr(rpc_device, "zigbee_firmware")
