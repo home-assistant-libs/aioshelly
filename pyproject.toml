@@ -32,7 +32,7 @@ dependencies = [
 lint = [
   "mypy==1.17.0",
   "pydocstyle==6.3.0",
-  "ruff==0.12.4",
+  "ruff==0.12.5",
   "types-requests",
 ]
 dev = [
