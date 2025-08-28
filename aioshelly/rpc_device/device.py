@@ -697,7 +697,12 @@ class RpcDevice:
         )
         self._status.update(
             {
-                item["key"]: {"value": item["status"].get("value")}
+                item["key"]: {
+                    "value" if "value" in item["status"] else "state": item[
+                        "status"
+                    ].get("value")
+                    or item["status"].get("state")
+                }
                 for item in self._dynamic_components
             }
         )
