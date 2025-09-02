@@ -686,11 +686,12 @@ class RpcDevice:
             if any(supported in component["key"] for supported in ["object"])
         ]
         if macro_objects:
-            obj_structure = OBJECT_STRUCTURES.get(self.model, None)
+            model = self.shelly["jwt"]["n"]
+            obj_structure = OBJECT_STRUCTURES.get(model, None)
             if not obj_structure:
                 _LOGGER.warning(
                     "Unknown device %s [Powered by Shelly], object structure: %s",
-                    self.model,
+                    model,
                     macro_objects,
                 )
             else:
@@ -701,9 +702,15 @@ class RpcDevice:
 
                         index = cast(int, obj_structure[ref]["index"])
 
+                        value = (
+                            value[obj_structure[ref]["key"]]
+                            if isinstance(value, dict)
+                            else value
+                        )
+
                         new_object = {
                             "key": f"{obj_structure[ref]['type']}:{index}",
-                            "status": {"value": value[obj_structure[ref]["key"]]},
+                            "status": {"value": value},
                             "config": {
                                 "id": index,
                                 "name": obj_structure[ref]["name"],
