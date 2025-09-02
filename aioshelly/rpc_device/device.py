@@ -48,6 +48,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
+from .object_mapping import OBJECT_STRUCTURES
 from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
@@ -677,6 +678,40 @@ class RpcDevice:
             for component in components.get("components", [])
             if any(supported in component["key"] for supported in VIRTUAL_COMPONENTS)
         ]
+
+        # New powered by Shelly devices has a custom structure in "object"
+        macro_objects = [
+            component
+            for component in components.get("components", [])
+            if any(supported in component["key"] for supported in ["object"])
+        ]
+        if macro_objects:
+            obj_structure = OBJECT_STRUCTURES.get(self.model, None)
+            if not obj_structure:
+                _LOGGER.warning(
+                    "Unknown device %s [Powered by Shelly], object structure: %s",
+                    self.model,
+                    macro_objects,
+                )
+            else:
+                for macro_object in macro_objects:
+                    for single_object in macro_object["status"]["value"].items():
+                        ref = single_object[0]
+                        value = single_object[1]
+
+                        index = cast(int, obj_structure[ref]["index"])
+
+                        new_object = {
+                            "key": f"{obj_structure[ref]['type']}:{index}",
+                            "status": {"value": value[obj_structure[ref]["key"]]},
+                            "config": {
+                                "id": index,
+                                "name": obj_structure[ref]["name"],
+                                "meta": {"ui": {"unit": obj_structure[ref]["unit"]}},
+                            },
+                        }
+                        _LOGGER.debug("Adding new sensors from object: %s", new_object)
+                        self._dynamic_components.append(new_object)
 
         if not self._config or not self._status:
             raise NotInitialized
