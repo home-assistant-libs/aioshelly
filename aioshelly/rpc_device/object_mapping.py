@@ -3,7 +3,7 @@
 from typing import Any
 
 OBJECT_STRUCTURES: dict[str, dict[str, Any]] = {
-    "FK-06X": {
+    "Irrigation controller FK-06X": {
         "zone0": {
             "name": "Zone 1",
             "index": 200,
