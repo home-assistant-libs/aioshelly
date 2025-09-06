@@ -140,6 +140,7 @@ MODEL_DIMMER_G4 = "S4DM-0A101WWL"
 MODEL_FLOOD_G4 = "S4SN-0071A"
 MODEL_I4_G4 = "S4SN-0A24X"
 MODEL_PLUG_US_G4 = "S4PL-00116US"
+MODEL_PRESENCE_G4 = "S4SN-0U61X"
 
 GEN1 = 1
 GEN2 = 2
@@ -1058,6 +1059,13 @@ DEVICES = {
         model=MODEL_PLUG_US_G4,
         name="Shelly Plug US Gen4",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+    ),
+    MODEL_PRESENCE_G4: ShellyDevice(
+        model=MODEL_PRESENCE_G4,
+        name="Shelly Presence Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
     ),
