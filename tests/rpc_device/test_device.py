@@ -1024,6 +1024,22 @@ async def test_number_set(
 
 
 @pytest.mark.asyncio
+async def test_button_trigger(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice button_trigger() method."""
+    await rpc_device.button_trigger(12, "single_push")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Button.Trigger"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "event": "single_push",
+    }
+
+
+@pytest.mark.asyncio
 async def test_enum_set(
     rpc_device: RpcDevice,
 ) -> None:

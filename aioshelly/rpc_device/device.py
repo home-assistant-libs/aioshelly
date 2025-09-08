@@ -334,6 +334,14 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def button_trigger(self, id_: int, event: str) -> None:
+        """Trigger the button component."""
+        params = {
+            "id": id_,
+            "event": event,
+        }
+        await self.call_rpc("Button.Trigger", params=params)
+
     async def enum_set(self, id_: int, value: str) -> None:
         """Set the value for the enum component."""
         params = {
