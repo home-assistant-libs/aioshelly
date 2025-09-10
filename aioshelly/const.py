@@ -109,6 +109,7 @@ MODEL_PRO_EM3_400 = "SPEM-003CEBEU400"
 MODEL_PRO_RGBWW_PM = "SPDC-0D5PE16EU"
 MODEL_WALL_DISPLAY = "SAWD-0A1XX10EU1"
 MODEL_WALL_DISPLAY_X2 = "SAWD-2A1XX10EU1"
+MODEL_WALL_DISPLAY_XL = "SAWD-3A1XE10EU2"
 # Gen3 RPC based models
 MODEL_1_G3 = "S3SW-001X16EU"
 MODEL_1L_G3 = "S3SW-0A1X1EUL"
@@ -863,6 +864,13 @@ DEVICES = {
     MODEL_WALL_DISPLAY_X2: ShellyDevice(
         model=MODEL_WALL_DISPLAY_X2,
         name="Shelly Wall Display X2",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_WALL_DISPLAY_XL: ShellyDevice(
+        model=MODEL_WALL_DISPLAY_XL,
+        name="Shelly Wall Display XL",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
