@@ -1,5 +1,6 @@
 """Tests for common module."""
 
+import re
 from unittest.mock import patch
 
 import pytest
@@ -148,7 +149,8 @@ async def test_get_info_invalid_error() -> None:
     session = ClientSession()
 
     with pytest.raises(
-        InvalidHostError, match="Host 'http://10.10.10.10' cannot contain ':'"
+        InvalidHostError,
+        match=re.escape("Host 'http://10.10.10.10' cannot contain ':'"),
     ):
         await get_info(session, "http://10.10.10.10", "AABBCCDDEEFF")
 

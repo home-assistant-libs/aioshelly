@@ -1,5 +1,6 @@
 """Tests for rpc_device.device module."""
 
+import re
 from collections.abc import AsyncGenerator
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -765,14 +766,18 @@ async def test_poll_call_error(
     """Test RpcDevice poll method when RpcCallError."""
     rpc_device.call_rpc_multiple.return_value = [None]
 
-    with pytest.raises(RpcCallError, match="empty response to Shelly.GetStatus"):
+    with pytest.raises(
+        RpcCallError, match=re.escape("empty response to Shelly.GetStatus")
+    ):
         await rpc_device.poll()
 
     rpc_device.call_rpc_multiple.return_value = [blu_gateway_status, None]
     rpc_device._dynamic_components = [{"key": "component1"}]
     rpc_device._status = {"lorem": "ipsum"}
 
-    with pytest.raises(RpcCallError, match="empty response to Shelly.GetComponents"):
+    with pytest.raises(
+        RpcCallError, match=re.escape("empty response to Shelly.GetComponents")
+    ):
         await rpc_device.poll()
 
 
