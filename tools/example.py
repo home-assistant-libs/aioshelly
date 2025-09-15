@@ -27,7 +27,12 @@ from common import (
 )
 
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import DEFAULT_HTTP_PORT, WS_API_URL
+from aioshelly.const import (
+    BLOCK_GENERATIONS,
+    DEFAULT_HTTP_PORT,
+    RPC_GENERATIONS,
+    WS_API_URL,
+)
 
 
 async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -> None:
@@ -52,7 +57,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     options: ConnectionOptions
 
-    with Path.open("devices.json", encoding="utf8") as fp:
+    with Path.open(Path("devices.json"), encoding="utf8") as fp:
         device_options = [ConnectionOptions(**json.loads(line)) for line in fp]
 
     async with ClientSession() as aiohttp_session:
@@ -127,18 +132,40 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument("--username", "-u", type=str, help="Set device username")
     parser.add_argument("--password", "-p", type=str, help="Set device password")
 
-    parser.add_argument(
-        "--gen1", "-g1", action="store_true", help="Force Gen1 (CoAP) device"
+    gen = parser.add_mutually_exclusive_group()
+    gen.add_argument(
+        "--gen1",
+        "-g1",
+        action="store_const",
+        const=1,
+        dest="gen",
+        help="Force Gen1 (CoAP) device",
     )
-    parser.add_argument(
-        "--gen2", "-g2", action="store_true", help="Force Gen 2 (RPC) device"
+    gen.add_argument(
+        "--gen2",
+        "-g2",
+        action="store_const",
+        const=2,
+        dest="gen",
+        help="Force Gen 2 (RPC) device",
     )
-    parser.add_argument(
-        "--gen3", "-g3", action="store_true", help="Force Gen 3 (RPC) device"
+    gen.add_argument(
+        "--gen3",
+        "-g3",
+        action="store_const",
+        const=3,
+        dest="gen",
+        help="Force Gen 3 (RPC) device",
     )
-    parser.add_argument(
-        "--gen4", "-g4", action="store_true", help="Force Gen 4 (RPC) device"
+    gen.add_argument(
+        "--gen4",
+        "-g4",
+        action="store_const",
+        const=4,
+        dest="gen",
+        help="Force Gen 4 (RPC) device",
     )
+
     parser.add_argument(
         "--debug", "-deb", action="store_true", help="Enable debug level for logging"
     )
@@ -178,35 +205,19 @@ async def main() -> None:
     await coap_context.initialize(args.coap_port, args.listen_ip_address)
     await ws_context.initialize(args.ws_port, args.ws_api_url)
 
-    if not args.init and not (args.gen1 or args.gen2 or args.gen3 or args.gen4):
+    if not args.init and not args.gen:
         parser.error("specify gen if no device init at startup")
-
-    gen_list = (args.gen1, args.gen2, args.gen3, args.gen4)
-    if len([gen for gen in gen_list if gen]) > 1:
-        parser.error(
-            "You can only use one of --gen1, --gen2, --gen3 or --gen4 at a time"
-        )
-
-    gen = None
-    if args.gen1:
-        gen = 1
-    elif args.gen2:
-        gen = 2
-    elif args.gen3:
-        gen = 3
-    elif args.gen4:
-        gen = 4
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         # if gen is in args reduce logging for other gens
-        if args.gen1:
+        if args.gen in BLOCK_GENERATIONS:
             logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
-        elif args.gen2 or args.gen3 or args.gen4:
+        elif args.gen in RPC_GENERATIONS:
             logging.getLogger("aioshelly.block_device").setLevel(logging.INFO)
 
     if args.devices:
-        await test_devices(args.init, gen)
+        await test_devices(args.init, args.gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
@@ -220,9 +231,9 @@ async def main() -> None:
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)
         elif args.supports_scripts:
-            await check_rpc_device_supports_scripts(options, gen)
+            await check_rpc_device_supports_scripts(options, args.gen)
         else:
-            await test_single(options, args.init, gen)
+            await test_single(options, args.init, args.gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
