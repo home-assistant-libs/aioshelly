@@ -27,7 +27,12 @@ from common import (
 )
 
 from aioshelly.common import ConnectionOptions
-from aioshelly.const import DEFAULT_HTTP_PORT, WS_API_URL
+from aioshelly.const import (
+    BLOCK_GENERATIONS,
+    DEFAULT_HTTP_PORT,
+    RPC_GENERATIONS,
+    WS_API_URL,
+)
 
 
 async def test_single(options: ConnectionOptions, init: bool, gen: int | None) -> None:
@@ -203,18 +208,16 @@ async def main() -> None:
     if not args.init and not args.gen:
         parser.error("specify gen if no device init at startup")
 
-    gen = args.gen
-
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
         # if gen is in args reduce logging for other gens
-        if args.gen1:
+        if args.gen in BLOCK_GENERATIONS:
             logging.getLogger("aioshelly.rpc_device").setLevel(logging.INFO)
-        elif args.gen2 or args.gen3 or args.gen4:
+        elif args.gen in RPC_GENERATIONS:
             logging.getLogger("aioshelly.block_device").setLevel(logging.INFO)
 
     if args.devices:
-        await test_devices(args.init, gen)
+        await test_devices(args.init, args.gen)
     elif args.ip_address:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
@@ -228,9 +231,9 @@ async def main() -> None:
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)
         elif args.supports_scripts:
-            await check_rpc_device_supports_scripts(options, gen)
+            await check_rpc_device_supports_scripts(options, args.gen)
         else:
-            await test_single(options, args.init, gen)
+            await test_single(options, args.init, args.gen)
     else:
         parser.error("--ip_address or --devices must be specified")
 
