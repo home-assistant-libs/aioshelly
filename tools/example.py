@@ -52,8 +52,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     options: ConnectionOptions
 
-    p = Path("devices.json")
-    with p.open(encoding="utf8") as fp:  # noqa: ASYNC230 -- this is test code
+    with Path.open(Path("devices.json"), encoding="utf8") as fp:
         device_options = [ConnectionOptions(**json.loads(line)) for line in fp]
 
     async with ClientSession() as aiohttp_session:
