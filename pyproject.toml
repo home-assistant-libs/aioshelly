@@ -30,7 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 lint = [
-  "mypy==1.17.1",
+  "mypy==1.18.1",
   "pydocstyle==6.3.0",
   "ruff==0.12.12",
   "types-requests",
