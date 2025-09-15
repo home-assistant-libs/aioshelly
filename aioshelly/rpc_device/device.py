@@ -696,10 +696,7 @@ class RpcDevice:
             }
         )
         self._status.update(
-            {
-                item["key"]: {"value": item["status"].get("value")}
-                for item in self._dynamic_components
-            }
+            {item["key"]: {**item["status"]} for item in self._dynamic_components}
         )
 
     async def _retrieve_blutrv_components(self, components: dict[str, Any]) -> None:
