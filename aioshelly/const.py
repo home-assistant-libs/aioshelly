@@ -1163,7 +1163,15 @@ END_OF_OPTIONS_MARKER = 0xFF
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
-VIRTUAL_COMPONENTS = {"boolean", "button", "enum", "number", "presencezone", "text"}
+VIRTUAL_COMPONENTS = {
+    "boolean",
+    "button",
+    "enum",
+    "number",
+    "object",
+    "presencezone",
+    "text",
+}
 # Firmware 1.2.0 release date
 VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213
 
