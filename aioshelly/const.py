@@ -128,6 +128,7 @@ MODEL_DUO_BULB_G3 = "S3BL-D010009AEU"
 MODEL_EM_G3 = "S3EM-002CXCEU"
 MODEL_HT_G3 = "S3SN-0U12A"
 MODEL_I4_G3 = "S3SN-0024X"
+MODEL_MULTICOLOR_BULB_G3 = "S3BL-C010007AEU"
 MODEL_OUT_PLUG_S_G3 = "S3PL-20112EU"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
@@ -984,6 +985,13 @@ DEVICES = {
     MODEL_I4_G3: ShellyDevice(
         model=MODEL_I4_G3,
         name="Shelly I4 Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+    ),
+    MODEL_MULTICOLOR_BULB_G3: ShellyDevice(
+        model=MODEL_MULTICOLOR_BULB_G3,
+        name="Shelly Multicolor Bulb Gen3",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
