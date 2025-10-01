@@ -1029,6 +1029,22 @@ async def test_number_set(
 
 
 @pytest.mark.asyncio
+async def test_boolean_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice button_trigger() method."""
+    await rpc_device.boolean_set(12, True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Boolean.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "value": True,
+    }
+
+
+@pytest.mark.asyncio
 async def test_button_trigger(
     rpc_device: RpcDevice,
 ) -> None:
