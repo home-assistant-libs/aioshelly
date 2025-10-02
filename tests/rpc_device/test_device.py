@@ -1086,8 +1086,8 @@ async def test_cury_set(
         "intensity": 75,
     }
 
-    assert call_args_list[1][0][0][0][0] == "Cury.Set"
-    assert call_args_list[1][0][0][0][1] == {
+    assert call_args_list[2][0][0][0][0] == "Cury.Set"
+    assert call_args_list[2][0][0][0][1] == {
         "id": 2,
         "slot": "right",
         "on": False,
