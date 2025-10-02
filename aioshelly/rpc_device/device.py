@@ -350,6 +350,24 @@ class RpcDevice:
         }
         await self.call_rpc("Button.Trigger", params=params)
 
+    async def cury_set(
+        self,
+        id_: int,
+        slot: str,
+        value: bool | None = None,
+        intensity: int | None = None,
+    ) -> None:
+        """Set parameters for cury component."""
+        params = {
+            "id": id_,
+            "slot": slot,
+        }
+        if value is not None:
+            params["on"] = value
+        if intensity is not None:
+            params["intensity"] = intensity
+        await self.call_rpc("Cury.Set", params=params)
+
     async def enum_set(self, id_: int, value: str) -> None:
         """Set the value for the enum component."""
         params = {
