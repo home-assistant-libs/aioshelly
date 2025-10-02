@@ -1061,6 +1061,33 @@ async def test_button_trigger(
 
 
 @pytest.mark.asyncio
+async def test_cury_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice cury_set() method."""
+    await rpc_device.cury_set(2, "left", True)
+    await rpc_device.cury_set(2, "right", intensity=75)
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Cury.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 2,
+        "slot": "left",
+        "on": True,
+    }
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[1][0][0][0][0] == "Cury.Set"
+    assert call_args_list[1][0][0][0][1] == {
+        "id": 2,
+        "slot": "right",
+        "intensity": 75,
+    }
+
+
+@pytest.mark.asyncio
 async def test_enum_set(
     rpc_device: RpcDevice,
 ) -> None:
