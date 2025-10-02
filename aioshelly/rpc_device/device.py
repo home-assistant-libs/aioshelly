@@ -334,6 +334,14 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def boolean_set(self, id_: int, value: bool) -> None:
+        """Set the value for the boolean component."""
+        params = {
+            "id": id_,
+            "value": value,
+        }
+        await self.call_rpc("Boolean.Set", params=params)
+
     async def button_trigger(self, id_: int, event: str) -> None:
         """Trigger the button component."""
         params = {
