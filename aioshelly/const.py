@@ -167,6 +167,9 @@ GEN1_LIGHT_TRANSITION_MIN_FIRMWARE_DATE = 20210710
 # Firmware 1.0.0 release date
 GEN2_MIN_FIRMWARE_DATE = 20230803
 
+# Firmware 2.3.0 release date
+GEN2_WALL_DISPLAY_MIN_FIRMWARE_DATE = 20250110
+
 # Firmware 1.0.99 release date
 GEN3_MIN_FIRMWARE_DATE = 20231102
 
@@ -859,7 +862,7 @@ DEVICES = {
     MODEL_WALL_DISPLAY: ShellyDevice(
         model=MODEL_WALL_DISPLAY,
         name="Shelly Wall Display",
-        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        min_fw_date=GEN2_WALL_DISPLAY_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
     ),
@@ -1163,15 +1166,6 @@ END_OF_OPTIONS_MARKER = 0xFF
 
 FIRMWARE_PATTERN = re.compile(r"^(\d{8})")
 
-VIRTUAL_COMPONENTS = {
-    "boolean",
-    "button",
-    "enum",
-    "number",
-    "object",
-    "presencezone",
-    "text",
-}
 # Firmware 1.2.0 release date
 VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213
 
