@@ -383,6 +383,14 @@ class RpcDevice:
         }
         await self.call_rpc("Number.Set", params=params)
 
+    async def switch_set(self, id_: int, value: bool) -> None:
+        """Set the value for the switch component."""
+        params = {
+            "id": id_,
+            "on": value,
+        }
+        await self.call_rpc("Switch.Set", params=params)
+
     async def text_set(self, id_: int, value: str) -> None:
         """Set the value for the text component."""
         params = {
