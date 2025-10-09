@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
@@ -120,7 +121,7 @@ max-complexity = 18
 legacy_tox_ini = """
 
 [tox]
-envlist = py311, py312, py313, lint, mypy, tests
+envlist = py311, py312, py313, py314, lint, mypy, tests
 skip_missing_interpreters = True
 
 [gh-actions]
@@ -128,6 +129,7 @@ python =
   3.11: py311, lint, mypy
   3.12: py312, tests
   3.13: py313, tests
+  3.14: py314, tests
 
 [testenv:lint]
 basepython = python3
