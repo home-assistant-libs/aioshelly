@@ -349,6 +349,18 @@ class RpcDevice:
         }
         await self.call_rpc("Button.Trigger", params=params)
 
+    async def cury_boost(
+        self,
+        id_: int,
+        slot: str,
+    ) -> None:
+        """Start boost mode for Cury."""
+        params = {
+            "id": id_,
+            "slot": slot,
+        }
+        await self.call_rpc("Cury.Boost", params=params)
+
     async def cury_set(
         self,
         id_: int,
