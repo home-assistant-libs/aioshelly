@@ -1061,6 +1061,96 @@ async def test_button_trigger(
 
 
 @pytest.mark.asyncio
+async def test_cover_get_status(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice cover_get_status() method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {"id": 0, "pos_control": True, "last_direction": "open", "current_pos": 61}
+    ]
+
+    result = await rpc_device.cover_get_status(0)
+
+    assert result == {
+        "id": 0,
+        "pos_control": True,
+        "last_direction": "open",
+        "current_pos": 61,
+    }
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.GetStatus"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
+
+
+@pytest.mark.asyncio
+async def test_cover_calibrate(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice cover_calibrate() method."""
+    await rpc_device.cover_calibrate(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.Calibrate"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
+
+
+@pytest.mark.asyncio
+async def test_cover_open(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice cover_open() method."""
+    await rpc_device.cover_open(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.Open"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
+
+
+@pytest.mark.asyncio
+async def test_cover_close(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice cover_close() method."""
+    await rpc_device.cover_close(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.Close"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
+
+
+@pytest.mark.asyncio
+async def test_cover_stop(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice cover_stop() method."""
+    await rpc_device.cover_stop(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.Stop"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
+
+
+@pytest.mark.asyncio
+async def test_cover_set_position(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice cover_set_position() method."""
+    await rpc_device.cover_set_position(0, 55)
+    await rpc_device.cover_set_position(1, slat_pos=20)
+    await rpc_device.cover_set_position(0, 45, slat_pos=10)
+
+    assert rpc_device.call_rpc_multiple.call_count == 3
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.GoToPosition"
+    assert call_args_list[0][0][0][0][1] == {"id": 0, "pos": 55}
+
+    assert call_args_list[1][0][0][0][0] == "Cover.GoToPosition"
+    assert call_args_list[1][0][0][0][1] == {"id": 1, "slat_pos": 20}
+
+    assert call_args_list[2][0][0][0][0] == "Cover.GoToPosition"
+    assert call_args_list[2][0][0][0][1] == {"id": 0, "pos": 45, "slat_pos": 10}
+
+
+@pytest.mark.asyncio
 async def test_cury_boost(
     rpc_device: RpcDevice,
 ) -> None:

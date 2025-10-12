@@ -349,6 +349,40 @@ class RpcDevice:
         }
         await self.call_rpc("Button.Trigger", params=params)
 
+    async def cover_get_status(self, id_: int) -> dict[str, Any]:
+        """Get cover status."""
+        return await self.call_rpc("Cover.GetStatus", {"id": id_})
+
+    async def cover_calibrate(self, id_: int) -> None:
+        """Calibrate cover."""
+        await self.call_rpc("Cover.Calibrate", {"id": id_})
+
+    async def cover_open(self, id_: int) -> None:
+        """Open cover."""
+        await self.call_rpc("Cover.Open", {"id": id_})
+
+    async def cover_close(self, id_: int) -> None:
+        """Close cover."""
+        await self.call_rpc("Cover.Close", {"id": id_})
+
+    async def cover_stop(self, id_: int) -> None:
+        """Stop cover."""
+        await self.call_rpc("Cover.Stop", {"id": id_})
+
+    async def cover_set_position(
+        self,
+        id_: int,
+        pos: int | None = None,
+        slat_pos: int | None = None,
+    ) -> None:
+        """Set cover position."""
+        params = {"id": id_}
+        if pos is not None:
+            params["pos"] = pos
+        if slat_pos is not None:
+            params["slat_pos"] = slat_pos
+        await self.call_rpc("Cover.GoToPosition", params=params)
+
     async def cury_boost(
         self,
         id_: int,
