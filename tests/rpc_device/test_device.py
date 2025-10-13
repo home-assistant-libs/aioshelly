@@ -402,11 +402,11 @@ async def test_device_already_initialized(
 @pytest.mark.parametrize(
     ("exc", "result_exc", "result_str"),
     [
-        (InvalidAuthError, InvalidAuthError, ""),
+        (InvalidAuthError, InvalidAuthError, None),
         (RpcCallError(404, "test error"), DeviceConnectionError, "test error"),
-        (ClientError, DeviceConnectionError, ""),
-        (DeviceConnectionError, DeviceConnectionError, ""),
-        (OSError, DeviceConnectionError, ""),
+        (ClientError, DeviceConnectionError, None),
+        (DeviceConnectionError, DeviceConnectionError, None),
+        (OSError, DeviceConnectionError, None),
     ],
 )
 @pytest.mark.asyncio
