@@ -43,7 +43,7 @@ dev = [
   "pytest-cov==7.0.0",
   "pytest==8.4.2",
   "requests",
-  "tox==4.30.3",
+  "tox==4.31.0",
 ]
 
 [project.urls]
