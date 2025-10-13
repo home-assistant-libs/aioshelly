@@ -1,0 +1,1 @@
+{"id":0, "source":"WS_in", "state":"closing","move_timeout":60.00, "move_started_at":1760365457.96,"apower":123.1,"voltage":219.7,"current":0.557,"pf":0.99,"freq":50.0,"aenergy":{"total":314.801,"by_minute":[0.000,0.000,0.000],"minute_ts":1760365440},"temperature":{"tC":52.0, "tF":125.7},"pos_control":true,"last_direction":"close","current_pos":51}

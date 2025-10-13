@@ -91,6 +91,18 @@ async def mini_1_g4_components() -> AsyncGenerator[dict[str, Any], None]:
     yield await load_device_fixture("shellymini1gen4", "Shelly.GetComponents")
 
 
+@pytest_asyncio.fixture
+async def shelly2pmg3_status() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Shelly 2PM Gen3 status."""
+    yield await load_device_fixture("shelly2pmg3", "Shelly.GetStatus")
+
+
+@pytest_asyncio.fixture
+async def shelly2pmg3_cover_status() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Shelly 2PM Gen3 cover status."""
+    yield await load_device_fixture("shelly2pmg3", "Cover.GetStatus")
+
+
 def test_mergedicts() -> None:
     """Test the recursive dict merge."""
     dest = {"a": 1, "b": {"c": 2, "d": 3}}
@@ -720,6 +732,44 @@ async def test_device_mac_address_mismatch(
 
     with pytest.raises(MacAddressMismatchError):
         await rpc_device.initialize()
+
+
+@pytest.mark.asyncio
+async def test_cover_update_status(
+    rpc_device: RpcDevice,
+    shelly2pmg3_status: dict[str, Any],
+    shelly2pmg3_cover_status: dict[str, Any],
+) -> None:
+    """Test RpcDevice cover_update_status method."""
+    rpc_device.initialized = True
+    rpc_device.call_rpc_multiple.side_effect = [
+        [shelly2pmg3_cover_status],
+    ]
+
+    # no status, do not try to update cover status
+    await rpc_device.update_cover_status(0)
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    rpc_device._status = shelly2pmg3_status
+
+    # cover not found in status
+    await rpc_device.update_cover_status(1)
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    # cover found in status and updated
+    assert rpc_device.status["cover:0"]["state"] == "open"
+    assert rpc_device.status["cover:0"]["current_pos"] == 100
+
+    await rpc_device.update_cover_status(0)
+
+    assert rpc_device.status["cover:0"]["state"] == "closing"
+    assert rpc_device.status["cover:0"]["current_pos"] == 51
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.GetStatus"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
 
 
 @pytest.mark.asyncio
