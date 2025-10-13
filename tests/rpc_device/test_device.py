@@ -1061,6 +1061,30 @@ async def test_button_trigger(
 
 
 @pytest.mark.asyncio
+async def test_climate_set_target_temperature(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice climate_set_target_temperature() method."""
+    await rpc_device.climate_set_target_temperature(0, 22)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Thermostat.SetConfig"
+    assert call_args_list[0][0][0][0][1] == {"config": {"id": 0, "target_C": 22}}
+
+
+@pytest.mark.asyncio
+async def test_climate_set_hvac_mode(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice climate_set_hvac_mode() method."""
+    await rpc_device.climate_set_hvac_mode(0, "heat")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Thermostat.SetConfig"
+    assert call_args_list[0][0][0][0][1] == {"config": {"id": 0, "enable": True}}
+
+
+@pytest.mark.asyncio
 async def test_cover_get_status(rpc_device: RpcDevice) -> None:
     """Test RpcDevice cover_get_status() method."""
     rpc_device.call_rpc_multiple.return_value = [

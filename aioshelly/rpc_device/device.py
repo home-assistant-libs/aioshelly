@@ -361,12 +361,13 @@ class RpcDevice:
         }
         await self.call_rpc("Thermostat.SetConfig", params=params)
 
-    async def climate_set_hvac_mode(self, id_: int, enable: bool) -> None:
+    async def climate_set_hvac_mode(self, id_: int, hvac_mode: str) -> None:
         """Set climate hvac mode."""
+        mode = hvac_mode in ("cool", "heat")
         params = {
             "config": {
                 "id": id_,
-                "enable": enable,
+                "enable": mode,
             }
         }
         await self.call_rpc("Thermostat.SetConfig", params=params)
