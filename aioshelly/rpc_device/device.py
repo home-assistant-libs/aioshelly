@@ -488,6 +488,19 @@ class RpcDevice:
         """Get device config from 'Shelly.GetConfig'."""
         self._config = await self.call_rpc("Shelly.GetConfig")
 
+    async def update_cover_status(self, id_: int) -> None:
+        """Update cover status.
+
+        This method will update only the status of the specified cover
+        component in the device status if it exists in the current status.
+        """
+        key = f"cover:{id_}"
+        if self._status is None or key not in self._status:
+            return
+
+        cover_status = await self.cover_get_status(id_)
+        self._status[key].update(cover_status)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
