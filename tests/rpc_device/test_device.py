@@ -1198,6 +1198,29 @@ async def test_cury_boost(
 
 
 @pytest.mark.asyncio
+async def test_cury_stop_boost(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice cury_stop_boost() method."""
+    await rpc_device.cury_stop_boost(2, "left")
+    await rpc_device.cury_stop_boost(3, "right")
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cury.StopBoost"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 2,
+        "slot": "left",
+    }
+    assert call_args_list[1][0][0][0][0] == "Cury.StopBoost"
+    assert call_args_list[1][0][0][0][1] == {
+        "id": 3,
+        "slot": "right",
+    }
+
+
+@pytest.mark.asyncio
 async def test_cury_set(
     rpc_device: RpcDevice,
 ) -> None:
