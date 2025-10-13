@@ -349,6 +349,29 @@ class RpcDevice:
         }
         await self.call_rpc("Button.Trigger", params=params)
 
+    async def climate_set_target_temperature(
+        self, id_: int, temperature: float
+    ) -> None:
+        """Set climate target temperature."""
+        params = {
+            "config": {
+                "id": id_,
+                "target_C": temperature,
+            }
+        }
+        await self.call_rpc("Thermostat.SetConfig", params=params)
+
+    async def climate_set_hvac_mode(self, id_: int, hvac_mode: str) -> None:
+        """Set climate hvac mode."""
+        mode = hvac_mode in ("cool", "heat")
+        params = {
+            "config": {
+                "id": id_,
+                "enable": mode,
+            }
+        }
+        await self.call_rpc("Thermostat.SetConfig", params=params)
+
     async def cover_get_status(self, id_: int) -> dict[str, Any]:
         """Get cover status."""
         return await self.call_rpc("Cover.GetStatus", {"id": id_})
