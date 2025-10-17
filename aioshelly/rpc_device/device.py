@@ -464,6 +464,10 @@ class RpcDevice:
         }
         await self.call_rpc("Number.Set", params=params)
 
+    async def smoke_mute_alarm(self, id_: int) -> None:
+        """Mute smoke alarm."""
+        await self.call_rpc("Smoke.Mute", params={"id": id_})
+
     async def switch_set(self, id_: int, value: bool) -> None:
         """Set the value for the switch component."""
         params = {

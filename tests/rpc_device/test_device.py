@@ -1423,3 +1423,16 @@ async def test_switch_set(
 
     assert call_args_list[0][0][0][0][0] == "Switch.Set"
     assert call_args_list[0][0][0][0][1] == {"id": 2, "on": True}
+
+
+@pytest.mark.asyncio
+async def test_smoke_mute_alarm(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice smoke_mute_alarm() method."""
+    await rpc_device.smoke_mute_alarm(12)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Smoke.Mute"
+    assert call_args_list[0][0][0][0][1] == {"id": 12}
