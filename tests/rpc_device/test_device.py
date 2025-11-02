@@ -1436,3 +1436,20 @@ async def test_smoke_mute_alarm(
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
     assert call_args_list[0][0][0][0][0] == "Smoke.Mute"
     assert call_args_list[0][0][0][0][1] == {"id": 12}
+
+
+@pytest.mark.asyncio
+async def test_cury_set_away_mode(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice cury_set_away_mode() method."""
+    await rpc_device.cury_set_away_mode(0, True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cury.SetAwayMode"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 0,
+        "on": True,
+    }
