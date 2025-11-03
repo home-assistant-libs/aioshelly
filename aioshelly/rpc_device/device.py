@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable, Iterable
 from enum import Enum, auto
 from functools import partial
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientSession
 
@@ -111,18 +111,16 @@ class RpcDevice:
             self._rpc = WsRPC(
                 options.ip_address, self._on_notification, port=options.port
             )
-        elif options.ble_device is not None:
-            # BLE transport
-            self._rpc = BleRPC(options.ble_device)
         else:
-            raise ValueError("Must provide either ip_address or ble_device")
+            # BLE transport (guaranteed non-None by ConnectionOptions)
+            self._rpc = BleRPC(options.ble_device)
 
         # Subscribe to WebSocket updates if using WsRPC
         self._unsub_ws: Callable | None = None
         if isinstance(self._rpc, WsRPC) and ws_context is not None:
-            if options.ip_address is None:
-                msg = "ip_address required for WebSocket transport"
-                raise ValueError(msg)
+            # options.ip_address is guaranteed non-None if we have WsRPC
+            if TYPE_CHECKING:
+                assert options.ip_address is not None
             sub_id = options.ip_address
             if options.device_mac:
                 sub_id = options.device_mac

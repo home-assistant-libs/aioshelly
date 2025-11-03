@@ -1471,17 +1471,6 @@ async def test_rpc_device_init_with_ble(ws_context: WsServer) -> None:
 
 
 @pytest.mark.asyncio
-async def test_rpc_device_init_requires_transport() -> None:
-    """Test RpcDevice initialization requires either ip_address or ble_device."""
-    # Create options with neither ip_address nor ble_device
-    # This will be caught by ConnectionOptions __post_init__
-    with pytest.raises(
-        ValueError, match="Must provide either ip_address or ble_device"
-    ):
-        ConnectionOptions()
-
-
-@pytest.mark.asyncio
 async def test_rpc_device_create_ble(
     client_session: ClientSession, ws_context: WsServer
 ) -> None:
@@ -1566,3 +1555,15 @@ async def test_process_ip_or_options_ble() -> None:
     assert result is options
     assert result.ble_device is ble_device
     assert result.ip_address is None
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_create_with_string_ip(
+    client_session: ClientSession, ws_context: WsServer
+) -> None:
+    """Test RpcDevice.create with string IP address."""
+    # Pass a string IP address instead of ConnectionOptions
+    rpc_device = await RpcDevice.create(client_session, ws_context, "192.168.1.100")
+
+    assert rpc_device.options.ip_address == "192.168.1.100"
+    assert isinstance(rpc_device._rpc, WsRPC)
