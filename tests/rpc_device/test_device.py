@@ -1587,28 +1587,33 @@ async def test_rpc_device_initialize_wsrpc_without_aiohttp_session() -> None:
 @pytest.mark.asyncio
 async def test_rpc_device_initialize_ble() -> None:
     """Test RpcDevice.initialize with BLE transport."""
+    device_info = await load_device_fixture(
+        "shellyblugatewaygen3", "Shelly.GetDeviceInfo"
+    )
+    config = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetConfig")
+    status = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetStatus")
+    components = await load_device_fixture(
+        "shellyblugatewaygen3", "Shelly.GetComponents"
+    )
+    remote_config = await load_device_fixture(
+        "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
+    )
+
     ws_context = Mock(spec=WsServer)
     ble_device = MagicMock(spec=BLEDevice)
     ble_device.address = "AA:BB:CC:DD:EE:FF"
-    options = ConnectionOptions(ble_device=ble_device, device_mac="AABBCCDDEEFF")
+    options = ConnectionOptions(ble_device=ble_device, device_mac=device_info["mac"])
 
     mock_ble_rpc = AsyncMock(spec=BleRPC)
     mock_ble_rpc.connected = True
     mock_ble_rpc.connect = AsyncMock()
     mock_ble_rpc.call = AsyncMock(
         side_effect=[
-            {
-                "id": "shellyplus1-test",
-                "mac": "AABBCCDDEEFF",
-                "model": "SNSW-001P16EU",
-                "gen": 2,
-                "fw_id": "20230913-112054/v1.14.0-gcb84623",
-                "ver": "1.14.0",
-                "app": "Plus1",
-                "profile": "switch",
-            },
-            {"name": "test"},
-            {},
+            device_info,
+            config,
+            status,
+            components,
+            remote_config,
         ]
     )
 
