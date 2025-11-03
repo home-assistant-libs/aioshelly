@@ -10,10 +10,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import platform
 import sys
+
+from bleak import BleakScanner
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.rpc_device import RpcDevice
+
+# Check if we're on macOS
+IS_MACOS = platform.system() == "Darwin"
 
 # Enable debug logging
 logging.basicConfig(
@@ -33,8 +39,17 @@ async def main() -> None:
 
     mac_address = sys.argv[1]
 
-    # Create connection options with BLE MAC address
-    options = ConnectionOptions(bluetooth_address=mac_address)
+    # Scan for the BLE device
+    print(f"Scanning for device {mac_address}...")
+    ble_device = await BleakScanner.find_device_by_address(mac_address, timeout=10.0)
+    if not ble_device:
+        print(f"Device {mac_address} not found or out of range")
+        sys.exit(1)
+
+    print(f"Found device: {ble_device.name or 'Unknown'} ({ble_device.address})")
+
+    # Create connection options with BLE device
+    options = ConnectionOptions(ble_device=ble_device)
 
     # Create device (uses BLE transport based on connection options)
     device = await RpcDevice.create(
