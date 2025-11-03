@@ -146,6 +146,31 @@ class BleRPC:
         self._client = None
         self._connected = False
 
+    def _validate_response_id(self, response: dict[str, Any], expected_id: int) -> None:
+        """Validate response ID matches request ID."""
+        if response.get("id") != expected_id:
+            msg = (
+                f"Response ID mismatch: expected {expected_id}, "
+                f"got {response.get('id')}"
+            )
+            raise RpcCallError(0, msg)
+
+    def _raise_for_response_error(self, response: dict[str, Any]) -> None:
+        """Raise exception if response contains an error."""
+        if "error" in response:
+            error = response["error"]
+            code = error.get("code", 0)
+            message = error.get("message", "Unknown error")
+            raise RpcCallError(code, message)
+
+    def _extract_result(self, response: dict[str, Any]) -> dict[str, Any]:
+        """Extract result from response or raise if invalid."""
+        if "result" in response:
+            result: dict[str, Any] = response["result"]
+            return result
+        # Response has neither error nor result
+        raise RpcCallError(0, f"Invalid response: {response}")
+
     async def call(
         self,
         method: str,
@@ -196,31 +221,11 @@ class BleRPC:
                 timeout=timeout,
             )
 
-            # Parse response
+            # Parse and validate response
             response: dict[str, Any] = json_loads(response_data)
-
-            # Verify response ID matches request
-            if response.get("id") != call_id:
-                msg = (
-                    f"Response ID mismatch: expected {call_id}, "
-                    f"got {response.get('id')}"
-                )
-                raise RpcCallError(0, msg)  # noqa: TRY301
-
-            # Check for error in response
-            if "error" in response:
-                error = response["error"]
-                code = error.get("code", 0)
-                message = error.get("message", "Unknown error")
-                raise RpcCallError(code, message)  # noqa: TRY301
-
-            # Return result
-            if "result" in response:
-                result: dict[str, Any] = response["result"]
-                return result
-
-            # Response has neither error nor result
-            raise RpcCallError(0, f"Invalid response: {response}")  # noqa: TRY301
+            self._validate_response_id(response, call_id)
+            self._raise_for_response_error(response)
+            return self._extract_result(response)
 
         except TimeoutError as err:
             raise DeviceConnectionTimeoutError(
