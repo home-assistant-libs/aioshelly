@@ -41,13 +41,13 @@ class ConnectionOptions:
     """Shelly options for connection."""
 
     ip_address: str | None = None
-    ble_device: BLEDevice | None = None
     username: str | None = None
     password: str | None = None
     temperature_unit: str = "C"
     auth: BasicAuth | None = None
     device_mac: str | None = None
     port: int = DEFAULT_HTTP_PORT
+    ble_device: BLEDevice | None = None
 
     def __post_init__(self) -> None:
         """Call after initialization."""
