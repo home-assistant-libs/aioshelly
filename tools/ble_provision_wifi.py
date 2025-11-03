@@ -16,6 +16,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import getpass
 import logging
@@ -105,10 +106,22 @@ class ShellyScannerAll:
 
 async def main() -> None:  # noqa: PLR0915
     """Run the WiFi provisioning example."""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Provision WiFi credentials to Shelly device via BLE"
+    )
+    parser.add_argument("mac_address", nargs="?", help="BLE MAC address of device")
+    parser.add_argument("ssid", nargs="?", help="WiFi SSID")
+    parser.add_argument("password", nargs="?", help="WiFi password")
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Enable debug logging"
+    )
+    args = parser.parse_args()
+
     # Check if MAC address was provided
-    if len(sys.argv) >= 2:  # noqa: PLR2004
+    if args.mac_address:
         # MAC address provided, scan for specific device
-        mac_address = sys.argv[1].upper()
+        mac_address = args.mac_address.upper()
         print(f"Scanning for device {mac_address}...")
         device_scanner = DeviceScanner(mac_address)
         ble_device = await device_scanner.find_device(timeout=10.0)
@@ -129,8 +142,8 @@ async def main() -> None:  # noqa: PLR0915
             sys.exit(1)
 
         print(f"\nFound {len(devices)} Shelly device(s):")
-        for i, device in enumerate(devices, 1):
-            print(f"  {i}. {device.name or 'Unknown'} ({device.address})")
+        for i, dev in enumerate(devices, 1):
+            print(f"  {i}. {dev.name or 'Unknown'} ({dev.address})")
 
         # Prompt user to select a device
         while True:
