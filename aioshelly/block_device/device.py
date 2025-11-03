@@ -84,6 +84,8 @@ class BlockDevice:
         options: ConnectionOptions,
     ) -> None:
         """Device init."""
+        if options.ip_address is None:
+            raise ValueError("Block devices require ip_address")
         self.coap_context: COAP = coap_context
         self.aiohttp_session: ClientSession = aiohttp_session
         self.options: ConnectionOptions = options
@@ -114,6 +116,8 @@ class BlockDevice:
     ) -> BlockDevice:
         """Device creation."""
         options = await process_ip_or_options(ip_or_options)
+        if options.ip_address is None:
+            raise ValueError("Block devices require ip_address")
         # Try sending cit/s request to trigger a sleeping device
         try:
             await coap_context.request(options.ip_address, "s")
@@ -129,6 +133,8 @@ class BlockDevice:
     @property
     def ip_address(self) -> str:
         """Device ip address."""
+        if self.options.ip_address is None:
+            raise RuntimeError("Block device ip_address is None")
         return self.options.ip_address
 
     async def initialize(self) -> None:
@@ -150,10 +156,10 @@ class BlockDevice:
             self.initialized = False
             self.coap_s = None
 
-        ip = self.options.ip_address
+        ip = self.ip_address
         try:
             self._shelly = await get_info(
-                self.aiohttp_session, self.options.ip_address, self.options.device_mac
+                self.aiohttp_session, self.ip_address, self.options.device_mac
             )
 
             if self.requires_auth and not self.options.auth:
@@ -293,7 +299,7 @@ class BlockDevice:
 
     async def update_shelly(self) -> None:
         """Device update for /shelly (HTTP)."""
-        self._shelly = await get_info(self.aiohttp_session, self.options.ip_address)
+        self._shelly = await get_info(self.aiohttp_session, self.ip_address)
 
     async def _update_cit_d(self) -> None:
         """Update CoAP cit/d.
@@ -349,7 +355,7 @@ class BlockDevice:
         if self.options.auth is None and self.requires_auth:
             raise InvalidAuthError("auth missing and required")
 
-        host = self.options.ip_address
+        host = self.ip_address
         _LOGGER.debug("host %s: http request: /%s (params=%s)", host, path, params)
         try:
             resp: ClientResponse = await self.aiohttp_session.request(
