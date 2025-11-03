@@ -753,7 +753,7 @@ class RpcDevice:
             raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
-            raise DeviceConnectionError from err
+            raise self._last_error from err
         else:
             return results
 
