@@ -113,6 +113,8 @@ class RpcDevice:
             )
         else:
             # BLE transport (guaranteed non-None by ConnectionOptions)
+            if TYPE_CHECKING:
+                assert options.ble_device is not None
             self._rpc = BleRPC(options.ble_device)
 
         # Subscribe to WebSocket updates if using WsRPC
