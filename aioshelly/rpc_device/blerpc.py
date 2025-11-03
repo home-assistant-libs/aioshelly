@@ -34,10 +34,10 @@ RX_POLL_INTERVAL = 0.1  # seconds between RX control polls
 UINT32_BYTES = 4  # Size of uint32 in bytes
 
 # Pre-compiled struct operations for better performance
-_PACK_UINT32_BE = struct.Struct(">I").pack  # Pack 4-byte big-endian unsigned integer
-_UNPACK_UINT32_BE = struct.Struct(
-    ">I"
-).unpack  # Unpack 4-byte big-endian unsigned integer
+# Pack 4-byte big-endian unsigned integer
+_PACK_UINT32_BE = struct.Struct(">I").pack
+# Unpack 4-byte big-endian unsigned integer
+_UNPACK_UINT32_BE = struct.Struct(">I").unpack
 
 
 class BleRPC:
@@ -252,12 +252,10 @@ class BleRPC:
             raise DeviceConnectionTimeoutError(
                 f"BLE RPC call timed out after {timeout}s"
             ) from err
-        except Exception as err:
-            if isinstance(
-                err, (DeviceConnectionError, DeviceConnectionTimeoutError, RpcCallError)
-            ):
-                raise
+        except (BleakError, OSError) as err:
             raise DeviceConnectionError(f"BLE RPC call failed: {err}") from err
+        except ValueError as err:
+            raise DeviceConnectionError(f"Invalid JSON in RPC call: {err}") from err
 
     async def _send_request(self, data: bytes) -> None:
         """Send RPC request over BLE.
