@@ -221,9 +221,15 @@ class RpcDevice:
         """Device port."""
         return self.options.port
 
+    def _device_info_str(self) -> str:
+        """Return device info string for logging."""
+        if self.options.bluetooth_address:
+            return f"BLE device {self.options.bluetooth_address}"
+        return f"host {self.options.ip_address}:{self.options.port}"
+
     async def initialize(self) -> None:
         """Device initialization."""
-        _LOGGER.debug("host %s:%s: RPC device initialize", self.ip_address, self.port)
+        _LOGGER.debug("%s: RPC device initialize", self._device_info_str())
         if self._initialize_lock.locked():
             raise RuntimeError("Already initializing")
 
@@ -244,8 +250,7 @@ class RpcDevice:
 
     async def _connect_websocket(self) -> None:
         """Connect device websocket."""
-        ip = self.options.ip_address
-        port = self.options.port
+        device_info = self._device_info_str()
         try:
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
                 if isinstance(self._rpc, WsRPC):
@@ -259,21 +264,21 @@ class RpcDevice:
             await self._init_calls()
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
-            _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
+            _LOGGER.debug("%s: error: %r", device_info, self._last_error)
             await self._rpc.disconnect()
             raise
         except MacAddressMismatchError as err:
             self._last_error = err
-            _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
+            _LOGGER.debug("%s: error: %r", device_info, err)
             await self._rpc.disconnect()
             raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
-            _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
+            _LOGGER.debug("%s: error: %r", device_info, self._last_error)
             await self._rpc.disconnect()
             raise self._last_error from err
         else:
-            _LOGGER.debug("host %s:%s: RPC device init finished", ip, port)
+            _LOGGER.debug("%s: RPC device init finished", device_info)
             self.initialized = True
 
     async def shutdown(self) -> None:
@@ -282,7 +287,7 @@ class RpcDevice:
         This method will unsubscribe the update listener and disconnect the websocket.
 
         """
-        _LOGGER.debug("host %s:%s: RPC device shutdown", self.ip_address, self.port)
+        _LOGGER.debug("%s: RPC device shutdown", self._device_info_str())
         self._update_listener = None
         await self._disconnect_websocket()
 
