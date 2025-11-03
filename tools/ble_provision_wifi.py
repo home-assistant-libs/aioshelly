@@ -1,7 +1,7 @@
 """Example of provisioning WiFi credentials via Bluetooth.
 
 This script demonstrates how to:
-1. Connect to a Shelly device via BLE
+1. Scan for and connect to a Shelly device via BLE
 2. Scan for available WiFi networks
 3. Configure WiFi credentials
 """
