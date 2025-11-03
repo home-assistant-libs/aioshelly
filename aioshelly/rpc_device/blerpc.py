@@ -34,6 +34,8 @@ RX_CONTROL_CHARACTERISTIC_UUID = "5f6d4f53-5f52-5043-5f72-785f63746c5f"
 # Protocol constants
 UINT32_BYTES = 4  # Size of uint32 in bytes
 MAX_CONNECTION_RETRIES = 2  # Initial attempt + 1 retry for cache issues
+RX_POLL_INTERVAL = 0.1  # Seconds to wait between RX frame length polls
+RX_POLL_MAX_ATTEMPTS = 50  # Max polls before timeout (5 seconds total)
 
 # Pre-compiled struct operations for better performance
 # Pack 4-byte big-endian unsigned integer
@@ -302,18 +304,36 @@ class BleRPC:
         if TYPE_CHECKING:
             assert self._client is not None
 
-        # Read frame length from RX control characteristic
-        length_data = await self._client.read_gatt_char(RX_CONTROL_CHARACTERISTIC_UUID)
-        if len(length_data) < UINT32_BYTES:
-            msg = (
-                f"Invalid frame length data: expected {UINT32_BYTES} bytes, "
-                f"got {len(length_data)}"
+        # Poll RX control characteristic for frame length
+        # Frame length may be 0 while device prepares response
+        frame_length = 0
+        for _attempt in range(RX_POLL_MAX_ATTEMPTS):
+            length_data = await self._client.read_gatt_char(
+                RX_CONTROL_CHARACTERISTIC_UUID
             )
-            raise DeviceConnectionError(msg)
+            if len(length_data) < UINT32_BYTES:
+                msg = (
+                    f"Invalid frame length data: expected {UINT32_BYTES} bytes, "
+                    f"got {len(length_data)}"
+                )
+                raise DeviceConnectionError(msg)
 
-        frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
+            frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
+            if frame_length == 0:
+                # Device hasn't prepared response yet, wait and retry
+                _LOGGER.debug("Frame length 0, polling again in %ss", RX_POLL_INTERVAL)
+                await asyncio.sleep(RX_POLL_INTERVAL)
+                continue
+
+            # Got non-zero frame length
+            break
+
         if frame_length == 0:
-            msg = "Received frame length of 0, no response data available"
+            timeout_s = RX_POLL_MAX_ATTEMPTS * RX_POLL_INTERVAL
+            msg = (
+                f"No response data available after {RX_POLL_MAX_ATTEMPTS} "
+                f"poll attempts ({timeout_s}s)"
+            )
             raise DeviceConnectionError(msg)
 
         _LOGGER.debug("Receiving %d bytes via BLE", frame_length)

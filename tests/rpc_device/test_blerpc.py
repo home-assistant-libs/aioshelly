@@ -21,6 +21,7 @@ from aioshelly.json import json_bytes
 from aioshelly.rpc_device.blerpc import (
     DATA_CHARACTERISTIC_UUID,
     RPC_SERVICE_UUID,
+    RX_POLL_MAX_ATTEMPTS,
     BleRPC,
 )
 
@@ -503,24 +504,63 @@ async def test_blerpc_call_invalid_response(
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_establish_connection")
-async def test_blerpc_call_zero_frame_length(
+async def test_blerpc_call_zero_frame_length_timeout(
     ble_device: BLEDevice, mock_ble_client: MagicMock
 ) -> None:
-    """Test BLE RPC call with zero frame length."""
+    """Test BLE RPC call with zero frame length that times out after polling."""
     ble_rpc = BleRPC(ble_device)
 
     mock_ble_client.write_gatt_char = AsyncMock()
     mock_ble_client.read_gatt_char = AsyncMock()
 
-    # Mock RX control returns frame length of 0
+    # Mock RX control always returns frame length of 0 (never ready)
     mock_ble_client.read_gatt_char.side_effect = [
-        (0).to_bytes(4, "big"),  # Frame length of 0
+        (0).to_bytes(4, "big")
+    ] * RX_POLL_MAX_ATTEMPTS
+
+    await ble_rpc.connect()
+
+    # Patch asyncio.sleep to avoid slow test
+    with (
+        patch("aioshelly.rpc_device.blerpc.asyncio.sleep", new_callable=AsyncMock),
+        pytest.raises(
+            DeviceConnectionError,
+            match=(
+                f"No response data available after {RX_POLL_MAX_ATTEMPTS} poll attempts"
+            ),
+        ),
+    ):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_zero_frame_length_then_success(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with zero frame length that eventually succeeds."""
+    ble_rpc = BleRPC(ble_device)
+
+    response_data = b'{"id":1,"result":{"name":"Test Device"}}'
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    # Mock RX control returns 0 a few times, then actual frame length
+    mock_ble_client.read_gatt_char.side_effect = [
+        (0).to_bytes(4, "big"),  # First poll: not ready
+        (0).to_bytes(4, "big"),  # Second poll: not ready
+        len(response_data).to_bytes(4, "big"),  # Third poll: ready
+        response_data,  # Data read
     ]
 
     await ble_rpc.connect()
 
-    with pytest.raises(DeviceConnectionError, match="Received frame length of 0"):
-        await ble_rpc.call("Shelly.GetDeviceInfo")
+    # Patch asyncio.sleep to avoid slow test
+    with patch("aioshelly.rpc_device.blerpc.asyncio.sleep", new_callable=AsyncMock):
+        result = await ble_rpc.call("Shelly.GetDeviceInfo")
+
+    assert result == {"name": "Test Device"}
 
 
 @pytest.mark.asyncio
