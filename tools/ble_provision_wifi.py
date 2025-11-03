@@ -9,10 +9,17 @@ This script demonstrates how to:
 from __future__ import annotations
 
 import asyncio
+import logging
 import sys
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.rpc_device import RpcDevice
+
+# Enable debug logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 
 async def main() -> None:
