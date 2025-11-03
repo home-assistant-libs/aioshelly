@@ -20,6 +20,7 @@ from aioshelly.exceptions import (
 from aioshelly.json import json_bytes
 from aioshelly.rpc_device.blerpc import (
     DATA_CHARACTERISTIC_UUID,
+    RPC_SERVICE_UUID,
     BleRPC,
 )
 
@@ -83,22 +84,21 @@ async def test_blerpc_connect_already_connected(ble_device: BLEDevice) -> None:
 
 
 @pytest.mark.asyncio
-async def test_blerpc_connect_failure(ble_device: BLEDevice) -> None:
+async def test_blerpc_connect_failure(
+    ble_device: BLEDevice, mock_establish_connection: MagicMock
+) -> None:
     """Test BLE RPC connection failure."""
     ble_rpc = BleRPC(ble_device)
+    mock_establish_connection.side_effect = BleakError("Connection failed")
 
-    with (
-        patch(
-            "aioshelly.rpc_device.blerpc.establish_connection",
-            side_effect=BleakError("Connection failed"),
-        ),
-        pytest.raises(BleConnectionError, match="Failed to connect"),
-    ):
+    with pytest.raises(BleConnectionError, match="Failed to connect"):
         await ble_rpc.connect()
 
 
 @pytest.mark.asyncio
-async def test_blerpc_connect_missing_characteristic(ble_device: BLEDevice) -> None:
+async def test_blerpc_connect_missing_characteristic(
+    ble_device: BLEDevice, mock_establish_connection: MagicMock
+) -> None:
     """Test BLE RPC connection with missing characteristic."""
     ble_rpc = BleRPC(ble_device)
 
@@ -114,16 +114,14 @@ async def test_blerpc_connect_missing_characteristic(ble_device: BLEDevice) -> N
     client.clear_cache = AsyncMock()
     client.disconnect = AsyncMock()
 
-    with patch(
-        "aioshelly.rpc_device.blerpc.establish_connection",
-        return_value=client,
-    ):
-        with pytest.raises(BleCharacteristicNotFoundError):
-            await ble_rpc.connect()
+    mock_establish_connection.return_value = client
 
-        # Should have tried twice (with cache clear)
-        assert client.clear_cache.call_count == 1
-        assert client.disconnect.call_count == 2
+    with pytest.raises(BleCharacteristicNotFoundError):
+        await ble_rpc.connect()
+
+    # Should have tried twice (with cache clear)
+    assert client.clear_cache.call_count == 1
+    assert client.disconnect.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -375,4 +373,129 @@ async def test_blerpc_call_id_mismatch(
     await ble_rpc.connect()
 
     with pytest.raises(RpcCallError, match="Response ID mismatch"):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+async def test_blerpc_connect_missing_rpc_service(
+    ble_device: BLEDevice, mock_establish_connection: MagicMock
+) -> None:
+    """Test BLE RPC connection with missing RPC service."""
+    ble_rpc = BleRPC(ble_device)
+
+    client = AsyncMock()
+    client.is_connected = True
+
+    # Mock services but missing RPC service
+    services = Mock()
+    services.get_service.return_value = None  # Missing RPC service
+    client.services = services
+    client.clear_cache = AsyncMock()
+    client.disconnect = AsyncMock()
+
+    mock_establish_connection.return_value = client
+
+    with pytest.raises(
+        BleCharacteristicNotFoundError,
+        match=f"RPC service {RPC_SERVICE_UUID} not found",
+    ):
+        await ble_rpc.connect()
+
+    # Should have tried twice (with cache clear)
+    assert client.clear_cache.call_count == 1
+    assert client.disconnect.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_blerpc_connect_service_discovery_error(
+    ble_device: BLEDevice, mock_establish_connection: MagicMock
+) -> None:
+    """Test BLE RPC connection with service discovery error."""
+    ble_rpc = BleRPC(ble_device)
+
+    client = AsyncMock()
+    client.is_connected = True
+
+    # Mock services that raises BleakError during access
+    client.services = Mock()
+    client.services.get_service.side_effect = BleakError("Service discovery failed")
+    client.disconnect = AsyncMock()
+
+    mock_establish_connection.return_value = client
+
+    with pytest.raises(BleConnectionError, match="Failed to verify RPC service"):
+        await ble_rpc.connect()
+
+    # Should have disconnected
+    assert client.disconnect.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_blerpc_connect_os_error(
+    ble_device: BLEDevice, mock_establish_connection: MagicMock
+) -> None:
+    """Test BLE RPC connection with OS error during service discovery."""
+    ble_rpc = BleRPC(ble_device)
+
+    client = AsyncMock()
+    client.is_connected = True
+
+    # Mock services that raises OSError during access
+    client.services = Mock()
+    client.services.get_service.side_effect = OSError("OS error")
+    client.disconnect = AsyncMock()
+
+    mock_establish_connection.return_value = client
+
+    with pytest.raises(BleConnectionError, match="Failed to verify RPC service"):
+        await ble_rpc.connect()
+
+    # Should have disconnected
+    assert client.disconnect.call_count == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_disconnect_callback(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC disconnect callback."""
+    ble_rpc = BleRPC(ble_device)
+
+    await ble_rpc.connect()
+    assert ble_rpc.connected is True
+
+    # Simulate disconnect callback being called
+    ble_rpc._on_disconnect(mock_ble_client)
+
+    assert ble_rpc.connected is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_invalid_response(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with response that has neither error nor result."""
+    ble_rpc = BleRPC(ble_device)
+
+    # Mock response with neither error nor result
+    invalid_response: dict[str, Any] = {
+        "id": 1,
+        # No error or result field
+    }
+    response_data = json_bytes(invalid_response)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    frame_length = len(response_data)
+    mock_ble_client.read_gatt_char.side_effect = [
+        frame_length.to_bytes(4, "big"),
+        response_data,
+    ]
+
+    await ble_rpc.connect()
+
+    with pytest.raises(RpcCallError, match="Invalid response"):
         await ble_rpc.call("Shelly.GetDeviceInfo")
