@@ -7,10 +7,13 @@ import ipaddress
 import logging
 from dataclasses import dataclass
 from socket import gethostbyname
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import BasicAuth, ClientSession, ClientTimeout
 from yarl import URL
+
+if TYPE_CHECKING:
+    from bleak import BLEDevice
 
 from .const import (
     CONNECT_ERRORS,
@@ -38,7 +41,7 @@ class ConnectionOptions:
     """Shelly options for connection."""
 
     ip_address: str | None = None
-    bluetooth_address: str | None = None
+    ble_device: BLEDevice | None = None
     username: str | None = None
     password: str | None = None
     temperature_unit: str = "C"
@@ -48,11 +51,11 @@ class ConnectionOptions:
 
     def __post_init__(self) -> None:
         """Call after initialization."""
-        if self.ip_address is None and self.bluetooth_address is None:
-            raise ValueError("Must provide either ip_address or bluetooth_address")
+        if self.ip_address is None and self.ble_device is None:
+            raise ValueError("Must provide either ip_address or ble_device")
 
-        if self.ip_address is not None and self.bluetooth_address is not None:
-            raise ValueError("Cannot provide both ip_address and bluetooth_address")
+        if self.ip_address is not None and self.ble_device is not None:
+            raise ValueError("Cannot provide both ip_address and ble_device")
 
         if self.username is not None:
             if self.password is None:

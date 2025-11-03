@@ -111,11 +111,11 @@ class RpcDevice:
             self._rpc = WsRPC(
                 options.ip_address, self._on_notification, port=options.port
             )
-        elif options.bluetooth_address is not None:
+        elif options.ble_device is not None:
             # BLE transport
-            self._rpc = BleRPC(options.bluetooth_address)
+            self._rpc = BleRPC(options.ble_device)
         else:
-            raise ValueError("Must provide either ip_address or bluetooth_address")
+            raise ValueError("Must provide either ip_address or ble_device")
 
         # Subscribe to WebSocket updates if using WsRPC
         self._unsub_ws: Callable | None = None
@@ -159,7 +159,7 @@ class RpcDevice:
         else:
             _LOGGER.debug(
                 "device %s: RPC device create (BLE), MAC: %s",
-                options.bluetooth_address,
+                options.ble_device.address if options.ble_device else None,
                 options.device_mac,
             )
 
@@ -223,8 +223,8 @@ class RpcDevice:
 
     def _device_info_str(self) -> str:
         """Return device info string for logging."""
-        if self.options.bluetooth_address:
-            return f"BLE device {self.options.bluetooth_address}"
+        if self.options.ble_device:
+            return f"BLE device {self.options.ble_device.address}"
         return f"host {self.options.ip_address}:{self.options.port}"
 
     async def initialize(self) -> None:
@@ -252,7 +252,8 @@ class RpcDevice:
         """Connect device websocket."""
         device_info = self._device_info_str()
         try:
-            async with asyncio.timeout(DEVICE_IO_TIMEOUT):
+            # Use DEVICE_INIT_TIMEOUT for connection (BLE needs longer for scanning)
+            async with asyncio.timeout(DEVICE_INIT_TIMEOUT):
                 if isinstance(self._rpc, WsRPC):
                     if self.aiohttp_session is None:
                         raise ValueError(

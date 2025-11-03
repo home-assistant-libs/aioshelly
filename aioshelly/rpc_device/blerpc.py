@@ -5,11 +5,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import struct
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from bleak import BleakClient
 from bleak.exc import BleakError
-from bleak_retry_connector import BleakNotFoundError, establish_connection
+from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
+
+if TYPE_CHECKING:
+    from bleak import BLEDevice
 
 from ..const import DEVICE_IO_TIMEOUT
 from ..exceptions import (
@@ -43,15 +45,15 @@ _UNPACK_UINT32_BE = struct.Struct(">I").unpack
 class BleRPC:
     """BLE RPC client for Shelly devices."""
 
-    def __init__(self, address: str) -> None:
+    def __init__(self, ble_device: BLEDevice) -> None:
         """Initialize BLE RPC client.
 
         Args:
-            address: Bluetooth MAC address of the device
+            ble_device: BLEDevice object from BleakScanner
 
         """
-        self._address = address
-        self._client: BleakClient | None = None
+        self._ble_device = ble_device
+        self._client: BleakClientWithServiceCache | None = None
         self._call_id = 0
         self._connected = False
 
@@ -73,24 +75,22 @@ class BleRPC:
         if self.connected:
             raise RuntimeError("Already connected")
 
-        _LOGGER.debug("Connecting to Shelly device at %s via BLE", self._address)
+        address = self._ble_device.address
+        _LOGGER.debug("Connecting to Shelly device at %s via BLE", address)
 
         # Retry once if characteristics are missing (cache issue)
         for attempt in range(2):
             try:
+                # Establish connection with retry support
                 self._client = await establish_connection(
-                    BleakClient,
-                    self._address,
-                    self._address,
+                    BleakClientWithServiceCache,
+                    self._ble_device,
+                    address,
                     disconnected_callback=self._on_disconnect,
                 )
-            except BleakNotFoundError as err:
-                raise BleConnectionError(
-                    f"Device {self._address} not found or out of range"
-                ) from err
             except (BleakError, TimeoutError, OSError) as err:
                 raise BleConnectionError(
-                    f"Failed to connect to {self._address}: {err}"
+                    f"Failed to connect to {address}: {err}"
                 ) from err
 
             # Verify RPC service and characteristics are available
@@ -101,7 +101,7 @@ class BleRPC:
                     # First attempt: clear cache and retry
                     _LOGGER.debug(
                         "%s: characteristic missing, clearing cache: %s",
-                        self._address,
+                        address,
                         err,
                     )
                     await self._client.clear_cache()
@@ -117,14 +117,14 @@ class BleRPC:
                 await self._client.disconnect()
                 self._client = None
                 raise BleConnectionError(
-                    f"Failed to verify RPC service on {self._address}: {err}"
+                    f"Failed to verify RPC service on {address}: {err}"
                 ) from err
 
             # Success
             break
 
         self._connected = True
-        _LOGGER.info("Connected to Shelly device at %s via BLE", self._address)
+        _LOGGER.info("Connected to Shelly device at %s via BLE", address)
 
     async def _verify_rpc_service(self) -> None:
         """Verify that the RPC service and characteristics are available."""
@@ -152,9 +152,9 @@ class BleRPC:
                     f"{name} characteristic {uuid} not found"
                 )
 
-    def _on_disconnect(self, _client: BleakClient) -> None:
+    def _on_disconnect(self, _client: BleakClientWithServiceCache) -> None:
         """Handle BLE disconnection."""
-        _LOGGER.info("Disconnected from Shelly device at %s", self._address)
+        _LOGGER.info("Disconnected from Shelly device at %s", self._ble_device.address)
         self._connected = False
 
     async def disconnect(self) -> None:
@@ -162,7 +162,7 @@ class BleRPC:
         if self._client is None:
             return
 
-        _LOGGER.debug("Disconnecting from %s", self._address)
+        _LOGGER.debug("Disconnecting from %s", self._ble_device.address)
         await self._client.disconnect()
         self._client = None
         self._connected = False
