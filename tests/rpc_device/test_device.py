@@ -319,8 +319,8 @@ async def test_shelly_gen1(client_session: ClientSession, ws_context: WsServer) 
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     rpc_device = await RpcDevice.create(client_session, ws_context, options)
-    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
-    rpc_device._wsrpc.connect.side_effect = ServerDisconnectedError
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
+    rpc_device._rpc.connect.side_effect = ServerDisconnectedError
 
     with pytest.raises(DeviceConnectionError):
         await rpc_device.initialize()
@@ -391,7 +391,7 @@ async def test_device_already_initialized(
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
     ]
-    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
 
     await rpc_device.initialize()
 
@@ -434,8 +434,8 @@ async def test_device_exception_on_init(
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     rpc_device = await RpcDevice.create(client_session, ws_context, options)
-    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
-    rpc_device._wsrpc.calls.side_effect = [[blu_gateway_device_info], exc]
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
+    rpc_device._rpc.calls.side_effect = [[blu_gateway_device_info], exc]
 
     with pytest.raises(result_exc, match=result_str):
         await rpc_device.initialize()
