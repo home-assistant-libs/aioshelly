@@ -141,7 +141,7 @@ class RpcDevice:
         cls: type[RpcDevice],
         aiohttp_session: ClientSession | None,
         ws_context: WsServer | None,
-        ip_or_options: IpOrOptionsType | ConnectionOptions,
+        ip_or_options: IpOrOptionsType,
     ) -> RpcDevice:
         """Device creation."""
         if isinstance(ip_or_options, ConnectionOptions):
