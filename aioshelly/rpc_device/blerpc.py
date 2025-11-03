@@ -32,7 +32,6 @@ TX_CONTROL_CHARACTERISTIC_UUID = "5f6d4f53-5f52-5043-5f74-785f63746c5f"
 RX_CONTROL_CHARACTERISTIC_UUID = "5f6d4f53-5f52-5043-5f72-785f63746c5f"
 
 # Protocol constants
-RX_POLL_INTERVAL = 0.1  # seconds between RX control polls
 UINT32_BYTES = 4  # Size of uint32 in bytes
 
 # Pre-compiled struct operations for better performance
@@ -228,34 +227,34 @@ class BleRPC:
 
         _LOGGER.debug("BLE RPC call: %s (id=%d)", method, call_id)
 
+        # Send request and receive response
         try:
-            # Send request
             request_data = json_bytes(request)
             await asyncio.wait_for(
                 self._send_request(request_data),
                 timeout=timeout,
             )
 
-            # Receive response
             response_data = await asyncio.wait_for(
                 self._receive_response(),
                 timeout=timeout,
             )
-
-            # Parse and validate response
-            response: dict[str, Any] = json_loads(response_data)
-            self._validate_response_id(response, call_id)
-            self._raise_for_response_error(response)
-            return self._extract_result(response)
-
         except TimeoutError as err:
             raise DeviceConnectionTimeoutError(
                 f"BLE RPC call timed out after {timeout}s"
             ) from err
         except (BleakError, OSError) as err:
             raise DeviceConnectionError(f"BLE RPC call failed: {err}") from err
+
+        # Parse and validate response
+        try:
+            response: dict[str, Any] = json_loads(response_data)
         except ValueError as err:
-            raise DeviceConnectionError(f"Invalid JSON in RPC call: {err}") from err
+            raise DeviceConnectionError(f"Invalid JSON in RPC response: {err}") from err
+
+        self._validate_response_id(response, call_id)
+        self._raise_for_response_error(response)
+        return self._extract_result(response)
 
     async def _send_request(self, data: bytes) -> None:
         """Send RPC request over BLE.
@@ -284,7 +283,7 @@ class BleRPC:
         """Receive RPC response over BLE.
 
         Protocol:
-        1. Poll RX control characteristic for frame length (4-byte big-endian)
+        1. Read frame length from RX control characteristic (4-byte big-endian)
         2. Read frame data from data characteristic
 
         Returns:
@@ -294,16 +293,19 @@ class BleRPC:
         if self._client is None:
             raise RuntimeError("Client not initialized")
 
-        # Poll RX control characteristic until we get a frame length
-        frame_length = 0
-        while frame_length == 0:
-            length_data = await self._client.read_gatt_char(
-                RX_CONTROL_CHARACTERISTIC_UUID
+        # Read frame length from RX control characteristic
+        length_data = await self._client.read_gatt_char(RX_CONTROL_CHARACTERISTIC_UUID)
+        if len(length_data) < UINT32_BYTES:
+            msg = (
+                f"Invalid frame length data: expected {UINT32_BYTES} bytes, "
+                f"got {len(length_data)}"
             )
-            if len(length_data) >= UINT32_BYTES:
-                frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
-            if frame_length == 0:
-                await asyncio.sleep(RX_POLL_INTERVAL)
+            raise DeviceConnectionError(msg)
+
+        frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
+        if frame_length == 0:
+            msg = "Received frame length of 0, no response data available"
+            raise DeviceConnectionError(msg)
 
         _LOGGER.debug("Receiving %d bytes via BLE", frame_length)
 

@@ -499,3 +499,47 @@ async def test_blerpc_call_invalid_response(
 
     with pytest.raises(RpcCallError, match="Invalid response"):
         await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_zero_frame_length(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with zero frame length."""
+    ble_rpc = BleRPC(ble_device)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    # Mock RX control returns frame length of 0
+    mock_ble_client.read_gatt_char.side_effect = [
+        (0).to_bytes(4, "big"),  # Frame length of 0
+    ]
+
+    await ble_rpc.connect()
+
+    with pytest.raises(DeviceConnectionError, match="Received frame length of 0"):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_invalid_frame_length_data(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with invalid frame length data."""
+    ble_rpc = BleRPC(ble_device)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    # Mock RX control returns insufficient bytes
+    mock_ble_client.read_gatt_char.side_effect = [
+        b"\x00\x00",  # Only 2 bytes instead of 4
+    ]
+
+    await ble_rpc.connect()
+
+    with pytest.raises(DeviceConnectionError, match="Invalid frame length data"):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
