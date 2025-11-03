@@ -9,6 +9,7 @@ This script demonstrates how to:
 from __future__ import annotations
 
 import asyncio
+import getpass
 import logging
 import platform
 import sys
@@ -63,9 +64,7 @@ async def main() -> None:
     """Run the WiFi provisioning example."""
     if len(sys.argv) < 2:  # noqa: PLR2004
         print("Usage: python ble_provision_wifi.py <MAC_ADDRESS> [SSID] [PASSWORD]")
-        print(
-            "  If SSID/PASSWORD not provided, will scan and display available networks"
-        )
+        print("  If SSID/PASSWORD not provided, you will be prompted after scanning")
         sys.exit(1)
 
     mac_address = sys.argv[1].upper()
@@ -119,27 +118,35 @@ async def main() -> None:
             auth_str = "Open" if auth == 0 else "Secured"
             print(f"  {i}. {ssid} (Signal: {rssi} dBm, {auth_str})")
 
-        # If SSID and password provided, configure WiFi
+        # Get SSID and password from command line or prompt
         if len(sys.argv) >= 4:  # noqa: PLR2004
             ssid = sys.argv[2]
             password = sys.argv[3]
+        else:
+            # Prompt for SSID and password
+            print()
+            ssid = input("Enter WiFi SSID: ").strip()
+            if not ssid:
+                print("No SSID provided, skipping WiFi configuration.")
+                return
+            password = getpass.getpass("Enter WiFi password: ")
 
-            print(f"\nConfiguring WiFi: {ssid}")
-            result = await device.call_rpc(
-                "WiFi.SetConfig",
-                {
-                    "config": {
-                        "sta": {
-                            "ssid": ssid,
-                            "pass": password,
-                            "enable": True,
-                        }
+        print(f"\nConfiguring WiFi: {ssid}")
+        result = await device.call_rpc(
+            "WiFi.SetConfig",
+            {
+                "config": {
+                    "sta": {
+                        "ssid": ssid,
+                        "pass": password,
+                        "enable": True,
                     }
-                },
-            )
-            print(f"WiFi configuration result: {result}")
-            print("\nDevice should now connect to WiFi.")
-            print("You can now connect to it via IP address.")
+                }
+            },
+        )
+        print(f"WiFi configuration result: {result}")
+        print("\nDevice should now connect to WiFi.")
+        print("You can now connect to it via IP address.")
 
     finally:
         await device.shutdown()
