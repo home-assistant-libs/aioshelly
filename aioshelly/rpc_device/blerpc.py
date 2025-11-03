@@ -307,18 +307,27 @@ class BleRPC:
 
         _LOGGER.debug("Receiving %d bytes via BLE", frame_length)
 
-        # Read data from data characteristic - may need multiple reads
+        # Read data from data characteristic in chunks
+        # Large responses may be split across multiple reads
         data_bytes = bytearray()
+        chunk_num = 0
         while len(data_bytes) < frame_length:
             chunk = cast(
                 bytes, await self._client.read_gatt_char(DATA_CHARACTERISTIC_UUID)
             )
-            data_bytes.extend(chunk)
-            # If we got less than expected and no more data, that's all we'll get
-            if len(data_bytes) < frame_length and len(chunk) == 0:
+            chunk_num += 1
+            _LOGGER.debug(
+                "Chunk %d: received %d bytes, total %d/%d",
+                chunk_num,
+                len(chunk),
+                len(data_bytes) + len(chunk),
+                frame_length,
+            )
+            if not chunk:
+                # No more data available
                 break
+            data_bytes.extend(chunk)
 
-        # Verify we received the expected amount of data
         if len(data_bytes) < frame_length:
             msg = (
                 f"Incomplete data received: expected {frame_length} bytes, "
