@@ -33,6 +33,7 @@ RX_CONTROL_CHARACTERISTIC_UUID = "5f6d4f53-5f52-5043-5f72-785f63746c5f"
 
 # Protocol constants
 UINT32_BYTES = 4  # Size of uint32 in bytes
+MAX_CONNECTION_RETRIES = 2  # Initial attempt + 1 retry for cache issues
 
 # Pre-compiled struct operations for better performance
 # Pack 4-byte big-endian unsigned integer
@@ -78,7 +79,7 @@ class BleRPC:
         _LOGGER.debug("Connecting to Shelly device at %s via BLE", address)
 
         # Retry once if characteristics are missing (cache issue)
-        for attempt in range(2):
+        for attempt in range(MAX_CONNECTION_RETRIES):
             try:
                 # Establish connection with retry support
                 self._client = await establish_connection(
