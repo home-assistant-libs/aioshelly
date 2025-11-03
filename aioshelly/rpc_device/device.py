@@ -448,6 +448,18 @@ class RpcDevice:
             params["intensity"] = intensity
         await self.call_rpc("Cury.Set", params=params)
 
+    async def cury_set_away_mode(
+        self,
+        id_: int,
+        value: bool,
+    ) -> None:
+        """Set away mode for Cury."""
+        params = {
+            "id": id_,
+            "on": value,
+        }
+        await self.call_rpc("Cury.SetAwayMode", params=params)
+
     async def enum_set(self, id_: int, value: str) -> None:
         """Set the value for the enum component."""
         params = {
