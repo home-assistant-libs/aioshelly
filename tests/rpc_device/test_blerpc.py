@@ -18,6 +18,7 @@ from aioshelly.exceptions import (
     RpcCallError,
 )
 from aioshelly.json import json_bytes
+from aioshelly.rpc_device import blerpc
 from aioshelly.rpc_device.blerpc import (
     DATA_CHARACTERISTIC_UUID,
     RPC_SERVICE_UUID,
@@ -520,9 +521,9 @@ async def test_blerpc_call_zero_frame_length_timeout(
 
     await ble_rpc.connect()
 
-    # Patch asyncio.sleep to avoid slow test
+    # Patch RX_POLL_INTERVAL to 0 to avoid slow test
     with (
-        patch("aioshelly.rpc_device.blerpc.asyncio.sleep", new_callable=AsyncMock),
+        patch.object(blerpc, "RX_POLL_INTERVAL", 0),
         pytest.raises(
             DeviceConnectionError,
             match=(
@@ -556,8 +557,8 @@ async def test_blerpc_call_zero_frame_length_then_success(
 
     await ble_rpc.connect()
 
-    # Patch asyncio.sleep to avoid slow test
-    with patch("aioshelly.rpc_device.blerpc.asyncio.sleep", new_callable=AsyncMock):
+    # Patch RX_POLL_INTERVAL to 0 to avoid slow test
+    with patch.object(blerpc, "RX_POLL_INTERVAL", 0):
         result = await ble_rpc.call("Shelly.GetDeviceInfo")
 
     assert result == {"name": "Test Device"}
