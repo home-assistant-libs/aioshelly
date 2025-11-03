@@ -1567,3 +1567,55 @@ async def test_rpc_device_create_with_string_ip(
 
     assert rpc_device.options.ip_address == "192.168.1.100"
     assert isinstance(rpc_device._rpc, WsRPC)
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_initialize_wsrpc_without_aiohttp_session() -> None:
+    """Test RpcDevice.initialize with WsRPC but no aiohttp_session."""
+    ws_context = Mock(spec=WsServer)
+    options = ConnectionOptions("192.168.1.100")
+
+    # Create RpcDevice with WsRPC but no aiohttp_session
+    rpc_device = RpcDevice(ws_context, None, options)
+
+    with pytest.raises(
+        ValueError, match="aiohttp_session required for WebSocket transport"
+    ):
+        await rpc_device.initialize()
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_initialize_ble() -> None:
+    """Test RpcDevice.initialize with BLE transport."""
+    ws_context = Mock(spec=WsServer)
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device, device_mac="AABBCCDDEEFF")
+
+    mock_ble_rpc = AsyncMock(spec=BleRPC)
+    mock_ble_rpc.connected = True
+    mock_ble_rpc.connect = AsyncMock()
+    mock_ble_rpc.call = AsyncMock(
+        side_effect=[
+            {
+                "id": "shellyplus1-test",
+                "mac": "AABBCCDDEEFF",
+                "model": "SNSW-001P16EU",
+                "gen": 2,
+                "fw_id": "20230913-112054/v1.14.0-gcb84623",
+                "ver": "1.14.0",
+                "app": "Plus1",
+                "profile": "switch",
+            },
+            {"name": "test"},
+            {},
+        ]
+    )
+
+    rpc_device = RpcDevice(ws_context, None, options, rpc=mock_ble_rpc)
+
+    await rpc_device.initialize()
+
+    # Verify BLE connect was called
+    assert mock_ble_rpc.connect.called
+    assert rpc_device.initialized
