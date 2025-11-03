@@ -75,37 +75,53 @@ class BleRPC:
 
         _LOGGER.debug("Connecting to Shelly device at %s via BLE", self._address)
 
-        try:
-            self._client = await establish_connection(
-                BleakClient,
-                self._address,
-                self._address,
-                disconnected_callback=self._on_disconnect,
-            )
-        except BleakNotFoundError as err:
-            raise BleConnectionError(
-                f"Device {self._address} not found or out of range"
-            ) from err
-        except (BleakError, TimeoutError, OSError) as err:
-            raise BleConnectionError(
-                f"Failed to connect to {self._address}: {err}"
-            ) from err
+        # Retry once if characteristics are missing (cache issue)
+        for attempt in range(2):
+            try:
+                self._client = await establish_connection(
+                    BleakClient,
+                    self._address,
+                    self._address,
+                    disconnected_callback=self._on_disconnect,
+                )
+            except BleakNotFoundError as err:
+                raise BleConnectionError(
+                    f"Device {self._address} not found or out of range"
+                ) from err
+            except (BleakError, TimeoutError, OSError) as err:
+                raise BleConnectionError(
+                    f"Failed to connect to {self._address}: {err}"
+                ) from err
 
-        # Verify RPC service and characteristics are available
-        try:
-            await self._verify_rpc_service()
-        except BleCharacteristicNotFoundError:
-            # Re-raise our own exception as-is
-            await self._client.disconnect()
-            self._client = None
-            raise
-        except (BleakError, OSError) as err:
-            # Catch unexpected errors during service discovery
-            await self._client.disconnect()
-            self._client = None
-            raise BleConnectionError(
-                f"Failed to verify RPC service on {self._address}: {err}"
-            ) from err
+            # Verify RPC service and characteristics are available
+            try:
+                await self._verify_rpc_service()
+            except BleCharacteristicNotFoundError as err:
+                if attempt == 0:
+                    # First attempt: clear cache and retry
+                    _LOGGER.debug(
+                        "%s: characteristic missing, clearing cache: %s",
+                        self._address,
+                        err,
+                    )
+                    await self._client.clear_cache()
+                    await self._client.disconnect()
+                    self._client = None
+                    continue
+                # Second attempt: give up
+                await self._client.disconnect()
+                self._client = None
+                raise
+            except (BleakError, OSError) as err:
+                # Catch unexpected errors during service discovery
+                await self._client.disconnect()
+                self._client = None
+                raise BleConnectionError(
+                    f"Failed to verify RPC service on {self._address}: {err}"
+                ) from err
+
+            # Success
+            break
 
         self._connected = True
         _LOGGER.info("Connected to Shelly device at %s via BLE", self._address)
