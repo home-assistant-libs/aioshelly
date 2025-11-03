@@ -127,8 +127,9 @@ class BleRPC:
 
     async def _verify_rpc_service(self) -> None:
         """Verify that the RPC service and characteristics are available."""
-        if self._client is None:
-            raise RuntimeError("Client not initialized")
+        self._raise_if_client_not_initialized()
+        if TYPE_CHECKING:
+            assert self._client is not None
 
         # Check for RPC service
         services = self._client.services
@@ -155,6 +156,11 @@ class BleRPC:
         """Handle BLE disconnection."""
         _LOGGER.info("Disconnected from Shelly device at %s", self._ble_device.address)
         self._connected = False
+
+    def _raise_if_client_not_initialized(self) -> None:
+        """Raise RuntimeError if client is not initialized."""
+        if self._client is None:
+            raise RuntimeError("Client not initialized")
 
     async def disconnect(self) -> None:
         """Disconnect from device."""
@@ -267,8 +273,9 @@ class BleRPC:
             data: JSON-encoded request data
 
         """
-        if self._client is None:
-            raise RuntimeError("Client not initialized")
+        self._raise_if_client_not_initialized()
+        if TYPE_CHECKING:
+            assert self._client is not None
 
         # Write frame length to TX control characteristic using pre-compiled struct
         frame_length = _PACK_UINT32_BE(len(data))
@@ -290,8 +297,9 @@ class BleRPC:
             JSON-encoded response data
 
         """
-        if self._client is None:
-            raise RuntimeError("Client not initialized")
+        self._raise_if_client_not_initialized()
+        if TYPE_CHECKING:
+            assert self._client is not None
 
         # Read frame length from RX control characteristic
         length_data = await self._client.read_gatt_char(RX_CONTROL_CHARACTERISTIC_UUID)

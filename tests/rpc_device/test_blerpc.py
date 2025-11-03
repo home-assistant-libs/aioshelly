@@ -543,3 +543,59 @@ async def test_blerpc_call_invalid_frame_length_data(
 
     with pytest.raises(DeviceConnectionError, match="Invalid frame length data"):
         await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+async def test_blerpc_disconnect_when_not_connected(ble_device: BLEDevice) -> None:
+    """Test disconnect when client is None."""
+    ble_rpc = BleRPC(ble_device)
+
+    # Should not raise an error
+    await ble_rpc.disconnect()
+    assert ble_rpc.connected is False
+
+
+@pytest.mark.asyncio
+async def test_blerpc_verify_rpc_service_no_client(ble_device: BLEDevice) -> None:
+    """Test _verify_rpc_service when client is None."""
+    ble_rpc = BleRPC(ble_device)
+
+    # _client is None, should raise RuntimeError
+    with pytest.raises(RuntimeError, match="Client not initialized"):
+        await ble_rpc._verify_rpc_service()
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_bleak_error(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with BleakError during transmission."""
+    ble_rpc = BleRPC(ble_device)
+
+    # Mock write_gatt_char to raise BleakError
+    mock_ble_client.write_gatt_char = AsyncMock(
+        side_effect=BleakError("Bluetooth error")
+    )
+
+    await ble_rpc.connect()
+
+    with pytest.raises(DeviceConnectionError, match="BLE RPC call failed"):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_os_error(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with OSError during transmission."""
+    ble_rpc = BleRPC(ble_device)
+
+    # Mock write_gatt_char to raise OSError
+    mock_ble_client.write_gatt_char = AsyncMock(side_effect=OSError("IO error"))
+
+    await ble_rpc.connect()
+
+    with pytest.raises(DeviceConnectionError, match="BLE RPC call failed"):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
