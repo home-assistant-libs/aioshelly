@@ -6,12 +6,14 @@ This script demonstrates how to:
 3. Configure WiFi credentials
 
 Usage:
-    python ble_provision_wifi.py [MAC_ADDRESS] [SSID] [PASSWORD]
+    python ble_provision_wifi.py [MAC_ADDRESS] [SSID] [PASSWORD] [-d|--debug]
 
     If no MAC_ADDRESS is provided, the script will scan for all Shelly devices
     and prompt you to select one.
 
     If no SSID/PASSWORD is provided, you will be prompted after scanning networks.
+
+    Use -d or --debug to enable debug logging.
 """
 
 from __future__ import annotations
@@ -160,12 +162,13 @@ async def main() -> None:  # noqa: PLR0915
                 print("\nCancelled")
                 sys.exit(1)
 
-    # Enable debug logging after finding device to avoid spam during scan
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        force=True,
-    )
+    # Enable debug logging if requested
+    if args.debug:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            force=True,
+        )
 
     # Create connection options with BLE device
     options = ConnectionOptions(ble_device=ble_device)
@@ -199,9 +202,9 @@ async def main() -> None:  # noqa: PLR0915
             print(f"  {i}. {ssid} (Signal: {rssi} dBm, {auth_str})")
 
         # Get SSID and password from command line or prompt
-        if len(sys.argv) >= 4:  # noqa: PLR2004
-            ssid = sys.argv[2]
-            password = sys.argv[3]
+        if args.ssid and args.password:
+            ssid = args.ssid
+            password = args.password
         else:
             # Prompt for SSID - can select from list or enter custom
             print()
