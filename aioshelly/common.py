@@ -37,7 +37,8 @@ DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT = ClientTimeout(total=DEVICE_IO_TIMEOUT)
 class ConnectionOptions:
     """Shelly options for connection."""
 
-    ip_address: str
+    ip_address: str | None = None
+    bluetooth_address: str | None = None
     username: str | None = None
     password: str | None = None
     temperature_unit: str = "C"
@@ -47,6 +48,12 @@ class ConnectionOptions:
 
     def __post_init__(self) -> None:
         """Call after initialization."""
+        if self.ip_address is None and self.bluetooth_address is None:
+            raise ValueError("Must provide either ip_address or bluetooth_address")
+
+        if self.ip_address is not None and self.bluetooth_address is not None:
+            raise ValueError("Cannot provide both ip_address and bluetooth_address")
+
         if self.username is not None:
             if self.password is None:
                 raise ValueError("Supply both username and password")
@@ -60,17 +67,19 @@ IpOrOptionsType = str | ConnectionOptions
 async def process_ip_or_options(ip_or_options: IpOrOptionsType) -> ConnectionOptions:
     """Return ConnectionOptions class from ip str or ConnectionOptions."""
     if isinstance(ip_or_options, str):
-        options = ConnectionOptions(ip_or_options)
+        options = ConnectionOptions(ip_address=ip_or_options)
     else:
         options = ip_or_options
 
-    try:
-        ipaddress.ip_address(options.ip_address)
-    except ValueError:
-        loop = asyncio.get_running_loop()
-        options.ip_address = await loop.run_in_executor(
-            None, gethostbyname, options.ip_address
-        )
+    # Only process IP address if provided (not for BLE connections)
+    if options.ip_address is not None:
+        try:
+            ipaddress.ip_address(options.ip_address)
+        except ValueError:
+            loop = asyncio.get_running_loop()
+            options.ip_address = await loop.run_in_executor(
+                None, gethostbyname, options.ip_address
+            )
 
     return options
 

@@ -39,6 +39,7 @@ from ..exceptions import (
     RpcCallError,
     ShellyError,
 )
+from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
     ShellyBLESetConfig,
@@ -88,27 +89,47 @@ class RpcDevice:
 
     def __init__(
         self,
-        ws_context: WsServer,
-        aiohttp_session: ClientSession,
+        ws_context: WsServer | None,
+        aiohttp_session: ClientSession | None,
         options: ConnectionOptions,
+        rpc: WsRPC | BleRPC | None = None,
     ) -> None:
         """Device init."""
-        self.aiohttp_session: ClientSession = aiohttp_session
+        self.aiohttp_session: ClientSession | None = aiohttp_session
         self.options: ConnectionOptions = options
         self._shelly: dict[str, Any] | None = None
         self._status: dict[str, Any] | None = None
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._dynamic_components: list[dict[str, Any]] = []
-        self._wsrpc = WsRPC(
-            options.ip_address, self._on_notification, port=options.port
-        )
-        sub_id = options.ip_address
-        if options.device_mac:
-            sub_id = options.device_mac
-        self._unsub_ws: Callable | None = ws_context.subscribe_updates(
-            sub_id, partial(self._wsrpc.handle_frame, RPCSource.SERVER)
-        )
+
+        # Create or use provided RPC client
+        if rpc is not None:
+            self._rpc: WsRPC | BleRPC = rpc
+        elif options.ip_address is not None:
+            # WebSocket transport
+            self._rpc = WsRPC(
+                options.ip_address, self._on_notification, port=options.port
+            )
+        elif options.bluetooth_address is not None:
+            # BLE transport
+            self._rpc = BleRPC(options.bluetooth_address)
+        else:
+            raise ValueError("Must provide either ip_address or bluetooth_address")
+
+        # Subscribe to WebSocket updates if using WsRPC
+        self._unsub_ws: Callable | None = None
+        if isinstance(self._rpc, WsRPC) and ws_context is not None:
+            if options.ip_address is None:
+                msg = "ip_address required for WebSocket transport"
+                raise ValueError(msg)
+            sub_id = options.ip_address
+            if options.device_mac:
+                sub_id = options.device_mac
+            self._unsub_ws = ws_context.subscribe_updates(
+                sub_id, partial(self._rpc.handle_frame, RPCSource.SERVER)
+            )
+
         self._update_listener: Callable | None = None
         self._initialize_lock = asyncio.Lock()
         self.initialized: bool = False
@@ -118,18 +139,30 @@ class RpcDevice:
     @classmethod
     async def create(
         cls: type[RpcDevice],
-        aiohttp_session: ClientSession,
-        ws_context: WsServer,
-        ip_or_options: IpOrOptionsType,
+        aiohttp_session: ClientSession | None,
+        ws_context: WsServer | None,
+        ip_or_options: IpOrOptionsType | ConnectionOptions,
     ) -> RpcDevice:
         """Device creation."""
-        options = await process_ip_or_options(ip_or_options)
-        _LOGGER.debug(
-            "host %s:%s: RPC device create, MAC: %s",
-            options.ip_address,
-            options.port,
-            options.device_mac,
-        )
+        if isinstance(ip_or_options, ConnectionOptions):
+            options = ip_or_options
+        else:
+            options = await process_ip_or_options(ip_or_options)
+
+        if options.ip_address is not None:
+            _LOGGER.debug(
+                "host %s:%s: RPC device create (WebSocket), MAC: %s",
+                options.ip_address,
+                options.port,
+                options.device_mac,
+            )
+        else:
+            _LOGGER.debug(
+                "device %s: RPC device create (BLE), MAC: %s",
+                options.bluetooth_address,
+                options.device_mac,
+            )
+
         return cls(ws_context, aiohttp_session, options)
 
     def _on_notification(
@@ -179,6 +212,8 @@ class RpcDevice:
     @property
     def ip_address(self) -> str:
         """Device ip address."""
+        if self.options.ip_address is None:
+            raise AttributeError("IP address not available for BLE devices")
         return self.options.ip_address
 
     @property
@@ -213,22 +248,29 @@ class RpcDevice:
         port = self.options.port
         try:
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
-                await self._wsrpc.connect(self.aiohttp_session)
+                if isinstance(self._rpc, WsRPC):
+                    if self.aiohttp_session is None:
+                        raise ValueError(
+                            "aiohttp_session required for WebSocket transport"
+                        )
+                    await self._rpc.connect(self.aiohttp_session)
+                else:
+                    await self._rpc.connect()
             await self._init_calls()
         except InvalidAuthError as err:
             self._last_error = InvalidAuthError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
-            await self._wsrpc.disconnect()
+            await self._rpc.disconnect()
             raise
         except MacAddressMismatchError as err:
             self._last_error = err
             _LOGGER.debug("host %s:%s: error: %r", ip, port, err)
-            await self._wsrpc.disconnect()
+            await self._rpc.disconnect()
             raise
         except (*CONNECT_ERRORS, RpcCallError) as err:
             self._last_error = DeviceConnectionError(err)
             _LOGGER.debug("host %s:%s: error: %r", ip, port, self._last_error)
-            await self._wsrpc.disconnect()
+            await self._rpc.disconnect()
             raise self._last_error from err
         else:
             _LOGGER.debug("host %s:%s: RPC device init finished", ip, port)
@@ -258,7 +300,7 @@ class RpcDevice:
                 )
             self._unsub_ws = None
 
-        await self._wsrpc.disconnect()
+        await self._rpc.disconnect()
 
     def subscribe_updates(self, update_listener: Callable) -> None:
         """Subscribe to device status updates."""
@@ -541,8 +583,13 @@ class RpcDevice:
         # require auth, so we must do a separate call here to get
         # the auth_domain/id so we can enable auth for the rest of the calls
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
-        if self.options.username and self.options.password:
-            self._wsrpc.set_auth_data(
+        # Auth only supported on WebSocket transport
+        if (
+            self.options.username
+            and self.options.password
+            and isinstance(self._rpc, WsRPC)
+        ):
+            self._rpc.set_auth_data(
                 self.shelly.get("auth_domain") or self.shelly["id"],
                 self.options.username,
                 self.options.password,
@@ -686,13 +733,23 @@ class RpcDevice:
     ) -> list[dict[str, Any]]:
         """Call RPC method."""
         try:
-            return await self._wsrpc.calls(calls, timeout)
+            # BleRPC only supports single calls, WsRPC supports batching
+            if isinstance(self._rpc, WsRPC):
+                return await self._rpc.calls(calls, timeout)
+
+            # BLE: execute calls sequentially
+            results: list[dict[str, Any]] = []
+            for method, params in calls:
+                result = await self._rpc.call(method, params or {}, timeout)
+                results.append(result)
         except (InvalidAuthError, RpcCallError) as err:
             self._last_error = err
             raise
         except CONNECT_ERRORS as err:
             self._last_error = DeviceConnectionError(err)
             raise DeviceConnectionError from err
+        else:
+            return results
 
     @property
     def status(self) -> dict[str, Any]:
@@ -767,7 +824,7 @@ class RpcDevice:
     @property
     def connected(self) -> bool:
         """Return true if device is connected."""
-        return self._wsrpc.connected
+        return self._rpc.connected
 
     @property
     def last_error(self) -> ShellyError | None:
