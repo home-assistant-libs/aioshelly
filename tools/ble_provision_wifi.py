@@ -4,6 +4,14 @@ This script demonstrates how to:
 1. Scan for and connect to a Shelly device via BLE
 2. Scan for available WiFi networks
 3. Configure WiFi credentials
+
+Usage:
+    python ble_provision_wifi.py [MAC_ADDRESS] [SSID] [PASSWORD]
+
+    If no MAC_ADDRESS is provided, the script will scan for all Shelly devices
+    and prompt you to select one.
+
+    If no SSID/PASSWORD is provided, you will be prompted after scanning networks.
 """
 
 from __future__ import annotations
@@ -60,25 +68,84 @@ class DeviceScanner:
         return self.found_device
 
 
-async def main() -> None:
+class ShellyScannerAll:
+    """Scanner to find all Shelly BLE devices."""
+
+    def __init__(self) -> None:
+        """Initialize scanner."""
+        self.found_devices: list[BLEDevice] = []
+
+    def detection_callback(
+        self,
+        device: BLEDevice,
+        advertisement_data: AdvertisementData,  # noqa: ARG002
+    ) -> None:
+        """Handle device detection."""
+        # Only include devices with names starting with "Shelly"
+        if (
+            device.name
+            and device.name.startswith("Shelly")
+            and not any(d.address == device.address for d in self.found_devices)
+        ):
+            self.found_devices.append(device)
+
+    async def scan_for_devices(self, timeout: float = 10.0) -> list[BLEDevice]:
+        """Scan for all Shelly devices and return list."""
+        # On macOS, use_bdaddr=True to get real MAC addresses in callback
+        scanner_kwargs: dict = {"detection_callback": self.detection_callback}
+        if IS_MACOS:
+            scanner_kwargs["cb"] = {"use_bdaddr": True}
+
+        scanner = BleakScanner(**scanner_kwargs)
+        await scanner.start()
+        await asyncio.sleep(timeout)
+        await scanner.stop()
+        return self.found_devices
+
+
+async def main() -> None:  # noqa: PLR0915
     """Run the WiFi provisioning example."""
-    if len(sys.argv) < 2:  # noqa: PLR2004
-        print("Usage: python ble_provision_wifi.py <MAC_ADDRESS> [SSID] [PASSWORD]")
-        print("  If SSID/PASSWORD not provided, you will be prompted after scanning")
-        sys.exit(1)
+    # Check if MAC address was provided
+    if len(sys.argv) >= 2:  # noqa: PLR2004
+        # MAC address provided, scan for specific device
+        mac_address = sys.argv[1].upper()
+        print(f"Scanning for device {mac_address}...")
+        device_scanner = DeviceScanner(mac_address)
+        ble_device = await device_scanner.find_device(timeout=10.0)
 
-    mac_address = sys.argv[1].upper()
+        if not ble_device:
+            print(f"Device {mac_address} not found or out of range")
+            sys.exit(1)
 
-    # Scan for the BLE device
-    print(f"Scanning for device {mac_address}...")
-    device_scanner = DeviceScanner(mac_address)
-    ble_device = await device_scanner.find_device(timeout=10.0)
+        print(f"Found device: {ble_device.name or 'Unknown'} ({ble_device.address})")
+    else:
+        # No MAC address provided, scan for all Shelly devices
+        print("Scanning for Shelly devices...")
+        shelly_scanner = ShellyScannerAll()
+        devices = await shelly_scanner.scan_for_devices(timeout=10.0)
 
-    if not ble_device:
-        print(f"Device {mac_address} not found or out of range")
-        sys.exit(1)
+        if not devices:
+            print("No Shelly devices found")
+            sys.exit(1)
 
-    print(f"Found device: {ble_device.name or 'Unknown'} ({ble_device.address})")
+        print(f"\nFound {len(devices)} Shelly device(s):")
+        for i, device in enumerate(devices, 1):
+            print(f"  {i}. {device.name or 'Unknown'} ({device.address})")
+
+        # Prompt user to select a device
+        while True:
+            try:
+                choice = input(f"\nSelect device (1-{len(devices)}): ").strip()
+                device_idx = int(choice) - 1
+                if 0 <= device_idx < len(devices):
+                    ble_device = devices[device_idx]
+                    name = ble_device.name or "Unknown"
+                    print(f"Selected: {name} ({ble_device.address})")
+                    break
+                print(f"Please enter a number between 1 and {len(devices)}")
+            except (ValueError, KeyboardInterrupt):
+                print("\nCancelled")
+                sys.exit(1)
 
     # Enable debug logging after finding device to avoid spam during scan
     logging.basicConfig(
@@ -123,12 +190,31 @@ async def main() -> None:
             ssid = sys.argv[2]
             password = sys.argv[3]
         else:
-            # Prompt for SSID and password
+            # Prompt for SSID - can select from list or enter custom
             print()
-            ssid = input("Enter WiFi SSID: ").strip()
-            if not ssid:
+            ssid_input = input(
+                f"Enter network number (1-{len(networks)}) or custom SSID: "
+            ).strip()
+            if not ssid_input:
                 print("No SSID provided, skipping WiFi configuration.")
                 return
+
+            # Check if user entered a number to select from list
+            try:
+                network_idx = int(ssid_input) - 1
+                if 0 <= network_idx < len(networks):
+                    ssid = networks[network_idx].get("ssid", "")
+                    print(f"Selected network: {ssid}")
+                else:
+                    print(
+                        f"Invalid selection. Please enter 1-{len(networks)} "
+                        "or a custom SSID"
+                    )
+                    return
+            except ValueError:
+                # Not a number, treat as custom SSID
+                ssid = ssid_input
+
             password = getpass.getpass("Enter WiFi password: ")
 
         print(f"\nConfiguring WiFi: {ssid}")
