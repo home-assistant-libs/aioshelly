@@ -12,8 +12,11 @@ import asyncio
 import logging
 import platform
 import sys
+from contextlib import suppress
 
 from bleak import BleakScanner
+from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData
 
 from aioshelly.common import ConnectionOptions
 from aioshelly.rpc_device import RpcDevice
@@ -21,11 +24,39 @@ from aioshelly.rpc_device import RpcDevice
 # Check if we're on macOS
 IS_MACOS = platform.system() == "Darwin"
 
-# Enable debug logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+
+class DeviceScanner:
+    """Scanner to find a specific BLE device by MAC address."""
+
+    def __init__(self, mac_address: str) -> None:
+        """Initialize scanner."""
+        self.mac_address = mac_address.upper()
+        self.found_event = asyncio.Event()
+        self.found_device: BLEDevice | None = None
+
+    def detection_callback(
+        self,
+        device: BLEDevice,
+        advertisement_data: AdvertisementData,  # noqa: ARG002
+    ) -> None:
+        """Handle device detection."""
+        if device.address.upper() == self.mac_address:
+            self.found_device = device
+            self.found_event.set()
+
+    async def find_device(self, timeout: float = 10.0) -> BLEDevice | None:
+        """Scan for device and return it if found."""
+        # On macOS, use_bdaddr=True to get real MAC addresses in callback
+        scanner_kwargs: dict = {"detection_callback": self.detection_callback}
+        if IS_MACOS:
+            scanner_kwargs["cb"] = {"use_bdaddr": True}
+
+        scanner = BleakScanner(**scanner_kwargs)
+        await scanner.start()
+        with suppress(TimeoutError):
+            await asyncio.wait_for(self.found_event.wait(), timeout=timeout)
+        await scanner.stop()
+        return self.found_device
 
 
 async def main() -> None:
@@ -37,16 +68,25 @@ async def main() -> None:
         )
         sys.exit(1)
 
-    mac_address = sys.argv[1]
+    mac_address = sys.argv[1].upper()
 
     # Scan for the BLE device
     print(f"Scanning for device {mac_address}...")
-    ble_device = await BleakScanner.find_device_by_address(mac_address, timeout=10.0)
+    device_scanner = DeviceScanner(mac_address)
+    ble_device = await device_scanner.find_device(timeout=10.0)
+
     if not ble_device:
         print(f"Device {mac_address} not found or out of range")
         sys.exit(1)
 
     print(f"Found device: {ble_device.name or 'Unknown'} ({ble_device.address})")
+
+    # Enable debug logging after finding device to avoid spam during scan
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,
+    )
 
     # Create connection options with BLE device
     options = ConnectionOptions(ble_device=ble_device)
