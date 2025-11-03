@@ -8,7 +8,8 @@ import struct
 from typing import Any, cast
 
 from bleak import BleakClient
-from bleak_retry_connector import establish_connection
+from bleak.exc import BleakError
+from bleak_retry_connector import BleakNotFoundError, establish_connection
 
 from ..const import DEVICE_IO_TIMEOUT
 from ..exceptions import (
@@ -81,7 +82,11 @@ class BleRPC:
                 self._address,
                 disconnected_callback=self._on_disconnect,
             )
-        except Exception as err:
+        except BleakNotFoundError as err:
+            raise BleConnectionError(
+                f"Device {self._address} not found or out of range"
+            ) from err
+        except (BleakError, TimeoutError, OSError) as err:
             raise BleConnectionError(
                 f"Failed to connect to {self._address}: {err}"
             ) from err
@@ -89,11 +94,17 @@ class BleRPC:
         # Verify RPC service and characteristics are available
         try:
             await self._verify_rpc_service()
-        except Exception as err:
+        except BleCharacteristicNotFoundError:
+            # Re-raise our own exception as-is
             await self._client.disconnect()
             self._client = None
-            raise BleCharacteristicNotFoundError(
-                f"RPC service or characteristics not found on {self._address}"
+            raise
+        except (BleakError, OSError) as err:
+            # Catch unexpected errors during service discovery
+            await self._client.disconnect()
+            self._client = None
+            raise BleConnectionError(
+                f"Failed to verify RPC service on {self._address}: {err}"
             ) from err
 
         self._connected = True
@@ -113,23 +124,17 @@ class BleRPC:
             )
 
         # Check for required characteristics
-        data_char = services.get_characteristic(DATA_CHARACTERISTIC_UUID)
-        if not data_char:
-            raise BleCharacteristicNotFoundError(
-                f"Data characteristic {DATA_CHARACTERISTIC_UUID} not found"
-            )
+        required_characteristics = {
+            "Data": DATA_CHARACTERISTIC_UUID,
+            "TX control": TX_CONTROL_CHARACTERISTIC_UUID,
+            "RX control": RX_CONTROL_CHARACTERISTIC_UUID,
+        }
 
-        tx_char = services.get_characteristic(TX_CONTROL_CHARACTERISTIC_UUID)
-        if not tx_char:
-            raise BleCharacteristicNotFoundError(
-                f"TX control characteristic {TX_CONTROL_CHARACTERISTIC_UUID} not found"
-            )
-
-        rx_char = services.get_characteristic(RX_CONTROL_CHARACTERISTIC_UUID)
-        if not rx_char:
-            raise BleCharacteristicNotFoundError(
-                f"RX control characteristic {RX_CONTROL_CHARACTERISTIC_UUID} not found"
-            )
+        for name, uuid in required_characteristics.items():
+            if not services.get_characteristic(uuid):
+                raise BleCharacteristicNotFoundError(
+                    f"{name} characteristic {uuid} not found"
+                )
 
     def _on_disconnect(self, _client: BleakClient) -> None:
         """Handle BLE disconnection."""
