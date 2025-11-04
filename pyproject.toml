@@ -28,6 +28,7 @@ dependencies = [
   "habluetooth>=3.42.0",
   "orjson>=3.8.1",
   "yarl",
+  "zeroconf>=0.148.0"
 ]
 
 [project.optional-dependencies]
