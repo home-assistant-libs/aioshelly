@@ -28,15 +28,16 @@ async def async_lookup_device_by_name(
     LOGGER.debug("Active lookup for: %s", service_name)
     service_info = AsyncServiceInfo("_http._tcp.local.", service_name)
 
-    if await service_info.async_request(aiozc.zeroconf, 5000):
-        addresses = service_info.parsed_addresses(IPVersion.V4Only)
-        if addresses and service_info.port:
-            host = addresses[0]
-            port = service_info.port
-            LOGGER.debug("Found device via active lookup at %s:%s", host, port)
-            return (host, port)
-        LOGGER.debug("Active lookup found service but no IPv4 addresses or port")
-    else:
+    if not await service_info.async_request(aiozc.zeroconf, 5000):
         LOGGER.debug("Active lookup did not find service")
+        return None
 
-    return None
+    addresses = service_info.parsed_addresses(IPVersion.V4Only)
+    if not addresses or not service_info.port:
+        LOGGER.debug("Active lookup found service but no IPv4 addresses or port")
+        return None
+
+    host = addresses[0]
+    port = service_info.port
+    LOGGER.debug("Found device via active lookup at %s:%s", host, port)
+    return (host, port)
