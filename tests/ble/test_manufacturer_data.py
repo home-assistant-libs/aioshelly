@@ -115,6 +115,15 @@ def test_parse_partial_blocks() -> None:
     assert result == {"flags": 0x0004}
 
 
+def test_parse_lone_block_type() -> None:
+    """Test parsing with lone block type byte at end (no data following)."""
+    # Valid flags block followed by MODEL block type with no data
+    data = bytes([BLOCK_TYPE_FLAGS, 0x04, 0x00, BLOCK_TYPE_MODEL])
+    result = parse_shelly_manufacturer_data({ALLTERCO_MFID: data})
+    # Should parse flags but stop at MODEL block that has no data
+    assert result == {"flags": 0x0004}
+
+
 def test_parse_unknown_block_type() -> None:
     """Test parsing manufacturer data with unknown block type."""
     # Flags + unknown block type 0xFF

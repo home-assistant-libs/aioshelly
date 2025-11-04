@@ -46,9 +46,6 @@ def parse_shelly_manufacturer_data(
 
     # Parse blocks
     while offset < len(data):
-        if offset + 1 > len(data):
-            break
-
         block_type = data[offset]
         offset += 1
 
