@@ -508,6 +508,16 @@ class RpcDevice:
         }
         await self.call_rpc("Cury.SetAwayMode", params=params)
 
+    async def cury_set_mode(
+        self,
+        id_: int,
+        value: str,
+    ) -> None:
+        """Set mode for Cury."""
+        params: dict[str, Any] = {"id": id_}
+        params["mode"] = None if value == "none" else value
+        await self.call_rpc("Cury.SetMode", params=params)
+
     async def enum_set(self, id_: int, value: str) -> None:
         """Set the value for the enum component."""
         params = {

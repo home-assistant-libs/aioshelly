@@ -1458,6 +1458,33 @@ async def test_cury_set_away_mode(
 
 
 @pytest.mark.asyncio
+async def test_cury_set_mode(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice cury_set_mode() method."""
+    await rpc_device.cury_set_mode(9, "living_room")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cury.SetMode"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 9,
+        "mode": "living_room",
+    }
+
+    await rpc_device.cury_set_mode(9, "none")
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[1][0][0][0][1] == {
+        "id": 9,
+        "mode": None,
+    }
+
+
+@pytest.mark.asyncio
 async def test_rpc_device_init_with_ble(ws_context: WsServer) -> None:
     """Test RpcDevice initialization with BLE device."""
     ble_device = MagicMock(spec=BLEDevice)
