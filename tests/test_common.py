@@ -1,11 +1,12 @@
 """Tests for common module."""
 
 import re
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from aiohttp import BasicAuth, ClientError, ClientSession
 from aioresponses import aioresponses
+from bleak.backends.device import BLEDevice
 from yarl import URL
 
 from aioshelly.common import (
@@ -155,3 +156,21 @@ async def test_get_info_invalid_error() -> None:
         await get_info(session, "http://10.10.10.10", "AABBCCDDEEFF")
 
     await session.close()
+
+
+def test_connection_options_missing_both() -> None:
+    """Test ConnectionOptions with neither ip_address nor ble_device."""
+    with pytest.raises(
+        ValueError, match="Must provide either ip_address or ble_device"
+    ):
+        ConnectionOptions()
+
+
+def test_connection_options_both_provided() -> None:
+    """Test ConnectionOptions with both ip_address and ble_device."""
+    ble_device = MagicMock(spec=BLEDevice)
+
+    with pytest.raises(
+        ValueError, match="Cannot provide both ip_address and ble_device"
+    ):
+        ConnectionOptions(ip_address="192.168.1.1", ble_device=ble_device)

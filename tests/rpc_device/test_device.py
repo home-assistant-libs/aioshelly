@@ -3,15 +3,16 @@
 import re
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 import pytest_asyncio
 from aiohttp import ClientError
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ServerDisconnectedError
+from bleak.backends.device import BLEDevice
 
-from aioshelly.common import ConnectionOptions
+from aioshelly.common import ConnectionOptions, process_ip_or_options
 from aioshelly.const import NOTIFY_WS_CLOSED
 from aioshelly.exceptions import (
     DeviceConnectionError,
@@ -20,6 +21,7 @@ from aioshelly.exceptions import (
     NotInitialized,
     RpcCallError,
 )
+from aioshelly.rpc_device.blerpc import BleRPC
 from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
@@ -319,8 +321,8 @@ async def test_shelly_gen1(client_session: ClientSession, ws_context: WsServer) 
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     rpc_device = await RpcDevice.create(client_session, ws_context, options)
-    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
-    rpc_device._wsrpc.connect.side_effect = ServerDisconnectedError
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
+    rpc_device._rpc.connect.side_effect = ServerDisconnectedError
 
     with pytest.raises(DeviceConnectionError):
         await rpc_device.initialize()
@@ -391,7 +393,7 @@ async def test_device_already_initialized(
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
     ]
-    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
 
     await rpc_device.initialize()
 
@@ -434,8 +436,8 @@ async def test_device_exception_on_init(
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     rpc_device = await RpcDevice.create(client_session, ws_context, options)
-    rpc_device._wsrpc = AsyncMock(spec=WsRPC)
-    rpc_device._wsrpc.calls.side_effect = [[blu_gateway_device_info], exc]
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
+    rpc_device._rpc.calls.side_effect = [[blu_gateway_device_info], exc]
 
     with pytest.raises(result_exc, match=result_str):
         await rpc_device.initialize()
@@ -1453,3 +1455,172 @@ async def test_cury_set_away_mode(
         "id": 0,
         "on": True,
     }
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_init_with_ble(ws_context: WsServer) -> None:
+    """Test RpcDevice initialization with BLE device."""
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device)
+
+    ble_rpc = Mock(spec=BleRPC)
+    rpc_device = RpcDevice(ws_context, None, options, rpc=ble_rpc)
+
+    assert rpc_device._rpc is ble_rpc
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_create_ble(
+    client_session: ClientSession, ws_context: WsServer
+) -> None:
+    """Test RpcDevice.create with BLE device."""
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    ble_device.name = "ShellyPlus1-Test"
+    options = ConnectionOptions(ble_device=ble_device, device_mac="AABBCCDDEEFF")
+
+    # Create RPC device with BLE
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+
+    assert rpc_device.options.ble_device is ble_device
+    assert isinstance(rpc_device._rpc, BleRPC)
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_ble_device_info_str() -> None:
+    """Test _device_info_str for BLE device."""
+    ws_context = Mock(spec=WsServer)
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device)
+
+    rpc_device = RpcDevice(ws_context, None, options, rpc=Mock(spec=BleRPC))
+
+    device_info = rpc_device._device_info_str()
+    assert device_info == "BLE device AA:BB:CC:DD:EE:FF"
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_ble_ip_address_not_available() -> None:
+    """Test that ip_address property raises for BLE devices."""
+    ws_context = Mock(spec=WsServer)
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device)
+
+    rpc_device = RpcDevice(ws_context, None, options, rpc=Mock(spec=BleRPC))
+
+    with pytest.raises(
+        AttributeError, match="IP address not available for BLE devices"
+    ):
+        _ = rpc_device.ip_address
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_ble_call_rpc_multiple_sequential() -> None:
+    """Test call_rpc_multiple with BLE executes calls sequentially."""
+    ws_context = Mock(spec=WsServer)
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device)
+
+    mock_ble_rpc = AsyncMock(spec=BleRPC)
+    mock_ble_rpc.call = AsyncMock(side_effect=[{"result": 1}, {"result": 2}])
+
+    rpc_device = RpcDevice(ws_context, None, options, rpc=mock_ble_rpc)
+
+    calls = [
+        ("Method1", {"param1": "value1"}),
+        ("Method2", {"param2": "value2"}),
+    ]
+
+    results = await rpc_device.call_rpc_multiple(calls, timeout=10)
+
+    assert results == [{"result": 1}, {"result": 2}]
+    assert mock_ble_rpc.call.call_count == 2
+    mock_ble_rpc.call.assert_any_call("Method1", {"param1": "value1"}, 10)
+    mock_ble_rpc.call.assert_any_call("Method2", {"param2": "value2"}, 10)
+
+
+@pytest.mark.asyncio
+async def test_process_ip_or_options_ble() -> None:
+    """Test process_ip_or_options with BLE device."""
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device)
+
+    result = await process_ip_or_options(options)
+
+    assert result is options
+    assert result.ble_device is ble_device
+    assert result.ip_address is None
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_create_with_string_ip(
+    client_session: ClientSession, ws_context: WsServer
+) -> None:
+    """Test RpcDevice.create with string IP address."""
+    # Pass a string IP address instead of ConnectionOptions
+    rpc_device = await RpcDevice.create(client_session, ws_context, "192.168.1.100")
+
+    assert rpc_device.options.ip_address == "192.168.1.100"
+    assert isinstance(rpc_device._rpc, WsRPC)
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_initialize_wsrpc_without_aiohttp_session() -> None:
+    """Test RpcDevice.initialize with WsRPC but no aiohttp_session."""
+    ws_context = Mock(spec=WsServer)
+    options = ConnectionOptions("192.168.1.100")
+
+    # Create RpcDevice with WsRPC but no aiohttp_session
+    rpc_device = RpcDevice(ws_context, None, options)
+
+    with pytest.raises(
+        ValueError, match="aiohttp_session required for WebSocket transport"
+    ):
+        await rpc_device.initialize()
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_initialize_ble() -> None:
+    """Test RpcDevice.initialize with BLE transport."""
+    device_info = await load_device_fixture(
+        "shellyblugatewaygen3", "Shelly.GetDeviceInfo"
+    )
+    config = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetConfig")
+    status = await load_device_fixture("shellyblugatewaygen3", "Shelly.GetStatus")
+    components = await load_device_fixture(
+        "shellyblugatewaygen3", "Shelly.GetComponents"
+    )
+    remote_config = await load_device_fixture(
+        "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
+    )
+
+    ws_context = Mock(spec=WsServer)
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device, device_mac=device_info["mac"])
+
+    mock_ble_rpc = AsyncMock(spec=BleRPC)
+    mock_ble_rpc.connected = True
+    mock_ble_rpc.connect = AsyncMock()
+    mock_ble_rpc.call = AsyncMock(
+        side_effect=[
+            device_info,
+            config,
+            status,
+            components,
+            remote_config,
+        ]
+    )
+
+    rpc_device = RpcDevice(ws_context, None, options, rpc=mock_ble_rpc)
+
+    await rpc_device.initialize()
+
+    # Verify BLE connect was called
+    assert mock_ble_rpc.connect.called
+    assert rpc_device.initialized

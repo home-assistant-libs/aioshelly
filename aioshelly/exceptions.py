@@ -39,6 +39,14 @@ class DeviceConnectionTimeoutError(DeviceConnectionError):
     """Exception indicates device connection timeout errors."""
 
 
+class BleConnectionError(DeviceConnectionError):
+    """Exception indicates Bluetooth Low Energy connection errors."""
+
+
+class BleCharacteristicNotFoundError(BleConnectionError):
+    """Exception indicates required BLE GATT characteristic not found."""
+
+
 class InvalidAuthError(ShellyError):
     """Raised to indicate invalid or missing authentication error."""
 
