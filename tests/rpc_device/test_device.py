@@ -1457,6 +1457,7 @@ async def test_cury_set_away_mode(
     }
 
 
+@pytest.mark.asyncio
 async def test_cury_set_mode(
     rpc_device: RpcDevice,
 ) -> None:
@@ -1470,6 +1471,16 @@ async def test_cury_set_mode(
     assert call_args_list[0][0][0][0][1] == {
         "id": 9,
         "mode": "living_room",
+    }
+
+    await rpc_device.cury_set_mode(9, "none")
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[1][0][0][0][1] == {
+        "id": 9,
+        "mode": None,
     }
 
 
@@ -1640,8 +1651,3 @@ async def test_rpc_device_initialize_ble() -> None:
     # Verify BLE connect was called
     assert mock_ble_rpc.connect.called
     assert rpc_device.initialized
-    assert call_args_list[0][0][0][0][0] == "Cury.SetMode"
-    assert call_args_list[0][0][0][0][1] == {
-        "id": 9,
-        "mode": "living_room",
-    }
