@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 LOGGER = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ def has_rpc_over_ble(manufacturer_data: dict[int, bytes]) -> bool:
         return False
 
     flags = parsed["flags"]
-    if not isinstance(flags, int):
-        return False
+    if TYPE_CHECKING:
+        assert isinstance(flags, int)
 
     return bool(flags & FLAG_RPC_OVER_BLE_ENABLED)

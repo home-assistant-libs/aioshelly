@@ -97,6 +97,24 @@ def test_parse_truncated_mac() -> None:
     assert result is None
 
 
+def test_parse_truncated_model() -> None:
+    """Test parsing manufacturer data with truncated model block."""
+    # Block type 0x0B (model) but only 1 byte (needs 2)
+    data = bytes([BLOCK_TYPE_MODEL, 0x34])
+    result = parse_shelly_manufacturer_data({ALLTERCO_MFID: data})
+    # Should stop parsing and return empty result
+    assert result is None
+
+
+def test_parse_partial_blocks() -> None:
+    """Test parsing with valid block followed by incomplete block."""
+    # Valid flags block followed by incomplete MAC block
+    data = bytes([BLOCK_TYPE_FLAGS, 0x04, 0x00, BLOCK_TYPE_MAC, 0xC0, 0x49])
+    result = parse_shelly_manufacturer_data({ALLTERCO_MFID: data})
+    # Should parse flags but stop at incomplete MAC
+    assert result == {"flags": 0x0004}
+
+
 def test_parse_unknown_block_type() -> None:
     """Test parsing manufacturer data with unknown block type."""
     # Flags + unknown block type 0xFF
