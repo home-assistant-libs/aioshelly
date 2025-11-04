@@ -30,8 +30,7 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-from aioshelly.common import ConnectionOptions
-from aioshelly.rpc_device import RpcDevice
+from aioshelly.ble.provisioning import async_provision_wifi, async_scan_wifi_networks
 
 # Check if we're on macOS
 IS_MACOS = platform.system() == "Darwin"
@@ -170,88 +169,56 @@ async def main() -> None:  # noqa: PLR0915
             force=True,
         )
 
-    # Create connection options with BLE device
-    options = ConnectionOptions(ble_device=ble_device)
+    # Scan for available networks using the provisioning helper
+    print("\nScanning for WiFi networks...")
+    networks = await async_scan_wifi_networks(ble_device)
 
-    # Create device (uses BLE transport based on connection options)
-    device = await RpcDevice.create(
-        aiohttp_session=None,
-        ws_context=None,
-        ip_or_options=options,
-    )
+    print(f"\nFound {len(networks)} networks:")
+    for i, network in enumerate(networks, 1):
+        ssid = network.get("ssid", "Unknown")
+        rssi = network.get("rssi", 0)
+        auth = network.get("auth", 0)
+        auth_str = "Open" if auth == 0 else "Secured"
+        print(f"  {i}. {ssid} (Signal: {rssi} dBm, {auth_str})")
 
-    try:
-        # Initialize device connection
-        await device.initialize()
+    # Get SSID and password from command line or prompt
+    if args.ssid and args.password:
+        ssid = args.ssid
+        password = args.password
+    else:
+        # Prompt for SSID - can select from list or enter custom
+        print()
+        ssid_input = input(
+            f"Enter network number (1-{len(networks)}) or custom SSID: "
+        ).strip()
+        if not ssid_input:
+            print("No SSID provided, skipping WiFi configuration.")
+            return
 
-        # Get device info
-        print(f"Connected to: {device.model}")
-        print(f"Firmware: {device.firmware_version}")
-
-        # Scan for available networks
-        print("\nScanning for WiFi networks...")
-        scan_result = await device.call_rpc("WiFi.Scan")
-        networks = scan_result.get("results", [])
-
-        print(f"\nFound {len(networks)} networks:")
-        for i, network in enumerate(networks, 1):
-            ssid = network.get("ssid", "Unknown")
-            rssi = network.get("rssi", 0)
-            auth = network.get("auth", 0)
-            auth_str = "Open" if auth == 0 else "Secured"
-            print(f"  {i}. {ssid} (Signal: {rssi} dBm, {auth_str})")
-
-        # Get SSID and password from command line or prompt
-        if args.ssid and args.password:
-            ssid = args.ssid
-            password = args.password
-        else:
-            # Prompt for SSID - can select from list or enter custom
-            print()
-            ssid_input = input(
-                f"Enter network number (1-{len(networks)}) or custom SSID: "
-            ).strip()
-            if not ssid_input:
-                print("No SSID provided, skipping WiFi configuration.")
+        # Check if user entered a number to select from list
+        try:
+            network_idx = int(ssid_input) - 1
+            if 0 <= network_idx < len(networks):
+                ssid = networks[network_idx].get("ssid", "")
+                print(f"Selected network: {ssid}")
+            else:
+                print(
+                    f"Invalid selection. Please enter 1-{len(networks)} "
+                    "or a custom SSID"
+                )
                 return
+        except ValueError:
+            # Not a number, treat as custom SSID
+            ssid = ssid_input
 
-            # Check if user entered a number to select from list
-            try:
-                network_idx = int(ssid_input) - 1
-                if 0 <= network_idx < len(networks):
-                    ssid = networks[network_idx].get("ssid", "")
-                    print(f"Selected network: {ssid}")
-                else:
-                    print(
-                        f"Invalid selection. Please enter 1-{len(networks)} "
-                        "or a custom SSID"
-                    )
-                    return
-            except ValueError:
-                # Not a number, treat as custom SSID
-                ssid = ssid_input
+        password = getpass.getpass("Enter WiFi password: ")
 
-            password = getpass.getpass("Enter WiFi password: ")
-
-        print(f"\nConfiguring WiFi: {ssid}")
-        result = await device.call_rpc(
-            "WiFi.SetConfig",
-            {
-                "config": {
-                    "sta": {
-                        "ssid": ssid,
-                        "pass": password,
-                        "enable": True,
-                    }
-                }
-            },
-        )
-        print(f"WiFi configuration result: {result}")
-        print("\nDevice should now connect to WiFi.")
-        print("You can now connect to it via IP address.")
-
-    finally:
-        await device.shutdown()
+    # Provision WiFi credentials using the provisioning helper
+    print(f"\nConfiguring WiFi: {ssid}")
+    await async_provision_wifi(ble_device, ssid, password)
+    print("WiFi configuration complete!")
+    print("\nDevice should now connect to WiFi.")
+    print("You can now connect to it via IP address.")
 
 
 if __name__ == "__main__":
