@@ -578,7 +578,7 @@ class RpcDevice:
     async def wall_display_set_screen(self, value: bool) -> None:
         """Set Wall Display screen."""
         params = {"on": value}
-        await self.call_rpc("UI.Screen.Set", params)
+        await self.call_rpc("Ui.Screen.Set", params)
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""

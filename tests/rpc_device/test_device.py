@@ -1663,5 +1663,5 @@ async def test_wall_display_set_screen(
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
 
-    assert call_args_list[0][0][0][0][0] == "UI.Screen.Set"
+    assert call_args_list[0][0][0][0][0] == "Ui.Screen.Set"
     assert call_args_list[0][0][0][0][1] == {"on": True}
