@@ -576,7 +576,7 @@ class RpcDevice:
         self._status[key].update(cover_status)
 
     async def wall_display_set_screen(self, value: bool) -> None:
-        """Set Wall Display screen."""
+        """Set Wall Display screen on/off."""
         params = {"on": value}
         await self.call_rpc("Ui.Screen.Set", params)
 
