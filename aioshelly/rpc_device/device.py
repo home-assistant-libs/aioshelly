@@ -575,6 +575,11 @@ class RpcDevice:
         cover_status = await self.cover_get_status(id_)
         self._status[key].update(cover_status)
 
+    async def wall_display_set_screen(self, value: bool) -> None:
+        """Set Wall Display screen."""
+        params = {"on": value}
+        await self.call_rpc("UI.Screen.Set", params)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
