@@ -1658,7 +1658,7 @@ async def test_wall_display_set_screen(
     rpc_device: RpcDevice,
 ) -> None:
     """Test RpcDevice wall_display_set_screen() method."""
-    await rpc_device.cury_set_mode(True)
+    await rpc_device.wall_display_set_screen(True)
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
