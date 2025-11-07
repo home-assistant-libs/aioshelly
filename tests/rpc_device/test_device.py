@@ -1651,3 +1651,17 @@ async def test_rpc_device_initialize_ble() -> None:
     # Verify BLE connect was called
     assert mock_ble_rpc.connect.called
     assert rpc_device.initialized
+
+
+@pytest.mark.asyncio
+async def test_wall_display_set_screen(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice wall_display_set_screen() method."""
+    await rpc_device.wall_display_set_screen(True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Ui.Screen.Set"
+    assert call_args_list[0][0][0][0][1] == {"on": True}
