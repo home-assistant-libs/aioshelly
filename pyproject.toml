@@ -43,7 +43,7 @@ dev = [
   "pre-commit==4.4.0",
   "pytest-asyncio==1.2.0",
   "pytest-cov==7.0.0",
-  "pytest==8.4.2",
+  "pytest==9.0.0",
   "requests",
   "tox==4.32.0",
 ]
