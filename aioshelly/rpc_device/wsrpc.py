@@ -85,7 +85,7 @@ class SessionData:
 
     src: str | None
     dst: str | None
-    auth: tuple[DigestAuthMiddleware] | None
+    auth: DigestAuthMiddleware | None
 
 
 class RPCCall:
@@ -237,7 +237,7 @@ class WsRPC(WsBase):
     def set_auth_data(self, username: str, password: str) -> None:
         """Set authentication data and generate session auth."""
         self._auth_data = DigestAuthMiddleware(username, password)
-        self._session.auth = (self._auth_data,)
+        self._session.auth = self._auth_data
 
     async def _handle_call(self, frame_id: str) -> None:
         if TYPE_CHECKING:
