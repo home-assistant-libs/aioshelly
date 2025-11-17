@@ -100,12 +100,9 @@ class AuthData:
         """Call after initialization."""
         self.ha1 = hex_hash(f"{self.username}:{self.realm}:{self.password}")
 
-    def get_auth(self, nonce: int | None = None, n_c: int = 1) -> dict[str, Any]:
+    def get_auth(self, nonce: str = "", n_c: int = 1) -> dict[str, Any]:
         """Get auth for RPC calls."""
         cnonce = int(time.time())
-        if nonce is None:
-            nonce = cnonce - 1800
-
         # https://shelly-api-docs.shelly.cloud/gen2/Overview/CommonDeviceTraits/#authentication-over-websocket
         hashed = hex_hash(f"{self.ha1}:{nonce}:{n_c}:{cnonce}:auth:{HA2}")
 
@@ -434,43 +431,31 @@ class WsRPC(WsBase):
     ) -> list[dict[str, Any]]:
         """Websocket RPC calls."""
         # Try request with initial/last call auth data
-        all_successful, results = await self._rpc_calls(calls, timeout)
-        if all_successful:
-            # If all_successful, return results immediately
-            # mypy does not know that .result is never
-            # None when all_successful is True so we need
-            # to ignore the type check here
-            return [call.result for call in results]  # type: ignore[misc]
-
-        # Partial success, try to update auth and retry
-        to_retry: list[RPCCall] = []
         successful: list[dict[str, Any]] = []
-        for call in results:
-            if (result := call.result) is not UNDEFINED:
-                successful.append(result)
-                continue
-            resp = call.resolve.result()
-            self._raise_for_unrecoverable_errors(resp, allow_auth_retry=True)
-            if not to_retry:
-                # Update auth from response and try with new auth data
-                # If we have multiple calls, we only need to update auth once
-                if TYPE_CHECKING:
-                    # _raise_for_unrecoverable_errors ensures that auth_data is not None
-                    assert self._auth_data is not None
-                auth = json_loads(resp["error"]["message"])
-                self._session.auth = self._auth_data.get_auth(
-                    auth["nonce"], auth.get("nc", 1)
-                )
-            to_retry.append(call)
+        for call in calls:
+            _, results = await self._rpc_calls([call], timeout)
+            res = results[0]
+            if (result := res.result) is not UNDEFINED:
+                resp = res.resolve.result()
+                if "error" in resp:
+                    self._raise_for_unrecoverable_errors(resp, allow_auth_retry=True)
+                    # Update auth from response and try with new auth data
+                    # If we have multiple calls, we only need to update auth once
+                    if TYPE_CHECKING:
+                        assert self._auth_data is not None
+                    auth = json_loads(resp["error"]["message"])
+                    self._session.auth = self._auth_data.get_auth(
+                        auth["nonce"], auth.get("nc", 1)
+                    )
+                    _, results = await self._rpc_calls([call], timeout)
+                    res = results[0]
+                    if (
+                        result := res.result
+                    ) is UNDEFINED or "error" in res.resolve.result():
+                        self._raise_for_unrecoverable_errors(
+                            res.resolve.result(), allow_auth_retry=False
+                        )
 
-        _, results = await self._rpc_calls(
-            [(call.method, call.params) for call in to_retry], timeout
-        )
-        for call in results:
-            if (result := call.result) is UNDEFINED:
-                resp = call.resolve.result()
-                self._raise_for_unrecoverable_errors(resp, allow_auth_retry=False)
-            else:
                 successful.append(result)
 
         return successful
