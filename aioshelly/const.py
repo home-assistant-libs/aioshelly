@@ -962,6 +962,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1071,
     ),
     MODEL_DIMMER_10V_G3: ShellyDevice(
         model=MODEL_DIMMER_10V_G3,
