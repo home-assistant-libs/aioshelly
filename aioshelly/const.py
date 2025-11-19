@@ -200,6 +200,7 @@ class ShellyDevice:
     min_fw_date: int
     gen: int
     supported: bool
+    model_id: int | None = None  # BLE manufacturer data model ID (Gen4+ devices)
 
 
 DEVICES = {
@@ -510,6 +511,7 @@ DEVICES = {
         min_fw_date=GEN3_GATEWAY_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1817,
     ),
     MODEL_PLUS_1: ShellyDevice(
         model=MODEL_PLUS_1,
@@ -888,6 +890,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1018,
     ),
     MODEL_1L_G3: ShellyDevice(
         model=MODEL_1L_G3,
@@ -895,6 +898,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1014,
     ),
     MODEL_1_MINI_G3: ShellyDevice(
         model=MODEL_1_MINI_G3,
@@ -902,6 +906,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1015,
     ),
     MODEL_1PM_G3: ShellyDevice(
         model=MODEL_1PM_G3,
@@ -909,6 +914,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1019,
     ),
     MODEL_1PM_MINI_G3: ShellyDevice(
         model=MODEL_1PM_MINI_G3,
@@ -916,6 +922,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1016,
     ),
     MODEL_2L_G3: ShellyDevice(
         model=MODEL_2L_G3,
@@ -923,6 +930,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1013,
     ),
     MODEL_2PM_G3: ShellyDevice(
         model=MODEL_2PM_G3,
@@ -930,6 +938,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1005,
     ),
     MODEL_3EM_63_G3: ShellyDevice(
         model=MODEL_3EM_63_G3,
@@ -937,6 +946,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1026,
     ),
     MODEL_AZ_PLUG: ShellyDevice(
         model=MODEL_AZ_PLUG,
@@ -944,6 +954,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1850,
     ),
     MODEL_DALI_DIMMER_G3: ShellyDevice(
         model=MODEL_DALI_DIMMER_G3,
@@ -951,6 +962,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1071,
     ),
     MODEL_DIMMER_10V_G3: ShellyDevice(
         model=MODEL_DIMMER_10V_G3,
@@ -958,6 +970,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1072,
     ),
     MODEL_DIMMER_G3: ShellyDevice(
         model=MODEL_DIMMER_G3,
@@ -965,6 +978,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1073,
     ),
     MODEL_DUO_BULB_G3: ShellyDevice(
         model=MODEL_DUO_BULB_G3,
@@ -979,6 +993,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1027,
     ),
     MODEL_HT_G3: ShellyDevice(
         model=MODEL_HT_G3,
@@ -986,6 +1001,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1809,
     ),
     MODEL_I4_G3: ShellyDevice(
         model=MODEL_I4_G3,
@@ -993,6 +1009,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1812,
     ),
     MODEL_MULTICOLOR_BULB_G3: ShellyDevice(
         model=MODEL_MULTICOLOR_BULB_G3,
@@ -1007,6 +1024,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1853,
     ),
     MODEL_PILL_G3: ShellyDevice(
         model=MODEL_PILL_G3,
@@ -1021,6 +1039,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1023,
     ),
     MODEL_PLUG_S_G3: ShellyDevice(
         model=MODEL_PLUG_S_G3,
@@ -1028,6 +1047,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1805,
     ),
     MODEL_X_MOD1: ShellyDevice(
         model=MODEL_X_MOD1,
@@ -1042,6 +1062,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1028,
     ),
     MODEL_1_MINI_G4: ShellyDevice(
         model=MODEL_1_MINI_G4,
@@ -1049,6 +1070,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1030,
     ),
     MODEL_1PM_G4: ShellyDevice(
         model=MODEL_1PM_G4,
@@ -1056,6 +1078,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1029,
     ),
     MODEL_1PM_MINI_G4: ShellyDevice(
         model=MODEL_1PM_MINI_G4,
@@ -1063,6 +1086,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1031,
     ),
     MODEL_2PM_G4: ShellyDevice(
         model=MODEL_2PM_G4,
@@ -1070,6 +1094,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1032,
     ),
     MODEL_CURY_G4: ShellyDevice(
         model=MODEL_CURY_G4,
@@ -1084,6 +1109,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1075,
     ),
     MODEL_I4_G4: ShellyDevice(
         model=MODEL_I4_G4,
@@ -1098,6 +1124,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1822,
     ),
     MODEL_PLUG_US_G4: ShellyDevice(
         model=MODEL_PLUG_US_G4,
@@ -1105,6 +1132,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1852,
     ),
     MODEL_POWER_STRIP_G4: ShellyDevice(
         model=MODEL_POWER_STRIP_G4,
@@ -1112,6 +1140,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1851,
     ),
     MODEL_PRESENCE_G4: ShellyDevice(
         model=MODEL_PRESENCE_G4,
@@ -1187,3 +1216,11 @@ VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213
 
 # value confirmed by Shelly team
 BLU_TRV_TIMEOUT = 60
+
+# BLE manufacturer data model ID to ShellyDevice mapping
+# Built from DEVICES dict at module load time
+MODEL_ID_TO_DEVICE: dict[int, ShellyDevice] = {
+    device.model_id: device
+    for device in DEVICES.values()
+    if device.model_id is not None
+}

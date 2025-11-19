@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from habluetooth import BluetoothScanningMode, HaBluetoothConnector
 
+from ..const import MODEL_ID_TO_DEVICE
 from ..exceptions import RpcCallError
 from ..rpc_device import RpcDevice
 from .backend.scanner import ShellyBLEScanner
@@ -16,6 +18,9 @@ from .const import (
     VAR_EVENT_TYPE,
     VAR_VERSION,
 )
+
+if TYPE_CHECKING:
+    from ..const import ShellyDevice
 
 LOGGER = logging.getLogger(__name__)
 
@@ -109,3 +114,31 @@ async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
     LOGGER.info("BLE enabled, restarting device %s:%s", device.ip_address, device.port)
     await device.trigger_reboot(3500)
     return True
+
+
+def get_device_from_model_id(model_id: int) -> ShellyDevice | None:
+    """Get the ShellyDevice from a BLE model ID.
+
+    Args:
+        model_id: Model ID from BLE manufacturer data
+
+    Returns:
+        ShellyDevice object or None if not found
+
+    """
+    return MODEL_ID_TO_DEVICE.get(model_id)
+
+
+def get_name_from_model_id(model_id: int) -> str | None:
+    """Get the device name from a BLE model ID.
+
+    Args:
+        model_id: Model ID from BLE manufacturer data
+
+    Returns:
+        Device name or None if not found
+
+    """
+    if device := get_device_from_model_id(model_id):
+        return device.name
+    return None
