@@ -58,12 +58,12 @@ def parse_shelly_manufacturer_data(
             offset += 2
 
         elif block_type == BLOCK_TYPE_MAC:
-            # 6 bytes MAC address
+            # 6 bytes MAC address (stored in reverse order)
             if offset + 6 > len(data):
                 break
             mac_bytes = data[offset : offset + 6]
-            # Format as standard MAC address
-            result["mac"] = ":".join(f"{b:02X}" for b in mac_bytes)
+            # Format as standard MAC address (reverse the byte order)
+            result["mac"] = ":".join(f"{b:02X}" for b in reversed(mac_bytes))
             offset += 6
 
         elif block_type == BLOCK_TYPE_MODEL:

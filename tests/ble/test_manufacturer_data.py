@@ -37,10 +37,11 @@ def test_parse_flags_only() -> None:
 
 def test_parse_mac_only() -> None:
     """Test parsing manufacturer data with MAC address only."""
-    # Block type 0x0A (MAC) + 6 bytes MAC address
+    # Block type 0x0A (MAC) + 6 bytes MAC address (stored in reverse order)
     data = bytes([BLOCK_TYPE_MAC, 0xC0, 0x49, 0xEF, 0x88, 0x73, 0xE8])
     result = parse_shelly_manufacturer_data({ALLTERCO_MFID: data})
-    assert result == {"mac": "C0:49:EF:88:73:E8"}
+    # MAC bytes are reversed when parsed
+    assert result == {"mac": "E8:73:88:EF:49:C0"}
 
 
 def test_parse_model_only() -> None:
@@ -65,7 +66,7 @@ def test_parse_all_blocks() -> None:
             0xEF,
             0x88,
             0x73,
-            0xE8,  # MAC
+            0xE8,  # MAC (stored in reverse order)
             BLOCK_TYPE_MODEL,
             0x34,
             0x12,  # model = 0x1234
@@ -74,7 +75,7 @@ def test_parse_all_blocks() -> None:
     result = parse_shelly_manufacturer_data({ALLTERCO_MFID: data})
     assert result == {
         "flags": 0x0007,
-        "mac": "C0:49:EF:88:73:E8",
+        "mac": "E8:73:88:EF:49:C0",  # MAC bytes are reversed when parsed
         "model_id": 0x1234,
     }
 
