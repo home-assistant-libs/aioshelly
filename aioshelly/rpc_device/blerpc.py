@@ -369,6 +369,18 @@ class BleRPC:
             data_bytes.extend(chunk)
 
         if len(data_bytes) < frame_length:
+            # Log the actual data we received for debugging
+            _LOGGER.debug(
+                "Data received (hex): %s",
+                data_bytes[: min(len(data_bytes), 100)].hex(),
+            )
+            _LOGGER.debug(
+                "Data received (ascii): %s",
+                "".join(
+                    chr(b) if 32 <= b < 127 else f"\\x{b:02x}"
+                    for b in data_bytes[: min(len(data_bytes), 100)]
+                ),
+            )
             msg = (
                 f"Incomplete data received: expected {frame_length} bytes, "
                 f"got {len(data_bytes)}"
