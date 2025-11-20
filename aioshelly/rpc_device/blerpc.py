@@ -34,7 +34,6 @@ RX_CONTROL_CHARACTERISTIC_UUID = "5f6d4f53-5f52-5043-5f72-785f63746c5f"
 # Protocol constants
 UINT32_BYTES = 4  # Size of uint32 in bytes
 MAX_CONNECTION_RETRIES = 2  # Initial attempt + 1 retry for cache issues
-TX_SYNC_DELAY = 0.05  # Delay between TX control and data write for device sync
 RX_POLL_INTERVAL = 0.1  # Seconds to wait between RX frame length polls
 RX_POLL_MAX_ATTEMPTS = 50  # Max polls before timeout (5 seconds total)
 
@@ -284,9 +283,6 @@ class BleRPC:
         # Write frame length to TX control characteristic using pre-compiled struct
         frame_length = _PACK_UINT32_BE(len(data))
         await self._client.write_gatt_char(TX_CONTROL_CHARACTERISTIC_UUID, frame_length)
-
-        # Brief delay for device synchronization per Shelly BLE protocol
-        await asyncio.sleep(TX_SYNC_DELAY)
 
         # Write data to data characteristic
         await self._client.write_gatt_char(DATA_CHARACTERISTIC_UUID, data)
