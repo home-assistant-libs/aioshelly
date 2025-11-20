@@ -323,6 +323,11 @@ class BleRPC:
                 raise DeviceConnectionError(msg)
 
             frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
+            _LOGGER.debug(
+                "RX control raw bytes: %s, frame_length=%d",
+                length_data[:UINT32_BYTES].hex(),
+                frame_length,
+            )
             if frame_length == 0:
                 # Device hasn't prepared response yet, wait and retry
                 _LOGGER.debug("Frame length 0, polling again in %ss", RX_POLL_INTERVAL)
