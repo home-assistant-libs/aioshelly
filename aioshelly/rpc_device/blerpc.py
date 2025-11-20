@@ -387,6 +387,22 @@ class BleRPC:
                     for b in data_bytes[: min(len(data_bytes), 100)]
                 ),
             )
+
+            # Workaround for firmware bug: some devices return corrupted frame length
+            # in RX control but provide complete valid JSON response in data characteristic.
+            # If we got valid complete JSON, use it despite the incorrect frame length.
+            try:
+                json_loads(data_bytes)
+                _LOGGER.debug(
+                    "Frame length mismatch (expected %d, got %d) but data is valid JSON, using it",
+                    frame_length,
+                    len(data_bytes),
+                )
+                return bytes(data_bytes)
+            except ValueError:
+                # Not valid JSON or incomplete - this is a real error
+                pass
+
             msg = (
                 f"Incomplete data received: expected {frame_length} bytes, "
                 f"got {len(data_bytes)}"
