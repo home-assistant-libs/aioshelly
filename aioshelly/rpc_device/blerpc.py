@@ -363,6 +363,12 @@ class BleRPC:
                 len(data_bytes) + len(chunk),
                 frame_length,
             )
+            if chunk and chunk_num == 1:
+                # Log first chunk data for debugging
+                _LOGGER.debug(
+                    "First chunk hex: %s",
+                    chunk[:min(len(chunk), 50)].hex(),
+                )
             if not chunk:
                 # No more data available
                 break
