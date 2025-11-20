@@ -319,11 +319,6 @@ class BleRPC:
                 raise DeviceConnectionError(msg)
 
             frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
-            _LOGGER.debug(
-                "RX control raw bytes: %s, frame_length=%d",
-                length_data[:UINT32_BYTES].hex(),
-                frame_length,
-            )
             if frame_length == 0:
                 # Device hasn't prepared response yet, wait and retry
                 _LOGGER.debug("Frame length 0, polling again in %ss", RX_POLL_INTERVAL)
@@ -359,46 +354,12 @@ class BleRPC:
                 len(data_bytes) + len(chunk),
                 frame_length,
             )
-            if chunk and chunk_num == 1:
-                # Log first chunk data for debugging
-                _LOGGER.debug(
-                    "First chunk hex: %s",
-                    chunk[:min(len(chunk), 50)].hex(),
-                )
             if not chunk:
                 # No more data available
                 break
             data_bytes.extend(chunk)
 
         if len(data_bytes) < frame_length:
-            # Log the actual data we received for debugging
-            _LOGGER.debug(
-                "Data received (hex): %s",
-                data_bytes[: min(len(data_bytes), 100)].hex(),
-            )
-            _LOGGER.debug(
-                "Data received (ascii): %s",
-                "".join(
-                    chr(b) if 32 <= b < 127 else f"\\x{b:02x}"
-                    for b in data_bytes[: min(len(data_bytes), 100)]
-                ),
-            )
-
-            # Workaround for firmware bug: some devices return corrupted frame length
-            # in RX control but provide complete valid JSON response in data characteristic.
-            # If we got valid complete JSON, use it despite the incorrect frame length.
-            try:
-                json_loads(data_bytes)
-                _LOGGER.debug(
-                    "Frame length mismatch (expected %d, got %d) but data is valid JSON, using it",
-                    frame_length,
-                    len(data_bytes),
-                )
-                return bytes(data_bytes)
-            except ValueError:
-                # Not valid JSON or incomplete - this is a real error
-                pass
-
             msg = (
                 f"Incomplete data received: expected {frame_length} bytes, "
                 f"got {len(data_bytes)}"
