@@ -45,6 +45,7 @@ from .models import (
     ShellyBLESetConfig,
     ShellyScript,
     ShellyScriptCode,
+    ShellyWiFiSetConfig,
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
@@ -697,6 +698,27 @@ class RpcDevice:
     async def ble_getconfig(self) -> ShellyBLEConfig:
         """Get the BLE config with BLE.GetConfig."""
         return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
+
+    async def wifi_setconfig(
+        self, *, ap_enable: bool | None = None
+    ) -> ShellyWiFiSetConfig:
+        """Configure WiFi settings with WiFi.SetConfig.
+
+        Args:
+            ap_enable: Whether to enable the WiFi AP
+
+        Returns:
+            Response dict, may contain "restart_required": bool
+
+        """
+        config: dict[str, Any] = {}
+        if ap_enable is not None:
+            config["ap"] = {"enable": ap_enable}
+
+        return cast(
+            ShellyWiFiSetConfig,
+            await self.call_rpc("WiFi.SetConfig", {"config": config}),
+        )
 
     async def ws_setconfig(
         self, enable: bool, server: str, ssl_ca: str = "*"
