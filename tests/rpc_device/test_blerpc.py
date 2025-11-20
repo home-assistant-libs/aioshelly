@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -321,6 +322,38 @@ async def test_blerpc_call_incomplete_data(
 
     with pytest.raises(DeviceConnectionError, match="Incomplete data"):
         await ble_rpc.call("Shelly.GetDeviceInfo")
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_corrupted_frame_length_valid_json(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with corrupted frame length but valid complete JSON.
+
+    Workaround for firmware bug where RX control returns wrong frame length
+    but the actual data is complete valid JSON.
+    """
+    ble_rpc = BleRPC(ble_device)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    response = {"id": 1, "src": "test", "result": {"name": "Test Device"}}
+    response_bytes = json.dumps(response).encode()
+
+    # Mock RX control says 840106079 bytes (corrupted), but we get complete JSON
+    mock_ble_client.read_gatt_char.side_effect = [
+        (840106079).to_bytes(4, "big"),  # Corrupted frame length
+        response_bytes,  # Complete valid JSON response
+        b"",  # Empty chunk (no more data)
+    ]
+
+    await ble_rpc.connect()
+
+    # Should succeed despite corrupted frame length because JSON is valid
+    result = await ble_rpc.call("Shelly.GetDeviceInfo")
+    assert result == {"name": "Test Device"}
 
 
 @pytest.mark.asyncio
