@@ -538,6 +538,18 @@ async def test_ble_setconfig(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_wifi_setconfig(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice wifi_setconfig method."""
+    await rpc_device.wifi_setconfig(ap_enable=False)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "WiFi.SetConfig"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "config": {"ap": {"enable": False}}
+    }
+
+
+@pytest.mark.asyncio
 async def test_script_stop(rpc_device: RpcDevice) -> None:
     """Test RpcDevice script_stop method."""
     await rpc_device.script_stop(12)
