@@ -39,6 +39,12 @@ class ShellyBLESetConfig(TypedDict, total=False):
     restart_required: bool
 
 
+class ShellyWiFiSetConfig(TypedDict, total=False):
+    """Shelly WiFi Set Config."""
+
+    restart_required: bool
+
+
 class ShellyWsConfig(TypedDict, total=False):
     """Shelly Outbound Websocket Config."""
 
