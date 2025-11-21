@@ -362,10 +362,13 @@ class BleRPC:
             )
             if not chunk:
                 empty_reads += 1
-                # If first read is empty, device hasn't prepared data yet - retry once
-                if empty_reads == 1 and len(data_bytes) == 0:
+                # If we haven't received any data yet, device may not be ready
+                # Retry with backoff up to RX_POLL_MAX_ATTEMPTS times
+                if len(data_bytes) == 0 and empty_reads < RX_POLL_MAX_ATTEMPTS:
                     _LOGGER.debug(
-                        "First chunk empty, device not ready yet, retrying after %ss",
+                        "Chunk empty (attempt %d/%d), retrying after %ss",
+                        empty_reads,
+                        RX_POLL_MAX_ATTEMPTS,
                         RX_POLL_INTERVAL,
                     )
                     await asyncio.sleep(RX_POLL_INTERVAL)
