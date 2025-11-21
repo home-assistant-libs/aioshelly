@@ -319,6 +319,11 @@ class BleRPC:
                 raise DeviceConnectionError(msg)
 
             frame_length = _UNPACK_UINT32_BE(length_data[:UINT32_BYTES])[0]
+            _LOGGER.debug(
+                "RX control raw bytes: %s, frame_length=%d",
+                length_data[:UINT32_BYTES].hex(),
+                frame_length,
+            )
             if frame_length == 0:
                 # Device hasn't prepared response yet, wait and retry
                 _LOGGER.debug("Frame length 0, polling again in %ss", RX_POLL_INTERVAL)
@@ -360,6 +365,22 @@ class BleRPC:
             data_bytes.extend(chunk)
 
         if len(data_bytes) < frame_length:
+            # Workaround for firmware bug: some devices return corrupted frame length
+            # in RX control but provide complete valid JSON response in data
+            # characteristic.
+            # If we got valid complete JSON, use it despite the incorrect frame length.
+            try:
+                json_loads(data_bytes)
+                _LOGGER.debug(
+                    "Frame length mismatch (expected %d, got %d) but data is valid",
+                    frame_length,
+                    len(data_bytes),
+                )
+                return bytes(data_bytes)
+            except ValueError:
+                # Not valid JSON or incomplete - this is a real error
+                pass
+
             msg = (
                 f"Incomplete data received: expected {frame_length} bytes, "
                 f"got {len(data_bytes)}"
