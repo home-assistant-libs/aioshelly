@@ -347,6 +347,7 @@ class BleRPC:
         # Large responses may be split across multiple reads
         data_bytes = bytearray()
         chunk_num = 0
+        empty_reads = 0
         while len(data_bytes) < frame_length:
             chunk = cast(
                 bytes, await self._client.read_gatt_char(DATA_CHARACTERISTIC_UUID)
@@ -360,6 +361,15 @@ class BleRPC:
                 frame_length,
             )
             if not chunk:
+                empty_reads += 1
+                # If first read is empty, device hasn't prepared data yet - retry once
+                if empty_reads == 1 and len(data_bytes) == 0:
+                    _LOGGER.debug(
+                        "First chunk empty, device not ready yet, retrying after %ss",
+                        RX_POLL_INTERVAL,
+                    )
+                    await asyncio.sleep(RX_POLL_INTERVAL)
+                    continue
                 # No more data available
                 break
             data_bytes.extend(chunk)

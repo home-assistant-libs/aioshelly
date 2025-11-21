@@ -358,6 +358,35 @@ async def test_blerpc_call_corrupted_frame_length_valid_json(
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_first_chunk_empty_retry(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with empty first chunk, then data on retry."""
+    ble_rpc = BleRPC(ble_device)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    response = {"id": 1, "src": "test", "result": {"name": "Test Device"}}
+    response_bytes = json.dumps(response).encode()
+
+    # First data read returns empty (device not ready), second returns data
+    mock_ble_client.read_gatt_char.side_effect = [
+        len(response_bytes).to_bytes(4, "big"),  # Frame length
+        b"",  # First chunk empty - device not ready
+        response_bytes,  # Second chunk has data after retry
+        b"",  # End of data
+    ]
+
+    await ble_rpc.connect()
+
+    # Should succeed after retry
+    result = await ble_rpc.call("Shelly.GetDeviceInfo")
+    assert result == {"name": "Test Device"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
 async def test_blerpc_call_invalid_json(
     ble_device: BLEDevice, mock_ble_client: MagicMock
 ) -> None:
