@@ -358,6 +358,37 @@ async def test_blerpc_call_corrupted_frame_length_valid_json(
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_first_chunk_empty_retry(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call with multiple empty chunks, then data on retry."""
+    ble_rpc = BleRPC(ble_device)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    response = {"id": 1, "src": "test", "result": {"name": "Test Device"}}
+    response_bytes = json.dumps(response).encode()
+
+    # Multiple empty reads (device not ready), then data arrives
+    mock_ble_client.read_gatt_char.side_effect = [
+        len(response_bytes).to_bytes(4, "big"),  # Frame length
+        b"",  # First chunk empty - device not ready
+        b"",  # Second chunk empty - still not ready
+        b"",  # Third chunk empty - still not ready
+        response_bytes,  # Fourth chunk has data after retries
+        b"",  # End of data
+    ]
+
+    await ble_rpc.connect()
+
+    # Should succeed after multiple retries
+    result = await ble_rpc.call("Shelly.GetDeviceInfo")
+    assert result == {"name": "Test Device"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
 async def test_blerpc_call_invalid_json(
     ble_device: BLEDevice, mock_ble_client: MagicMock
 ) -> None:
@@ -595,6 +626,35 @@ async def test_blerpc_call_zero_frame_length_then_success(
         result = await ble_rpc.call("Shelly.GetDeviceInfo")
 
     assert result == {"name": "Test Device"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_establish_connection")
+async def test_blerpc_call_first_chunk_empty_timeout(
+    ble_device: BLEDevice, mock_ble_client: MagicMock
+) -> None:
+    """Test BLE RPC call times out after max empty chunk retries."""
+    ble_rpc = BleRPC(ble_device)
+
+    mock_ble_client.write_gatt_char = AsyncMock()
+    mock_ble_client.read_gatt_char = AsyncMock()
+
+    # Frame length indicates data, but reads always return empty
+    mock_ble_client.read_gatt_char.side_effect = [
+        (100).to_bytes(4, "big"),  # Frame length = 100 bytes
+        *[b"" for _ in range(60)],  # More than RX_POLL_MAX_ATTEMPTS empty reads
+    ]
+
+    await ble_rpc.connect()
+
+    # Patch RX_POLL_INTERVAL to speed up test
+    with (
+        patch("aioshelly.rpc_device.blerpc.RX_POLL_INTERVAL", 0.001),
+        pytest.raises(
+            DeviceConnectionError, match="Incomplete data received: expected 100 bytes"
+        ),
+    ):
+        await ble_rpc.call("Shelly.GetDeviceInfo")
 
 
 @pytest.mark.asyncio

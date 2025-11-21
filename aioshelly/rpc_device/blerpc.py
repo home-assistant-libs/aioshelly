@@ -347,6 +347,7 @@ class BleRPC:
         # Large responses may be split across multiple reads
         data_bytes = bytearray()
         chunk_num = 0
+        empty_reads = 0
         while len(data_bytes) < frame_length:
             chunk = cast(
                 bytes, await self._client.read_gatt_char(DATA_CHARACTERISTIC_UUID)
@@ -360,6 +361,18 @@ class BleRPC:
                 frame_length,
             )
             if not chunk:
+                empty_reads += 1
+                # If we haven't received any data yet, device may not be ready
+                # Retry with backoff up to RX_POLL_MAX_ATTEMPTS times
+                if len(data_bytes) == 0 and empty_reads < RX_POLL_MAX_ATTEMPTS:
+                    _LOGGER.debug(
+                        "Chunk empty (attempt %d/%d), retrying after %ss",
+                        empty_reads,
+                        RX_POLL_MAX_ATTEMPTS,
+                        RX_POLL_INTERVAL,
+                    )
+                    await asyncio.sleep(RX_POLL_INTERVAL)
+                    continue
                 # No more data available
                 break
             data_bytes.extend(chunk)
