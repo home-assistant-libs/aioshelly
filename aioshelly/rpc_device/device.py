@@ -581,6 +581,16 @@ class RpcDevice:
         params = {"on": value}
         await self.call_rpc("Ui.Screen.Set", params)
 
+    async def kvs_get(self, key: str) -> dict[str, Any]:
+        """Get value from KVS."""
+        params = {"key": key}
+        await self.call_rpc("KVS.Get", params)
+
+    async def kvs_set(self, key: str, value: str) -> None:
+        """Set value in KVS."""
+        params = {"key": key, "value": value}
+        await self.call_rpc("KVS.Set", params)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]

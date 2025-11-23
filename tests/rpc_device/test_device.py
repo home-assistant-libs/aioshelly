@@ -1677,3 +1677,35 @@ async def test_wall_display_set_screen(
 
     assert call_args_list[0][0][0][0][0] == "Ui.Screen.Set"
     assert call_args_list[0][0][0][0][1] == {"on": True}
+
+
+@pytest.mark.asyncio
+async def test_kvs_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice kvs_set() method."""
+    await rpc_device.kvs_set("key1", "value1")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "KVS.Set"
+    assert call_args_list[0][0][0][0][1] == {"key": "key1", "value": "value1"}
+
+
+@pytest.mark.asyncio
+async def test_kvs_get(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice kvs_get() method."""
+    rpc_device.call_rpc_multiple.return_value = [{"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": "value1"}]
+
+    result = await rpc_device.kvs_get("key1")
+
+    assert result == {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": "value1"}
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "KVS.Get"
+    assert call_args_list[0][0][0][0][1] == {"key": "key1"}
