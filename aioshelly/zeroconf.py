@@ -7,7 +7,6 @@ import logging
 
 from zeroconf import (
     BadTypeInNameException,
-    DNSPointer,
     IPVersion,
     current_time_millis,
 )
@@ -85,9 +84,7 @@ async def async_discover_devices(
 
     for service_type in SHELLY_TYPES:
         # Get all PTR records for this service type from the cache
-        ptr_records: list[DNSPointer] = zc.cache.async_all_by_details(
-            service_type, TYPE_PTR, CLASS_IN
-        )
+        ptr_records = zc.cache.async_all_by_details(service_type, TYPE_PTR, CLASS_IN)
 
         for record in ptr_records:
             service_name = record.alias
