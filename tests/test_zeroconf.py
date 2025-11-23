@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import socket
 from collections.abc import Generator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
-from zeroconf import IPVersion
+from zeroconf import DNSPointer, IPVersion
+from zeroconf.asyncio import AsyncServiceInfo
 
-from aioshelly.zeroconf import async_lookup_device_by_name
+from aioshelly.zeroconf import async_discover_devices, async_lookup_device_by_name
 
 
 @pytest.fixture
@@ -102,3 +104,210 @@ async def test_lookup_device_by_name_no_port(
     result = await async_lookup_device_by_name(mock_aiozc, "ShellyPlugUS-C049EF8873E8")
 
     assert result is None
+
+
+def _create_shelly_service_info(
+    name: str,
+    service_type: str,
+    address: str = "192.168.1.100",
+    port: int = 80,
+) -> AsyncServiceInfo:
+    """Create a mock Shelly service info."""
+    return AsyncServiceInfo(
+        service_type,
+        name,
+        addresses=[socket.inet_aton(address)],
+        port=port,
+        properties={},
+        weight=0,
+        priority=0,
+    )
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_empty() -> None:
+    """Test discovering devices when none are available."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+    mock_zc.cache.async_all_by_details.return_value = []
+
+    result = await async_discover_devices(mock_aiozc)
+
+    assert result == []
+    # Should query both service types
+    assert mock_zc.cache.async_all_by_details.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_from_cache() -> None:
+    """Test discovering devices that are already in cache."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+
+    # Create mock PTR records for Shelly devices
+    ptr_http = MagicMock(spec=DNSPointer)
+    ptr_http.alias = "Shelly-PlugS-12345._http._tcp.local."
+    ptr_shelly = MagicMock(spec=DNSPointer)
+    ptr_shelly.alias = "Shelly-1-67890._shelly._tcp.local."
+
+    cache_records: dict[str, list[DNSPointer]] = {
+        "_http._tcp.local.": [ptr_http],
+        "_shelly._tcp.local.": [ptr_shelly],
+    }
+
+    def mock_cache_lookup(
+        service_type: str, _record_type: int, _record_class: int
+    ) -> list[DNSPointer]:
+        return cache_records.get(service_type, [])
+
+    mock_zc.cache.async_all_by_details.side_effect = mock_cache_lookup
+
+    with patch.multiple(
+        AsyncServiceInfo,
+        load_from_cache=MagicMock(return_value=True),
+        addresses=PropertyMock(return_value=[socket.inet_aton("192.168.1.100")]),
+    ):
+        result = await async_discover_devices(mock_aiozc)
+
+    # Should find 2 devices
+    assert len(result) == 2
+    assert all(isinstance(info, AsyncServiceInfo) for info in result)
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_with_network_request() -> None:
+    """Test discovering devices that need network requests."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+
+    # Create mock PTR record
+    ptr = MagicMock(spec=DNSPointer)
+    ptr.alias = "Shelly-PlugS-12345._http._tcp.local."
+
+    def mock_cache_lookup(
+        service_type: str, _record_type: int, _record_class: int
+    ) -> list[DNSPointer]:
+        return [ptr] if service_type == "_http._tcp.local." else []
+
+    mock_zc.cache.async_all_by_details.side_effect = mock_cache_lookup
+
+    # Track async_request calls
+    request_called = False
+
+    async def mock_request(
+        _self: AsyncServiceInfo, _zc: MagicMock, _timeout: int
+    ) -> bool:
+        nonlocal request_called
+        request_called = True
+        return True
+
+    with patch.multiple(
+        AsyncServiceInfo,
+        load_from_cache=MagicMock(return_value=False),
+        async_request=mock_request,
+        addresses=PropertyMock(return_value=[socket.inet_aton("192.168.1.100")]),
+    ):
+        result = await async_discover_devices(mock_aiozc)
+
+    assert len(result) == 1
+    assert request_called
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_filters_non_shelly() -> None:
+    """Test that non-Shelly devices are filtered out."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+
+    # Create mix of Shelly and non-Shelly PTR records
+    ptr_shelly = MagicMock(spec=DNSPointer)
+    ptr_shelly.alias = "Shelly-PlugS-12345._http._tcp.local."
+    ptr_other = MagicMock(spec=DNSPointer)
+    ptr_other.alias = "SomeOtherDevice._http._tcp.local."
+
+    def mock_cache_lookup(
+        service_type: str, _record_type: int, _record_class: int
+    ) -> list[DNSPointer]:
+        return [ptr_shelly, ptr_other] if service_type == "_http._tcp.local." else []
+
+    mock_zc.cache.async_all_by_details.side_effect = mock_cache_lookup
+
+    with patch.multiple(
+        AsyncServiceInfo,
+        load_from_cache=MagicMock(return_value=True),
+        addresses=PropertyMock(return_value=[socket.inet_aton("192.168.1.100")]),
+    ):
+        result = await async_discover_devices(mock_aiozc)
+
+    # Should only find the Shelly device
+    assert len(result) == 1
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_filters_no_addresses() -> None:
+    """Test that devices without addresses are filtered out."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+
+    ptr = MagicMock(spec=DNSPointer)
+    ptr.alias = "Shelly-PlugS-12345._http._tcp.local."
+
+    def mock_cache_lookup(
+        service_type: str, _record_type: int, _record_class: int
+    ) -> list[DNSPointer]:
+        return [ptr] if service_type == "_http._tcp.local." else []
+
+    mock_zc.cache.async_all_by_details.side_effect = mock_cache_lookup
+
+    with patch.multiple(
+        AsyncServiceInfo,
+        load_from_cache=MagicMock(return_value=True),
+        addresses=PropertyMock(return_value=[]),
+    ):
+        result = await async_discover_devices(mock_aiozc)
+
+    # Should filter out devices without addresses
+    assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_timeout_parameter() -> None:
+    """Test that timeout parameter is passed correctly."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+
+    ptr = MagicMock(spec=DNSPointer)
+    ptr.alias = "Shelly-PlugS-12345._http._tcp.local."
+
+    def mock_cache_lookup(
+        service_type: str, _record_type: int, _record_class: int
+    ) -> list[DNSPointer]:
+        return [ptr] if service_type == "_http._tcp.local." else []
+
+    mock_zc.cache.async_all_by_details.side_effect = mock_cache_lookup
+
+    request_timeout = None
+
+    async def mock_request(
+        _self: AsyncServiceInfo, _zc: MagicMock, timeout: int
+    ) -> bool:
+        nonlocal request_timeout
+        request_timeout = timeout
+        return True
+
+    with patch.multiple(
+        AsyncServiceInfo,
+        load_from_cache=MagicMock(return_value=False),
+        async_request=mock_request,
+        addresses=PropertyMock(return_value=[socket.inet_aton("192.168.1.100")]),
+    ):
+        await async_discover_devices(mock_aiozc, timeout=5.0)
+
+    # Should convert timeout from seconds to milliseconds
+    assert request_timeout == 5000
