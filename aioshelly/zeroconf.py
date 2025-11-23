@@ -6,7 +6,6 @@ import asyncio
 import logging
 
 from zeroconf import (
-    BadTypeInNameException,
     IPVersion,
     current_time_millis,
 )
@@ -101,14 +100,7 @@ async def async_discover_devices(
             if service_name in discovered_services:
                 continue
 
-            try:
-                info = AsyncServiceInfo(service_type, service_name)
-            except BadTypeInNameException as ex:
-                LOGGER.debug(
-                    "Ignoring record with bad type in name: %s: %s", service_name, ex
-                )
-                continue
-
+            info = AsyncServiceInfo(service_type, service_name)
             discovered_services[service_name] = info
 
             # Try to load from cache first
