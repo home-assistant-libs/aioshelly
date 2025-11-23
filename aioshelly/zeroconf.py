@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import cast
 
 from zeroconf import (
+    DNSPointer,
     IPVersion,
     current_time_millis,
 )
@@ -86,7 +88,7 @@ async def async_discover_devices(
         ptr_records = zc.cache.async_all_by_details(service_type, TYPE_PTR, CLASS_IN)
 
         for record in ptr_records:
-            service_name = record.alias
+            service_name = cast(DNSPointer, record).alias
 
             # For _http._tcp.local., filter by Shelly- prefix since it
             # contains all devices. For _shelly._tcp.local., all devices
