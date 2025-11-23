@@ -15,7 +15,9 @@ from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 LOGGER = logging.getLogger(__name__)
 
-SHELLY_TYPES = ["_http._tcp.local.", "_shelly._tcp.local."]
+# Order matters: _shelly._tcp.local. is checked first as it's Shelly-specific
+# and more likely to have the device we're looking for
+SHELLY_TYPES = ("_shelly._tcp.local.", "_http._tcp.local.")
 SHELLY_NAME_PREFIX = "Shelly-"
 CLASS_IN = 1
 TYPE_PTR = 12
@@ -89,21 +91,23 @@ async def async_discover_devices(
 
         for record in ptr_records:
             service_name = cast(DNSPointer, record).alias
+            # Extract device name by splitting on first '.'
+            device_name = service_name.partition(".")[0]
 
             # For _http._tcp.local., filter by Shelly- prefix since it
             # contains all devices. For _shelly._tcp.local., all devices
             # are Shelly devices
-            if service_type == "_http._tcp.local." and not service_name.startswith(
+            if service_type == "_http._tcp.local." and not device_name.startswith(
                 SHELLY_NAME_PREFIX
             ):
                 continue
 
             # Skip if we already have this device from another service type
-            if service_name in discovered_services:
+            if device_name in discovered_services:
                 continue
 
             info = AsyncServiceInfo(service_type, service_name)
-            discovered_services[service_name] = info
+            discovered_services[device_name] = info
 
             # Try to load from cache first
             if not info.load_from_cache(zc, now):

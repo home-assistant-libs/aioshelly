@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import socket
 from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -244,6 +245,55 @@ async def test_discover_devices_filters_non_shelly() -> None:
         result = await async_discover_devices(mock_aiozc)
 
     # Should only find the Shelly device
+    assert len(result) == 1
+
+
+@pytest.mark.asyncio
+async def test_discover_devices_deduplicates_across_service_types() -> None:
+    """Test that devices in both service types are deduplicated."""
+    mock_aiozc = MagicMock()
+    mock_zc = MagicMock()
+    mock_aiozc.zeroconf = mock_zc
+
+    # Same device name but different service types
+    ptr_http = MagicMock(spec=DNSPointer)
+    ptr_http.alias = "Shelly-PlugS-12345._http._tcp.local."
+    ptr_shelly = MagicMock(spec=DNSPointer)
+    ptr_shelly.alias = "Shelly-PlugS-12345._shelly._tcp.local."
+
+    cache_records: dict[str, list[DNSPointer]] = {
+        "_http._tcp.local.": [ptr_http],
+        "_shelly._tcp.local.": [ptr_shelly],
+    }
+
+    def mock_cache_lookup(
+        service_type: str, _record_type: int, _record_class: int
+    ) -> list[DNSPointer]:
+        return cache_records.get(service_type, [])
+
+    mock_zc.cache.async_all_by_details.side_effect = mock_cache_lookup
+
+    # Track how many times AsyncServiceInfo is created
+    creation_count = 0
+    original_init = AsyncServiceInfo.__init__
+
+    def counting_init(self: AsyncServiceInfo, *args: Any, **kwargs: Any) -> None:
+        nonlocal creation_count
+        creation_count += 1
+        original_init(self, *args, **kwargs)
+
+    with (
+        patch.object(AsyncServiceInfo, "__init__", counting_init),
+        patch.multiple(
+            AsyncServiceInfo,
+            load_from_cache=MagicMock(return_value=True),
+            addresses=PropertyMock(return_value=[socket.inet_aton("192.168.1.100")]),
+        ),
+    ):
+        result = await async_discover_devices(mock_aiozc)
+
+    # Should only create one AsyncServiceInfo instance due to deduplication
+    assert creation_count == 1
     assert len(result) == 1
 
 
