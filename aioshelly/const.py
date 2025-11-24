@@ -645,6 +645,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x1804,
     ),
     MODEL_PLUS_PM_MINI: ShellyDevice(
         model=MODEL_PLUS_PM_MINI,
