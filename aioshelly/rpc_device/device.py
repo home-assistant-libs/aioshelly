@@ -586,7 +586,7 @@ class RpcDevice:
         params = {"key": key}
         return await self.call_rpc("KVS.Get", params)
 
-    async def kvs_set(self, key: str, value: Any) -> None:
+    async def kvs_set(self, key: str, value: str | int | float | bool | None) -> None:
         """Set value in KVS."""
         params = {"key": key, "value": value}
         await self.call_rpc("KVS.Set", params)
