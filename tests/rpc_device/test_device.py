@@ -1698,7 +1698,9 @@ async def test_kvs_get(
     rpc_device: RpcDevice,
 ) -> None:
     """Test RpcDevice kvs_get() method."""
-    rpc_device.call_rpc_multiple.return_value = [{"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": "value1"}]
+    rpc_device.call_rpc_multiple.return_value = [
+        {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": "value1"}
+    ]
 
     result = await rpc_device.kvs_get("key1")
 
