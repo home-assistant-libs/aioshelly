@@ -1706,18 +1706,31 @@ async def test_kvs_set(
     assert call_args_list[0][0][0][0][1] == {"key": "key1", "value": out_value}
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("value1", "value1"),
+        ('{"key1":"val1"}', {"key1": "val1"}),
+        ('[{"key1":"val1"},{"key2":"val2"}]', [{"key1": "val1"}, {"key2": "val2"}]),
+        (42.5, 42.5),
+        (True, True),
+        (None, None),
+    ],
+)
 @pytest.mark.asyncio
 async def test_kvs_get(
     rpc_device: RpcDevice,
+    value: str | float | bool | None,
+    expected: str | float | bool | dict | list | None,
 ) -> None:
     """Test RpcDevice kvs_get() method."""
     rpc_device.call_rpc_multiple.return_value = [
-        {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": "value1"}
+        {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": value}
     ]
 
     result = await rpc_device.kvs_get("key1")
 
-    assert result == {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": "value1"}
+    assert result == {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": expected}
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list

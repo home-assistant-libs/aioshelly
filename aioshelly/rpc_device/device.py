@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Iterable
+from contextlib import suppress
 from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
@@ -39,7 +40,7 @@ from ..exceptions import (
     RpcCallError,
     ShellyError,
 )
-from ..json import json_dumps
+from ..json import JSONDecodeError, json_dumps, json_loads
 from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
@@ -585,7 +586,12 @@ class RpcDevice:
     async def kvs_get(self, key: str) -> dict[str, Any]:
         """Get value from KVS."""
         params = {"key": key}
-        return await self.call_rpc("KVS.Get", params)
+        response = await self.call_rpc("KVS.Get", params)
+
+        with suppress(JSONDecodeError):
+            response["value"] = json_loads(response["value"])
+
+        return response
 
     async def kvs_set(
         self, key: str, value: str | float | bool | dict | list | None
