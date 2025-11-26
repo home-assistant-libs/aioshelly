@@ -39,6 +39,7 @@ from ..exceptions import (
     RpcCallError,
     ShellyError,
 )
+from ..json import json_dumps
 from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
@@ -586,9 +587,12 @@ class RpcDevice:
         params = {"key": key}
         return await self.call_rpc("KVS.Get", params)
 
-    async def kvs_set(self, key: str, value: str | float | bool | None) -> None:
+    async def kvs_set(
+        self, key: str, value: str | float | bool | dict | list | None
+    ) -> None:
         """Set value in KVS."""
-        params = {"key": key, "value": value}
+        val = json_dumps(value) if isinstance(value, (dict, list)) else value
+        params = {"key": key, "value": val}
         await self.call_rpc("KVS.Set", params)
 
     async def poll(self) -> None:
