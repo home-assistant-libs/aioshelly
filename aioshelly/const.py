@@ -120,6 +120,7 @@ MODEL_1PM_MINI_G3 = "S3SW-001P8EU"
 MODEL_2L_G3 = "S3SW-0A2X4EUL"
 MODEL_2PM_G3 = "S3SW-002P16EU"
 MODEL_3EM_63_G3 = "S3EM-003CXCEU63"
+MODEL_AZ_HT = "S3SN-1U12A"
 MODEL_AZ_PLUG = "S3PL-10112EU"
 MODEL_BLU_GATEWAY_G3 = "S3GW-1DBT001"
 MODEL_DALI_DIMMER_G3 = "S3DM-0A1WW"
@@ -959,6 +960,14 @@ DEVICES = {
         gen=GEN3,
         supported=True,
         model_id=0x1026,
+    ),
+    MODEL_AZ_HT: ShellyDevice(
+        model=MODEL_AZ_HT,
+        name="Shelly AZ H&T",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+        model_id=0x1816,
     ),
     MODEL_AZ_PLUG: ShellyDevice(
         model=MODEL_AZ_PLUG,
