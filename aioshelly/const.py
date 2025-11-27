@@ -547,6 +547,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x1070,
     ),
     MODEL_PLUS_1PM: ShellyDevice(
         model=MODEL_PLUS_1PM,
@@ -660,6 +661,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x1009,
     ),
     MODEL_PLUS_SMOKE: ShellyDevice(
         model=MODEL_PLUS_SMOKE,
