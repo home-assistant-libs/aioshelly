@@ -547,6 +547,67 @@ class RpcDevice:
         }
         await self.call_rpc("Switch.Set", params=params)
 
+    async def set_auth(self, password: str) -> dict[str, Any]:
+        """Enable authentication on the device.
+
+        Sets up digest authentication for the device using the provided password.
+        The username is always 'admin' as this is hardcoded in Shelly firmware.
+
+        Args:
+            password: The password to set for the 'admin' user.
+
+        Returns:
+            The RPC response from the device (typically empty dict on success).
+
+        Note:
+            After calling this method, subsequent connections to the device
+            must provide the username 'admin' and the configured password.
+            The device may need to be re-initialized with new ConnectionOptions
+            that include the password.
+
+        Example:
+            >>> await device.set_auth("MySecretPassword123")
+            {}
+            >>> # Reconnect with password
+            >>> options = ConnectionOptions(ip, "admin", "MySecretPassword123")
+        """
+        from .wsrpc import hex_hash
+
+        device_id = self.shelly["id"]
+        ha1 = hex_hash(f"admin:{device_id}:{password}")
+
+        return await self.call_rpc(
+            "Shelly.SetAuth",
+            {"user": "admin", "realm": device_id, "ha1": ha1},
+        )
+
+    async def disable_auth(self) -> dict[str, Any]:
+        """Disable authentication on the device.
+
+        Removes the authentication requirement from the device, allowing
+        unauthenticated connections.
+
+        Returns:
+            The RPC response from the device (typically empty dict on success).
+
+        Note:
+            This method requires the current connection to be authenticated.
+            If the device has authentication enabled, you must be connected
+            with valid credentials to disable it.
+
+        Example:
+            >>> # While connected with valid credentials
+            >>> await device.disable_auth()
+            {}
+            >>> # Device now accepts unauthenticated connections
+        """
+        device_id = self.shelly["id"]
+
+        return await self.call_rpc(
+            "Shelly.SetAuth",
+            {"user": "admin", "realm": device_id, "ha1": None},
+        )
+
     async def text_set(self, id_: int, value: str) -> None:
         """Set the value for the text component."""
         params = {
