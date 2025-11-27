@@ -660,6 +660,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x1009,
     ),
     MODEL_PLUS_SMOKE: ShellyDevice(
         model=MODEL_PLUS_SMOKE,
@@ -807,6 +808,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x200D,
     ),
     MODEL_PRO_DIMMER_2PM: ShellyDevice(
         model=MODEL_PRO_DIMMER_2PM,
@@ -814,6 +816,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x200E,
     ),
     MODEL_PRO_DUAL_COVER: ShellyDevice(
         model=MODEL_PRO_DUAL_COVER,
@@ -856,6 +859,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x1025,
     ),
     MODEL_PRO_RGBWW_PM: ShellyDevice(
         model=MODEL_PRO_RGBWW_PM,
@@ -863,6 +867,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x2012,
     ),
     MODEL_WALL_DISPLAY: ShellyDevice(
         model=MODEL_WALL_DISPLAY,
