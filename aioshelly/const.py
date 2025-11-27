@@ -131,6 +131,7 @@ MODEL_I4_G3 = "S3SN-0024X"
 MODEL_MULTICOLOR_BULB_G3 = "S3BL-C010007AEU"
 MODEL_OUT_PLUG_S_G3 = "S3PL-20112EU"
 MODEL_PILL_G3 = "S3SN-0U53X"
+MODEL_PLUG_PM_G3 = "S3PL-30116EU"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_X_MOD1 = "S3MX-0A"
@@ -1049,6 +1050,13 @@ DEVICES = {
         gen=GEN3,
         supported=True,
         model_id=0x1805,
+    ),
+    MODEL_PLUG_PM_G3: ShellyDevice(
+        model=MODEL_PLUG_PM_G3,
+        name="Shelly Plug PM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
     ),
     MODEL_X_MOD1: ShellyDevice(
         model=MODEL_X_MOD1,
