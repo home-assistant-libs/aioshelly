@@ -826,6 +826,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
+        model_id=0x2011,
     ),
     MODEL_PRO_DUAL_COVER: ShellyDevice(
         model=MODEL_PRO_DUAL_COVER,
@@ -1076,6 +1077,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1854,
     ),
     MODEL_SHUTTER_G3: ShellyDevice(
         model=MODEL_SHUTTER_G3,
@@ -1083,6 +1085,7 @@ DEVICES = {
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
+        model_id=0x1039,
     ),
     MODEL_X_MOD1: ShellyDevice(
         model=MODEL_X_MOD1,
@@ -1152,6 +1155,7 @@ DEVICES = {
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
+        model_id=0x1033,
     ),
     MODEL_I4_G4: ShellyDevice(
         model=MODEL_I4_G4,
