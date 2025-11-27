@@ -144,6 +144,7 @@ MODEL_1PM_MINI_G4 = "S4SW-001P8EU"
 MODEL_2PM_G4 = "S4SW-002P16EU"
 MODEL_CURY_G4 = "S4PB-00CU000002"
 MODEL_DIMMER_G4 = "S4DM-0A101WWL"
+MODEL_EM_MINI_G4 = "S4EM-001PXCEU16"
 MODEL_FLOOD_G4 = "S4SN-0071A"
 MODEL_I4_G4 = "S4SN-0A24X"
 MODEL_PLUG_US_G4 = "S4PL-00116US"
@@ -1127,6 +1128,13 @@ DEVICES = {
         gen=GEN4,
         supported=True,
         model_id=0x1075,
+    ),
+    MODEL_EM_MINI_G4: ShellyDevice(
+        model=MODEL_EM_MINI_G4,
+        name="Shelly EM Mini Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
     ),
     MODEL_I4_G4: ShellyDevice(
         model=MODEL_I4_G4,
