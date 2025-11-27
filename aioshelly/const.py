@@ -100,6 +100,7 @@ MODEL_PRO_4PM_V2 = "SPSW-104PE16EU"
 MODEL_PRO_4PM_V3 = "SPSW-204PE16EU"
 MODEL_PRO_DIMMER_1PM = "SPDM-001PE01EU"
 MODEL_PRO_DIMMER_2PM = "SPDM-002PE01EU"
+MODEL_PRO_DIMMER_10V_PM = "SPCC-001PE10EU"
 MODEL_PRO_DUAL_COVER = "SPSH-002PE16EU"
 MODEL_PRO_EM = "SPEM-002CEBEU50"
 MODEL_PRO_EM3 = "SPEM-003CEBEU"
@@ -814,6 +815,13 @@ DEVICES = {
     MODEL_PRO_DIMMER_2PM: ShellyDevice(
         model=MODEL_PRO_DIMMER_2PM,
         name="Shelly Pro Dimmer 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+    ),
+    MODEL_PRO_DIMMER_10V_PM: ShellyDevice(
+        model=MODEL_PRO_DIMMER_10V_PM,
+        name="Shelly Pro Dimmer 0/1-10V PM",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
