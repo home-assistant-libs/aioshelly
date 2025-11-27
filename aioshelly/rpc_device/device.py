@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Iterable
+from contextlib import suppress
 from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
@@ -39,6 +40,7 @@ from ..exceptions import (
     RpcCallError,
     ShellyError,
 )
+from ..json import JSONDecodeError, json_dumps, json_loads
 from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
@@ -580,6 +582,24 @@ class RpcDevice:
         """Set Wall Display screen on/off."""
         params = {"on": value}
         await self.call_rpc("Ui.Screen.Set", params)
+
+    async def kvs_get(self, key: str) -> dict[str, Any]:
+        """Get value from KVS."""
+        params = {"key": key}
+        response = await self.call_rpc("KVS.Get", params)
+
+        with suppress(JSONDecodeError):
+            response["value"] = json_loads(response["value"])
+
+        return response
+
+    async def kvs_set(
+        self, key: str, value: str | float | bool | dict | list | None
+    ) -> None:
+        """Set value in KVS."""
+        val = json_dumps(value) if isinstance(value, (dict, list)) else value
+        params = {"key": key, "value": val}
+        await self.call_rpc("KVS.Set", params)
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""

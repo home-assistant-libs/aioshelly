@@ -1677,3 +1677,63 @@ async def test_wall_display_set_screen(
 
     assert call_args_list[0][0][0][0][0] == "Ui.Screen.Set"
     assert call_args_list[0][0][0][0][1] == {"on": True}
+
+
+@pytest.mark.parametrize(
+    ("in_value", "out_value"),
+    [
+        ("value1", "value1"),
+        ({"key1": "val1"}, '{"key1":"val1"}'),
+        ([{"key1": "val1"}, {"key2": "val2"}], '[{"key1":"val1"},{"key2":"val2"}]'),
+        (42.5, 42.5),
+        (True, True),
+        (None, None),
+    ],
+)
+@pytest.mark.asyncio
+async def test_kvs_set(
+    rpc_device: RpcDevice,
+    in_value: str | float | bool | dict | list | None,
+    out_value: str,
+) -> None:
+    """Test RpcDevice kvs_set() method."""
+    await rpc_device.kvs_set("key1", in_value)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "KVS.Set"
+    assert call_args_list[0][0][0][0][1] == {"key": "key1", "value": out_value}
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("value1", "value1"),
+        ('{"key1":"val1"}', {"key1": "val1"}),
+        ('[{"key1":"val1"},{"key2":"val2"}]', [{"key1": "val1"}, {"key2": "val2"}]),
+        (42.5, 42.5),
+        (True, True),
+        (None, None),
+    ],
+)
+@pytest.mark.asyncio
+async def test_kvs_get(
+    rpc_device: RpcDevice,
+    value: str | float | bool | None,
+    expected: str | float | bool | dict | list | None,
+) -> None:
+    """Test RpcDevice kvs_get() method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": value}
+    ]
+
+    result = await rpc_device.kvs_get("key1")
+
+    assert result == {"etag": "16mLia9TRt8lGhj9Zf5Dp6Hw==", "value": expected}
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "KVS.Get"
+    assert call_args_list[0][0][0][0][1] == {"key": "key1"}
