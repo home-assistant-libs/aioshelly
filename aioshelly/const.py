@@ -151,7 +151,9 @@ MODEL_EM_MINI_G4 = "S4EM-001PXCEU16"
 MODEL_FLOOD_G4 = "S4SN-0071A"
 MODEL_I4_G4 = "S4SN-0A24X"
 MODEL_PLUG_US_G4 = "S4PL-00116US"
-MODEL_POWER_STRIP_G4 = "S4PL-00416EU"
+MODEL_POWER_STRIP_4_G4 = "S4PL-00416EU"
+MODEL_POWER_STRIP_4_G4_V2 = "S4PL-10416EU"
+MODEL_POWER_STRIP_US_4_G4 = "S4PL-00415US"
 MODEL_PRESENCE_G4 = "S4SN-0U61X"
 
 GEN1 = 1
@@ -1197,13 +1199,29 @@ DEVICES = {
         supported=True,
         model_id=0x1852,
     ),
-    MODEL_POWER_STRIP_G4: ShellyDevice(
-        model=MODEL_POWER_STRIP_G4,
-        name="Shelly Power Strip Gen4",
+    MODEL_POWER_STRIP_4_G4: ShellyDevice(
+        model=MODEL_POWER_STRIP_4_G4,
+        name="Shelly Power Strip 4 Gen4",
         min_fw_date=GEN4_MIN_FIRMWARE_DATE,
         gen=GEN4,
         supported=True,
         model_id=0x1851,
+    ),
+    MODEL_POWER_STRIP_4_G4_V2: ShellyDevice(
+        model=MODEL_POWER_STRIP_4_G4_V2,
+        name="Shelly Power Strip 4 Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1851,
+    ),
+    MODEL_POWER_STRIP_US_4_G4: ShellyDevice(
+        model=MODEL_POWER_STRIP_US_4_G4,
+        name="Shelly Power Strip 4 US Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1862,
     ),
     MODEL_PRESENCE_G4: ShellyDevice(
         model=MODEL_PRESENCE_G4,
