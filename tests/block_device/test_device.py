@@ -65,3 +65,49 @@ async def test_block_device_ip_address_property_guard(
 
     with pytest.raises(RuntimeError, match="Block device ip_address is None"):
         _ = block_device.ip_address
+
+@pytest.mark.asyncio
+async def test_block_device_set_auth(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice set_auth method."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+    block_device.http_request = AsyncMock(
+        return_value={"enabled": True, "unprotected": False, "username": "admin"}
+    )
+    block_device._shelly = {"auth": False}
+
+    result = await block_device.set_auth("admin", "password123")
+
+    block_device.http_request.assert_called_once_with(
+        "get",
+        "settings/login",
+        {"enabled": 1, "username": "admin", "password": "password123"},
+    )
+    assert result["enabled"] is True
+
+@pytest.mark.asyncio
+async def test_block_device_disable_auth(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice disable_auth method."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+    block_device.http_request = AsyncMock(
+        return_value={"enabled": False, "unprotected": False, "username": "admin"}
+    )
+    block_device._shelly = {"auth": True}
+
+    result = await block_device.disable_auth()
+
+    block_device.http_request.assert_called_once_with(
+        "get",
+        "settings/login",
+        {"enabled": 0},
+    )
+    assert result["enabled"] is False
