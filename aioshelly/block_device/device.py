@@ -422,28 +422,7 @@ class BlockDevice:
         await self.http_request("get", "reboot")
 
     async def set_auth(self, username: str, password: str) -> dict[str, Any]:
-        """Enable authentication on the device.
-
-        Sets up HTTP Basic authentication for the device using the provided
-        username and password.
-
-        Args:
-            username: The username to set.
-            password: The password to set.
-
-        Returns:
-            The response from the device containing login settings:
-            {"enabled": true, "unprotected": false, "username": "<username>"}
-
-        Note:
-            Unlike Gen2+ devices, Gen1 allows custom usernames (not limited
-            to 'admin'). The password is sent in plaintext over HTTP, so
-            ensure you're on a trusted network.
-
-        Example:
-            >>> await device.set_auth("admin", "MySecretPassword123")
-            {'enabled': True, 'unprotected': False, 'username': 'admin'}
-        """
+        """Enable authentication on the device."""
         return await self.http_request(
             "get",
             "settings/login",
@@ -451,24 +430,7 @@ class BlockDevice:
         )
 
     async def disable_auth(self) -> dict[str, Any]:
-        """Disable authentication on the device.
-
-        Removes the authentication requirement from the device, allowing
-        unauthenticated connections.
-
-        Returns:
-            The response from the device containing login settings:
-            {"enabled": false, "unprotected": false, "username": "<username>"}
-
-        Note:
-            This method requires the current connection to be authenticated
-            if authentication is currently enabled on the device.
-
-        Example:
-            >>> # While connected with valid credentials
-            >>> await device.disable_auth()
-            {'enabled': False, 'unprotected': False, 'username': 'admin'}
-        """
+        """Disable authentication on the device."""
         return await self.http_request(
             "get",
             "settings/login",
