@@ -100,6 +100,7 @@ MODEL_PRO_4PM_V2 = "SPSW-104PE16EU"
 MODEL_PRO_4PM_V3 = "SPSW-204PE16EU"
 MODEL_PRO_DIMMER_1PM = "SPDM-001PE01EU"
 MODEL_PRO_DIMMER_2PM = "SPDM-002PE01EU"
+MODEL_PRO_DIMMER_10V_PM = "SPCC-001PE10EU"
 MODEL_PRO_DUAL_COVER = "SPSH-002PE16EU"
 MODEL_PRO_EM = "SPEM-002CEBEU50"
 MODEL_PRO_EM3 = "SPEM-003CEBEU"
@@ -120,6 +121,7 @@ MODEL_1PM_MINI_G3 = "S3SW-001P8EU"
 MODEL_2L_G3 = "S3SW-0A2X4EUL"
 MODEL_2PM_G3 = "S3SW-002P16EU"
 MODEL_3EM_63_G3 = "S3EM-003CXCEU63"
+MODEL_AZ_HT = "S3SN-1U12A"
 MODEL_AZ_PLUG = "S3PL-10112EU"
 MODEL_BLU_GATEWAY_G3 = "S3GW-1DBT001"
 MODEL_DALI_DIMMER_G3 = "S3DM-0A1WW"
@@ -132,8 +134,10 @@ MODEL_I4_G3 = "S3SN-0024X"
 MODEL_MULTICOLOR_BULB_G3 = "S3BL-C010007AEU"
 MODEL_OUT_PLUG_S_G3 = "S3PL-20112EU"
 MODEL_PILL_G3 = "S3SN-0U53X"
+MODEL_PLUG_PM_G3 = "S3PL-30116EU"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
+MODEL_SHUTTER_G3 = "S3SH-0A2P4EU"
 MODEL_X_MOD1 = "S3MX-0A"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
@@ -143,6 +147,7 @@ MODEL_1PM_MINI_G4 = "S4SW-001P8EU"
 MODEL_2PM_G4 = "S4SW-002P16EU"
 MODEL_CURY_G4 = "S4PB-00CU000002"
 MODEL_DIMMER_G4 = "S4DM-0A101WWL"
+MODEL_EM_MINI_G4 = "S4EM-001PXCEU16"
 MODEL_FLOOD_G4 = "S4SN-0071A"
 MODEL_I4_G4 = "S4SN-0A24X"
 MODEL_PLUG_US_G4 = "S4PL-00116US"
@@ -820,6 +825,14 @@ DEVICES = {
         supported=True,
         model_id=0x200E,
     ),
+    MODEL_PRO_DIMMER_10V_PM: ShellyDevice(
+        model=MODEL_PRO_DIMMER_10V_PM,
+        name="Shelly Pro Dimmer 0/1-10V PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=0x2011,
+    ),
     MODEL_PRO_DUAL_COVER: ShellyDevice(
         model=MODEL_PRO_DUAL_COVER,
         name="Shelly Pro Dual Cover PM",
@@ -966,6 +979,14 @@ DEVICES = {
         supported=True,
         model_id=0x1026,
     ),
+    MODEL_AZ_HT: ShellyDevice(
+        model=MODEL_AZ_HT,
+        name="Shelly AZ H&T",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=False,
+        model_id=0x1816,
+    ),
     MODEL_AZ_PLUG: ShellyDevice(
         model=MODEL_AZ_PLUG,
         name="Shelly AZ Plug",
@@ -1067,6 +1088,22 @@ DEVICES = {
         supported=True,
         model_id=0x1805,
     ),
+    MODEL_PLUG_PM_G3: ShellyDevice(
+        model=MODEL_PLUG_PM_G3,
+        name="Shelly Plug PM Gen3",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+        model_id=0x1854,
+    ),
+    MODEL_SHUTTER_G3: ShellyDevice(
+        model=MODEL_SHUTTER_G3,
+        name="Shelly Shutter",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+        model_id=0x1039,
+    ),
     MODEL_X_MOD1: ShellyDevice(
         model=MODEL_X_MOD1,
         name="Shelly X MOD1",
@@ -1128,6 +1165,14 @@ DEVICES = {
         gen=GEN4,
         supported=True,
         model_id=0x1075,
+    ),
+    MODEL_EM_MINI_G4: ShellyDevice(
+        model=MODEL_EM_MINI_G4,
+        name="Shelly EM Mini Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1033,
     ),
     MODEL_I4_G4: ShellyDevice(
         model=MODEL_I4_G4,
