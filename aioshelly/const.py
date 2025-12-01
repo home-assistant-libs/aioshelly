@@ -967,7 +967,7 @@ DEVICES = {
         name="Shelly AZ H&T",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
-        supported=True,
+        supported=False,
         model_id=0x1816,
     ),
     MODEL_AZ_PLUG: ShellyDevice(
