@@ -2,38 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from aioshelly.ble.provisioning import async_provision_wifi, async_scan_wifi_networks
-
-
-@pytest.fixture
-def mock_ble_device() -> MagicMock:
-    """Create a mock BLE device."""
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_rpc_device() -> AsyncMock:
-    """Create a mock RPC device."""
-    mock_device = AsyncMock()
-    mock_device.initialize = AsyncMock()
-    mock_device.call_rpc = AsyncMock()
-    mock_device.shutdown = AsyncMock()
-    return mock_device
-
-
-@pytest.fixture
-def mock_rpc_device_class(
-    mock_rpc_device: AsyncMock,
-) -> Generator[MagicMock]:
-    """Create a mock RPC device class that returns the mock device."""
-    with patch("aioshelly.ble.provisioning.RpcDevice") as mock_class:
-        mock_class.create = AsyncMock(return_value=mock_rpc_device)
-        yield mock_class
 
 
 @pytest.mark.asyncio
