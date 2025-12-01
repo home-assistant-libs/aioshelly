@@ -1737,3 +1737,33 @@ async def test_kvs_get(
 
     assert call_args_list[0][0][0][0][0] == "KVS.Get"
     assert call_args_list[0][0][0][0][1] == {"key": "key1"}
+
+@pytest.mark.asyncio
+async def test_rpc_device_set_auth(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice set_auth method."""
+    rpc_device._shelly = {"id": "shellyplus1pm-aabbccddeeff"}
+
+    await rpc_device.set_auth("password123")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args = rpc_device.call_rpc_multiple.call_args_list[0][0][0][0]
+
+    assert call_args[0] == "Shelly.SetAuth"
+    assert call_args[1]["user"] == "admin"
+    assert call_args[1]["realm"] == "shellyplus1pm-aabbccddeeff"
+    assert call_args[1]["ha1"] is not None
+
+@pytest.mark.asyncio
+async def test_rpc_device_disable_auth(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice disable_auth method."""
+    rpc_device._shelly = {"id": "shellyplus1pm-aabbccddeeff"}
+
+    await rpc_device.disable_auth()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args = rpc_device.call_rpc_multiple.call_args_list[0][0][0][0]
+
+    assert call_args[0] == "Shelly.SetAuth"
+    assert call_args[1]["user"] == "admin"
+    assert call_args[1]["realm"] == "shellyplus1pm-aabbccddeeff"
+    assert call_args[1]["ha1"] is None
