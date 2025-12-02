@@ -75,7 +75,7 @@ async def test_block_device_set_auth(
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     block_device = BlockDevice(coap_context, client_session, options)
-    block_device.http_request = AsyncMock(
+    block_device.http_request = MagicMack(
         return_value={"enabled": True, "unprotected": False, "username": "admin"}
     )
     block_device._shelly = {"auth": False}
@@ -98,7 +98,7 @@ async def test_block_device_disable_auth(
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     block_device = BlockDevice(coap_context, client_session, options)
-    block_device.http_request = AsyncMock(
+    block_device.http_request = MagicMock(
         return_value={"enabled": False, "unprotected": False, "username": "admin"}
     )
     block_device._shelly = {"auth": True}
