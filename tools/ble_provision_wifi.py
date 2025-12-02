@@ -81,7 +81,7 @@ class ShellyScannerAll:
     def detection_callback(
         self,
         device: BLEDevice,
-        advertisement_data: AdvertisementData,  # noqa: ARG002
+        advertisement_data: AdvertisementData,
     ) -> None:
         """Handle device detection."""
         # Only include devices with names starting with "Shelly"
