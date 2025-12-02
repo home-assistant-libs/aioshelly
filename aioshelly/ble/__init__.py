@@ -108,7 +108,7 @@ async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
     ble_config = await device.ble_getconfig()
     if ble_config["enable"]:
         return False
-    ble_enable = await device.ble_setconfig(enable=True, enable_rpc=True)
+    ble_enable = await device.ble_setconfig(enable=True, enable_rpc=False)
     if not ble_enable["restart_required"]:
         return False
     LOGGER.info("BLE enabled, restarting device %s:%s", device.ip_address, device.port)
