@@ -30,6 +30,7 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
+from aioshelly.ble.manufacturer_data import parse_shelly_manufacturer_data
 from aioshelly.ble.provisioning import async_provision_wifi, async_scan_wifi_networks
 
 # Check if we're on macOS
@@ -80,7 +81,7 @@ class ShellyScannerAll:
     def detection_callback(
         self,
         device: BLEDevice,
-        advertisement_data: AdvertisementData,  # noqa: ARG002
+        advertisement_data: AdvertisementData,
     ) -> None:
         """Handle device detection."""
         # Only include devices with names starting with "Shelly"
@@ -89,6 +90,14 @@ class ShellyScannerAll:
             and device.name.startswith("Shelly")
             and not any(d.address == device.address for d in self.found_devices)
         ):
+            model_id = parse_shelly_manufacturer_data(
+                advertisement_data.manufacturer_data
+            ).get("model_id")
+            model_id_str = f"{model_id:#04x}" if model_id else "unknown"
+            print(
+                f"Discovered Shelly device: {device.name} ({device.address}), "
+                f"model_id: {model_id_str}"
+            )
             self.found_devices.append(device)
 
     async def scan_for_devices(self, timeout: float = 10.0) -> list[BLEDevice]:
