@@ -2,7 +2,7 @@
 
 import asyncio
 import socket
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 from aiohttp.client import ClientSession
@@ -66,6 +66,7 @@ async def test_block_device_ip_address_property_guard(
     with pytest.raises(RuntimeError, match="Block device ip_address is None"):
         _ = block_device.ip_address
 
+
 @pytest.mark.asyncio
 async def test_block_device_set_auth(
     client_session: ClientSession,
@@ -75,7 +76,7 @@ async def test_block_device_set_auth(
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     block_device = BlockDevice(coap_context, client_session, options)
-    block_device.http_request = MagicMack(
+    block_device.http_request = AsyncMock(
         return_value={"enabled": True, "unprotected": False, "username": "admin"}
     )
     block_device._shelly = {"auth": False}
@@ -89,6 +90,7 @@ async def test_block_device_set_auth(
     )
     assert result["enabled"] is True
 
+
 @pytest.mark.asyncio
 async def test_block_device_disable_auth(
     client_session: ClientSession,
@@ -98,7 +100,7 @@ async def test_block_device_disable_auth(
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
 
     block_device = BlockDevice(coap_context, client_session, options)
-    block_device.http_request = MagicMock(
+    block_device.http_request = AsyncMock(
         return_value={"enabled": False, "unprotected": False, "username": "admin"}
     )
     block_device._shelly = {"auth": True}
