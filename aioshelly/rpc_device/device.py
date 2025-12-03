@@ -549,25 +549,13 @@ class RpcDevice:
         }
         await self.call_rpc("Switch.Set", params=params)
 
-    async def set_auth(self, password: str) -> dict[str, Any]:
-        """Enable authentication on the device."""
-        from .wsrpc import hex_hash
-
+    async def set_auth(self, password: str | None = None) -> dict[str, Any]:
+        """Set authentication on the device. Pass password to enable, None to disable."""
         device_id = self.shelly["id"]
-        ha1 = hex_hash(f"admin:{device_id}:{password}")
-
+        ha1 = hex_hash(f"admin:{device_id}:{password}") if password else None
         return await self.call_rpc(
             "Shelly.SetAuth",
             {"user": "admin", "realm": device_id, "ha1": ha1},
-        )
-
-    async def disable_auth(self) -> dict[str, Any]:
-        """Disable authentication on the device."""
-        device_id = self.shelly["id"]
-
-        return await self.call_rpc(
-            "Shelly.SetAuth",
-            {"user": "admin", "realm": device_id, "ha1": None},
         )
 
     async def text_set(self, id_: int, value: str) -> None:
