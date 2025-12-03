@@ -421,21 +421,20 @@ class BlockDevice:
         """Trigger a device reboot."""
         await self.http_request("get", "reboot")
 
-    async def set_auth(self, username: str, password: str) -> dict[str, Any]:
-        """Enable authentication on the device."""
-        return await self.http_request(
-            "get",
-            "settings/login",
-            {"enabled": 1, "username": username, "password": password},
-        )
-
-    async def disable_auth(self) -> dict[str, Any]:
-        """Disable authentication on the device."""
-        return await self.http_request(
-            "get",
-            "settings/login",
-            {"enabled": 0},
-        )
+    async def set_auth(
+        self,
+        enabled: bool,
+        username: str | None = None,
+        password: str | None = None,
+    ) -> dict[str, Any]:
+        """Set authentication on the device."""
+        if enabled:
+            if username is None or password is None:
+                raise ValueError("username and password required when enabling auth")
+            params = {"enabled": 1, "username": username, "password": password}
+        else:
+            params = {"enabled": 0}
+        return await self.http_request("get", "settings/login", params)    
 
     async def trigger_shelly_gas_self_test(self) -> None:
         """Trigger a Shelly Gas self test."""
