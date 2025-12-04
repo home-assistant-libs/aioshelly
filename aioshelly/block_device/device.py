@@ -434,7 +434,7 @@ class BlockDevice:
             params = {"enabled": 1, "username": username, "password": password}
         else:
             params = {"enabled": 0}
-        return await self.http_request("get", "settings/login", params)    
+        return await self.http_request("get", "settings/login", params)
 
     async def trigger_shelly_gas_self_test(self) -> None:
         """Trigger a Shelly Gas self test."""
