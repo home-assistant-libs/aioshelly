@@ -51,7 +51,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .wsrpc import RPCSource, WsRPC, WsServer, hex_hash
+from .wsrpc import RPCSource, WsRPC, WsServer, hex_hash,
 
 MAX_ITERATIONS = 10
 
