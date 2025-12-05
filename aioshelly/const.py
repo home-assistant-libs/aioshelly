@@ -544,7 +544,7 @@ DEVICES = {
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
-        model_id=None,  # Uses same model ID as MODEL_PLUS_1,
+        model_id=None,  # Uses same model ID as MODEL_PLUS_1
     ),
     MODEL_PLUS_10V: ShellyDevice(
         model=MODEL_PLUS_10V,
