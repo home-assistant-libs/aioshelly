@@ -1738,6 +1738,7 @@ async def test_kvs_get(
     assert call_args_list[0][0][0][0][0] == "KVS.Get"
     assert call_args_list[0][0][0][0][1] == {"key": "key1"}
 
+
 @pytest.mark.asyncio
 async def test_rpc_device_set_auth(rpc_device: RpcDevice) -> None:
     """Test RpcDevice set_auth method."""
@@ -1752,6 +1753,7 @@ async def test_rpc_device_set_auth(rpc_device: RpcDevice) -> None:
     assert call_args[1]["user"] == "admin"
     assert call_args[1]["realm"] == "shellyplus1pm-aabbccddeeff"
     assert call_args[1]["ha1"] is not None
+
 
 @pytest.mark.asyncio
 async def test_rpc_device_set_auth_disable(rpc_device: RpcDevice) -> None:
