@@ -81,7 +81,7 @@ async def test_block_device_set_auth(
     )
     block_device._shelly = {"auth": False}
 
-    result = await block_device.set_auth("admin", "password123")
+    result = await block_device.set_auth(True, "admin", "password123")
 
     block_device.http_request.assert_called_once_with(
         "get",
@@ -105,7 +105,7 @@ async def test_block_device_disable_auth(
     )
     block_device._shelly = {"auth": True}
 
-    result = await block_device.disable_auth()
+    result = await block_device.set_auth(False)
 
     block_device.http_request.assert_called_once_with(
         "get",
