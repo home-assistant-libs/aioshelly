@@ -51,7 +51,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .wsrpc import RPCSource, WsRPC, WsServer
+from .wsrpc import RPCSource, WsRPC, WsServer, hex_hash
 
 MAX_ITERATIONS = 10
 
@@ -548,6 +548,15 @@ class RpcDevice:
             "on": value,
         }
         await self.call_rpc("Switch.Set", params=params)
+
+    async def set_auth(self, password: str | None = None) -> dict[str, Any]:
+        """Set authentication. Pass password to enable, None to disable."""
+        device_id = self.shelly["id"]
+        ha1 = hex_hash(f"admin:{device_id}:{password}") if password else None
+        return await self.call_rpc(
+            "Shelly.SetAuth",
+            {"user": "admin", "realm": device_id, "ha1": ha1},
+        )
 
     async def text_set(self, id_: int, value: str) -> None:
         """Set the value for the text component."""
