@@ -47,6 +47,7 @@ from .models import (
     ShellyBLESetConfig,
     ShellyScript,
     ShellyScriptCode,
+    ShellyWiFiNetwork,
     ShellyWiFiSetConfig,
     ShellyWsConfig,
     ShellyWsSetConfig,
@@ -720,12 +721,20 @@ class RpcDevice:
         return cast(ShellyBLEConfig, await self.call_rpc("BLE.GetConfig"))
 
     async def wifi_setconfig(
-        self, *, ap_enable: bool | None = None
+        self,
+        *,
+        ap_enable: bool | None = None,
+        sta_ssid: str | None = None,
+        sta_password: str | None = None,
+        sta_enable: bool | None = None,
     ) -> ShellyWiFiSetConfig:
         """Configure WiFi settings with WiFi.SetConfig.
 
         Args:
             ap_enable: Whether to enable the WiFi AP
+            sta_ssid: WiFi station SSID to connect to
+            sta_password: WiFi station password
+            sta_enable: Whether to enable the WiFi station
 
         Returns:
             Response dict, may contain "restart_required": bool
@@ -734,11 +743,38 @@ class RpcDevice:
         config: dict[str, Any] = {}
         if ap_enable is not None:
             config["ap"] = {"enable": ap_enable}
+        if sta_ssid is not None or sta_password is not None or sta_enable is not None:
+            sta_config: dict[str, Any] = {}
+            if sta_ssid is not None:
+                sta_config["ssid"] = sta_ssid
+            if sta_password is not None:
+                sta_config["pass"] = sta_password
+            if sta_enable is not None:
+                sta_config["enable"] = sta_enable
+            config["sta"] = sta_config
 
         return cast(
             ShellyWiFiSetConfig,
             await self.call_rpc("WiFi.SetConfig", {"config": config}),
         )
+
+    async def wifi_scan(self, timeout: float = 30) -> list[ShellyWiFiNetwork]:
+        """Scan for WiFi networks using WiFi.Scan.
+
+        Args:
+            timeout: Scan timeout in seconds (default 30s, scan takes up to 20s)
+
+        Returns:
+            List of WiFi networks with ssid, rssi, auth fields
+
+        Raises:
+            DeviceConnectionError: If connection to device fails
+            RpcCallError: If RPC call fails
+
+        """
+        scan_result = await self.call_rpc("WiFi.Scan", timeout=timeout)
+        results: list[ShellyWiFiNetwork] = scan_result.get("results", [])
+        return results
 
     async def ws_setconfig(
         self, enable: bool, server: str, ssl_ca: str = "*"
