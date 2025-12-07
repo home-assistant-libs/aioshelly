@@ -45,6 +45,16 @@ class ShellyWiFiSetConfig(TypedDict, total=False):
     restart_required: bool
 
 
+class ShellyWiFiNetwork(TypedDict, total=False):
+    """Shelly WiFi Network from scan results."""
+
+    ssid: str
+    bssid: str
+    auth: int
+    channel: int
+    rssi: int
+
+
 class ShellyWsConfig(TypedDict, total=False):
     """Shelly Outbound Websocket Config."""
 

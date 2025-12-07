@@ -550,6 +550,94 @@ async def test_wifi_setconfig(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_wifi_setconfig_sta(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice wifi_setconfig method with STA configuration."""
+    await rpc_device.wifi_setconfig(
+        sta_ssid="MyNetwork",
+        sta_password="MyPassword",  # noqa: S106
+        sta_enable=True,
+    )
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "WiFi.SetConfig"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "config": {
+            "sta": {
+                "ssid": "MyNetwork",
+                "pass": "MyPassword",
+                "enable": True,
+            }
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_wifi_setconfig_ap_and_sta(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice wifi_setconfig method with both AP and STA configuration."""
+    await rpc_device.wifi_setconfig(
+        ap_enable=False,
+        sta_ssid="MyNetwork",
+        sta_password="MyPassword",  # noqa: S106
+        sta_enable=True,
+    )
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "WiFi.SetConfig"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "config": {
+            "ap": {"enable": False},
+            "sta": {
+                "ssid": "MyNetwork",
+                "pass": "MyPassword",
+                "enable": True,
+            },
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_wifi_scan(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice wifi_scan method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {
+            "results": [
+                {"ssid": "Network1", "rssi": -50, "auth": 2},
+                {"ssid": "Network2", "rssi": -60, "auth": 3},
+            ]
+        }
+    ]
+
+    result = await rpc_device.wifi_scan()
+
+    assert result == [
+        {"ssid": "Network1", "rssi": -50, "auth": 2},
+        {"ssid": "Network2", "rssi": -60, "auth": 3},
+    ]
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "WiFi.Scan"
+
+
+@pytest.mark.asyncio
+async def test_wifi_scan_empty(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice wifi_scan method with empty results."""
+    rpc_device.call_rpc_multiple.return_value = [{"results": []}]
+
+    result = await rpc_device.wifi_scan()
+
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_wifi_scan_no_results_key(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice wifi_scan method with missing results key."""
+    rpc_device.call_rpc_multiple.return_value = [{}]
+
+    result = await rpc_device.wifi_scan()
+
+    assert result == []
+
+
+@pytest.mark.asyncio
 async def test_script_stop(rpc_device: RpcDevice) -> None:
     """Test RpcDevice script_stop method."""
     await rpc_device.script_stop(12)
