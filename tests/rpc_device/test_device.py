@@ -1744,7 +1744,7 @@ async def test_rpc_device_set_auth(rpc_device: RpcDevice) -> None:
     """Test RpcDevice set_auth method."""
     rpc_device._shelly = {"id": "shellyplus1pm-aabbccddeeff"}
 
-    await rpc_device.set_auth("password123")
+    await rpc_device.set_auth(True, "password123")
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args = rpc_device.call_rpc_multiple.call_args_list[0][0][0][0]
@@ -1760,7 +1760,7 @@ async def test_rpc_device_set_auth_disable(rpc_device: RpcDevice) -> None:
     """Test RpcDevice set_auth method to disable auth."""
     rpc_device._shelly = {"id": "shellyplus1pm-aabbccddeeff"}
 
-    await rpc_device.set_auth(None)
+    await rpc_device.set_auth(False)
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args = rpc_device.call_rpc_multiple.call_args_list[0][0][0][0]
