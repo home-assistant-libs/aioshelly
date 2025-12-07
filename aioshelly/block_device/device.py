@@ -423,12 +423,12 @@ class BlockDevice:
 
     async def set_auth(
         self,
-        enabled: bool,
+        enable: bool,
         username: str | None = None,
         password: str | None = None,
     ) -> dict[str, Any]:
         """Set authentication on the device."""
-        if enabled:
+        if enable:
             if username is None or password is None:
                 raise ValueError("username and password required when enabling auth")
             params = {"enabled": True, "username": username, "password": password}
