@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from unittest.mock import AsyncMock
 
 import pytest
@@ -13,6 +14,7 @@ from aioshelly.ble import (
     get_device_from_model_id,
     get_name_from_model_id,
 )
+from aioshelly.const import DEVICES
 
 
 @pytest.mark.asyncio
@@ -112,3 +114,20 @@ def test_get_name_from_model_id() -> None:
     # Test with invalid model ID
     name = get_name_from_model_id(0x9999)
     assert name is None
+
+
+def test_duplicate_model_ids() -> None:
+    """Check for duplicate model IDs in DEVICES."""
+    by_id = defaultdict(list)
+
+    for model, device in DEVICES.items():
+        if device.model_id is not None:
+            by_id[device.model_id].append((model, device.name))
+
+    duplicates = {
+        f"{model_id:#04x}": entries
+        for model_id, entries in by_id.items()
+        if len(entries) > 1
+    }
+
+    assert not duplicates, "Duplicate model IDs found in DEVICES"

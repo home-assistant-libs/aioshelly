@@ -28,6 +28,8 @@ def mock_rpc_device() -> AsyncMock:
     mock_device = AsyncMock()
     mock_device.initialize = AsyncMock()
     mock_device.call_rpc = AsyncMock()
+    mock_device.wifi_scan = AsyncMock()
+    mock_device.wifi_setconfig = AsyncMock()
     mock_device.shutdown = AsyncMock()
     return mock_device
 

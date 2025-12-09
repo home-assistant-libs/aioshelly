@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 from ..common import ConnectionOptions
 from ..rpc_device import RpcDevice
+from ..rpc_device.models import ShellyWiFiNetwork
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -42,7 +43,9 @@ async def ble_rpc_device(ble_device: BLEDevice) -> AsyncIterator[RpcDevice]:
         await device.shutdown()
 
 
-async def async_scan_wifi_networks(ble_device: BLEDevice) -> list[dict[str, Any]]:
+async def async_scan_wifi_networks(
+    ble_device: BLEDevice,
+) -> list[ShellyWiFiNetwork]:
     """Scan for WiFi networks via BLE.
 
     Args:
@@ -57,9 +60,7 @@ async def async_scan_wifi_networks(ble_device: BLEDevice) -> list[dict[str, Any]
 
     """
     async with ble_rpc_device(ble_device) as device:
-        # WiFi scan can take up to 20 seconds - use 30s timeout to be safe
-        scan_result = await device.call_rpc("WiFi.Scan", timeout=30)
-        return cast(list[dict[str, Any]], scan_result.get("results", []))
+        return await device.wifi_scan()
 
 
 async def async_provision_wifi(ble_device: BLEDevice, ssid: str, password: str) -> None:
@@ -76,15 +77,6 @@ async def async_provision_wifi(ble_device: BLEDevice, ssid: str, password: str) 
 
     """
     async with ble_rpc_device(ble_device) as device:
-        await device.call_rpc(
-            "WiFi.SetConfig",
-            {
-                "config": {
-                    "sta": {
-                        "ssid": ssid,
-                        "pass": password,
-                        "enable": True,
-                    }
-                }
-            },
+        await device.wifi_setconfig(
+            sta_ssid=ssid, sta_password=password, sta_enable=True
         )
