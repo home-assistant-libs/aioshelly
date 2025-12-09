@@ -431,9 +431,7 @@ class BlockDevice:
         if enable:
             if username is None or password is None:
                 raise ValueError("username and password required when enabling auth")
-            params = {"enabled": True, "username": username, "password": password}
-        else:
-            params = {"enabled": False}
+        params = {"enabled": enable, "username": username, "password": password}
         return await self.http_request("get", "settings/login", params)
 
     async def trigger_shelly_gas_self_test(self) -> None:
