@@ -86,7 +86,7 @@ async def test_block_device_set_auth(
     block_device.http_request.assert_called_once_with(
         "get",
         "settings/login",
-        {"enabled": 1, "username": "admin", "password": "password123"},
+        {"enabled": True, "username": "admin", "password": "password123"},
     )
     assert result["enabled"] is True
 
