@@ -110,6 +110,34 @@ async def test_block_device_disable_auth(
     block_device.http_request.assert_called_once_with(
         "get",
         "settings/login",
-        {"enabled": False},
+        {"enabled": False, "unprotected": False},  # <- aangepast
     )
     assert result["enabled"] is False
+
+
+@pytest.mark.asyncio
+async def test_block_device_set_auth_username_too_long(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice set_auth with username too long."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+
+    with pytest.raises(ValueError, match="username must be between 1 and 50 characters"):
+        await block_device.set_auth(True, "a" * 51, "password123")
+
+
+@pytest.mark.asyncio
+async def test_block_device_set_auth_password_too_long(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice set_auth with password too long."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+
+    with pytest.raises(ValueError, match="password must be between 1 and 50 characters"):
+        await block_device.set_auth(True, "admin", "a" * 51)
