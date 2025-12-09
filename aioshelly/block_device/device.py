@@ -420,7 +420,7 @@ class BlockDevice:
     async def trigger_reboot(self) -> None:
         """Trigger a device reboot."""
         await self.http_request("get", "reboot")
-
+        
     async def set_auth(
         self,
         enable: bool,
@@ -431,7 +431,13 @@ class BlockDevice:
         if enable:
             if username is None or password is None:
                 raise ValueError("username and password required when enabling auth")
-        params = {"enabled": enable, "username": username, "password": password}
+            if not 1 <= len(username) <= 50:
+                raise ValueError("username must be between 1 and 50 characters")
+            if not 1 <= len(password) <= 50:
+                raise ValueError("password must be between 1 and 50 characters")
+            params = {"enabled": True, "username": username, "password": password}
+        else:
+            params = {"enabled": False, "unprotected": False}
         return await self.http_request("get", "settings/login", params)
 
     async def trigger_shelly_gas_self_test(self) -> None:
