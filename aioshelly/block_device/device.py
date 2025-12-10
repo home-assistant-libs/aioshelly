@@ -62,6 +62,8 @@ BLOCK_VALUE_TYPE_VOLTAGE = "V"
 
 HTTP_CALL_TIMEOUT_CLIENT_TIMEOUT = ClientTimeout(total=HTTP_CALL_TIMEOUT)
 
+MAX_CREDENTIALS_LENGTH = 50
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -420,7 +422,7 @@ class BlockDevice:
     async def trigger_reboot(self) -> None:
         """Trigger a device reboot."""
         await self.http_request("get", "reboot")
-        
+
     async def set_auth(
         self,
         enable: bool,
@@ -431,13 +433,13 @@ class BlockDevice:
         if enable:
             if username is None or password is None:
                 raise ValueError("username and password required when enabling auth")
-            if not 1 <= len(username) <= 50:
+            if not 1 <= len(username) <= MAX_CREDENTIALS_LENGTH:
                 raise ValueError("username must be between 1 and 50 characters")
-            if not 1 <= len(password) <= 50:
+            if not 1 <= len(password) <= MAX_CREDENTIALS_LENGTH:
                 raise ValueError("password must be between 1 and 50 characters")
             params = {"enabled": True, "username": username, "password": password}
         else:
-            params = {"enabled": False, "unprotected": False}
+            params = {"enabled": False, "unprotected": True}
         return await self.http_request("get", "settings/login", params)
 
     async def trigger_shelly_gas_self_test(self) -> None:
