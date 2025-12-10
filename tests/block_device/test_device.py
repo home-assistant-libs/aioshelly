@@ -101,7 +101,7 @@ async def test_block_device_disable_auth(
 
     block_device = BlockDevice(coap_context, client_session, options)
     block_device.http_request = AsyncMock(
-        return_value={"enabled": False, "unprotected": False, "username": "admin"}
+        return_value={"enabled": False, "unprotected": True, "username": "admin"}
     )
     block_device._shelly = {"auth": True}
 
@@ -110,7 +110,7 @@ async def test_block_device_disable_auth(
     block_device.http_request.assert_called_once_with(
         "get",
         "settings/login",
-        {"enabled": False, "unprotected": False},
+        {"enabled": False, "unprotected": True},
     )
     assert result["enabled"] is False
 
@@ -125,7 +125,9 @@ async def test_block_device_set_auth_username_too_long(
 
     block_device = BlockDevice(coap_context, client_session, options)
 
-    with pytest.raises(ValueError, match="username must be between 1 and 50 characters"):
+    with pytest.raises(
+        ValueError, match="username must be between 1 and 50 characters"
+    ):
         await block_device.set_auth(True, "a" * 51, "password123")
 
 
@@ -139,5 +141,7 @@ async def test_block_device_set_auth_password_too_long(
 
     block_device = BlockDevice(coap_context, client_session, options)
 
-    with pytest.raises(ValueError, match="password must be between 1 and 50 characters"):
+    with pytest.raises(
+        ValueError, match="password must be between 1 and 50 characters"
+    ):
         await block_device.set_auth(True, "admin", "a" * 51)
