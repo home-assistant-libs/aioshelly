@@ -110,7 +110,7 @@ async def test_block_device_disable_auth(
     block_device.http_request.assert_called_once_with(
         "get",
         "settings/login",
-        {"enabled": False, "unprotected": False},  # <- aangepast
+        {"enabled": False, "unprotected": False},
     )
     assert result["enabled"] is False
 
