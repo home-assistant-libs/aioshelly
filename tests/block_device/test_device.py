@@ -2,7 +2,7 @@
 
 import asyncio
 import socket
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 from aiohttp.client import ClientSession
@@ -65,3 +65,83 @@ async def test_block_device_ip_address_property_guard(
 
     with pytest.raises(RuntimeError, match="Block device ip_address is None"):
         _ = block_device.ip_address
+
+
+@pytest.mark.asyncio
+async def test_block_device_set_auth(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice set_auth method."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+    block_device.http_request = AsyncMock(
+        return_value={"enabled": True, "unprotected": False, "username": "admin"}
+    )
+    block_device._shelly = {"auth": False}
+
+    result = await block_device.set_auth(True, "admin", "password123")
+
+    block_device.http_request.assert_called_once_with(
+        "get",
+        "settings/login",
+        {"enabled": True, "username": "admin", "password": "password123"},
+    )
+    assert result["enabled"] is True
+
+
+@pytest.mark.asyncio
+async def test_block_device_disable_auth(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice disable_auth method."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+    block_device.http_request = AsyncMock(
+        return_value={"enabled": False, "unprotected": True, "username": "admin"}
+    )
+    block_device._shelly = {"auth": True}
+
+    result = await block_device.set_auth(False)
+
+    block_device.http_request.assert_called_once_with(
+        "get",
+        "settings/login",
+        {"enabled": False, "unprotected": True},
+    )
+    assert result["enabled"] is False
+
+
+@pytest.mark.asyncio
+async def test_block_device_set_auth_username_too_long(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice set_auth with username too long."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+
+    with pytest.raises(
+        ValueError, match="username must be between 1 and 50 characters"
+    ):
+        await block_device.set_auth(True, "a" * 51, "password123")
+
+
+@pytest.mark.asyncio
+async def test_block_device_set_auth_password_too_long(
+    client_session: ClientSession,
+) -> None:
+    """Test BlockDevice set_auth with password too long."""
+    coap_context = COAP()
+    options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
+
+    block_device = BlockDevice(coap_context, client_session, options)
+
+    with pytest.raises(
+        ValueError, match="password must be between 1 and 50 characters"
+    ):
+        await block_device.set_auth(True, "admin", "a" * 51)
