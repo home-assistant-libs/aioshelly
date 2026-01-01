@@ -445,7 +445,7 @@ class BlockDevice:
 
     async def configure_coiot_protocol(self, address: str, port: int) -> None:
         """Configure CoIoT protocol."""
-        params = {"coiot_enable": True, "coiot_peer": f"{address}:{port}"}
+        params = {"coiot_enable": "true", "coiot_peer": f"{address}:{port}"}
         await self.http_request("post", "settings/advanced", params)
 
     @property
