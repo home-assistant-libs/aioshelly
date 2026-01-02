@@ -19,6 +19,6 @@ async def client_session() -> AsyncGenerator[ClientSession, None]:
 @pytest_asyncio.fixture
 async def mock_block_device() -> AsyncGenerator[BlockDevice, None]:
     """Fixture for a mock block device."""
-    # Create a fake BlockDevice (could also use a fixture)
+    # Create a fake BlockDevice instance
     fake_block = device_module.BlockDevice.__new__(device_module.BlockDevice)
     yield fake_block
