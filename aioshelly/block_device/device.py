@@ -291,11 +291,11 @@ class BlockDevice:
 
     async def update_status(self) -> None:
         """Device update from /status (HTTP)."""
-        self._status = await self.http_request("get", "status")
+        self._status = await self._http_request("get", "status")
 
     async def update_settings(self) -> None:
         """Device update from /settings (HTTP)."""
-        self._settings = await self.http_request("get", "settings")
+        self._settings = await self._http_request("get", "settings")
 
     async def update_shelly(self) -> None:
         """Device update for /shelly (HTTP)."""
@@ -310,7 +310,7 @@ class BlockDevice:
         """
         match = FIRMWARE_PATTERN.search(self.firmware_version)
         if match is not None and int(match[0]) >= GEN1_HTTP_CIT_D_MIN_FIRMWARE_DATE:
-            cit_d_res = await self.http_request("get", "cit/d")
+            cit_d_res = await self._http_request("get", "cit/d")
             self._update_d(cit_d_res)
             return
 
@@ -348,7 +348,7 @@ class BlockDevice:
         await self.coap_context.request(self.ip_address, path)
         return event
 
-    async def http_request(
+    async def _http_request(
         self, method: str, path: str, params: Any | None = None, retry: bool = True
     ) -> dict[str, Any]:
         """Device HTTP request."""
@@ -379,7 +379,7 @@ class BlockDevice:
                 _LOGGER.debug(
                     "host %s: http request timeout: %r", host, self._last_error
                 )
-                return await self.http_request(method, path, params, retry=False)
+                return await self._http_request(method, path, params, retry=False)
 
             _LOGGER.debug(
                 "host %s: http request retry timeout: %r", host, self._last_error
@@ -389,7 +389,7 @@ class BlockDevice:
             self._last_error = DeviceConnectionError(err)
             if retry:
                 _LOGGER.debug("host %s: http request error: %r", host, self._last_error)
-                return await self.http_request(method, path, params, retry=False)
+                return await self._http_request(method, path, params, retry=False)
 
             _LOGGER.debug(
                 "host %s: http request retry error: %r", host, self._last_error
@@ -402,7 +402,7 @@ class BlockDevice:
 
     async def switch_light_mode(self, mode: str) -> dict[str, Any]:
         """Change device mode color/white."""
-        return await self.http_request("get", "settings", {"mode": mode})
+        return await self._http_request("get", "settings", {"mode": mode})
 
     async def trigger_ota_update(
         self, beta: bool = False, url: str | None = None
@@ -415,38 +415,44 @@ class BlockDevice:
         elif beta:
             params = {"beta": "true"}
 
-        return await self.http_request("get", "ota", params=params)
+        return await self._http_request("get", "ota", params=params)
 
     async def trigger_reboot(self) -> None:
         """Trigger a device reboot."""
-        await self.http_request("get", "reboot")
+        await self._http_request("get", "reboot")
 
     async def trigger_shelly_gas_self_test(self) -> None:
         """Trigger a Shelly Gas self test."""
-        await self.http_request("get", "self_test")
+        await self._http_request("get", "self_test")
 
     async def trigger_shelly_gas_mute(self) -> None:
         """Trigger a Shelly Gas mute action."""
-        await self.http_request("get", "mute")
+        await self._http_request("get", "mute")
 
     async def trigger_shelly_gas_unmute(self) -> None:
         """Trigger a Shelly Gas unmute action."""
-        await self.http_request("get", "unmute")
+        await self._http_request("get", "unmute")
 
     async def set_shelly_motion_detection(self, enable: bool) -> None:
         """Enable or disable Shelly Motion motion detection."""
         params = {"motion_enable": "true"} if enable else {"motion_enable": "false"}
 
-        await self.http_request("get", "settings", params)
+        await self._http_request("get", "settings", params)
 
     async def set_thermostat_state(self, channel: int = 0, **kwargs: Any) -> None:
         """Set thermostat state (Shelly TRV)."""
-        await self.http_request("get", f"thermostat/{channel}", kwargs)
+        await self._http_request("get", f"thermostat/{channel}", kwargs)
+
+    async def set_state(
+        self, path: str | None, channel: str | None, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Set device state."""
+        return await self._http_request("get", f"{path}/{channel}", kwargs)
 
     async def configure_coiot_protocol(self, address: str, port: int) -> None:
         """Configure CoIoT protocol."""
         params = {"coiot_enable": "true", "coiot_peer": f"{address}:{port}"}
-        await self.http_request("post", "settings/advanced", params)
+        await self._http_request("post", "settings/advanced", params)
 
     @property
     def requires_auth(self) -> bool:
@@ -593,15 +599,11 @@ class Block:
             for desc, index in self.sensor_ids.items()
         }
 
-    async def set_state(self, **kwargs: Any) -> dict[str, Any]:
-        """Set state request (HTTP)."""
-        return await self.device.http_request(
-            "get", f"{self.type}/{self.channel}", kwargs
-        )
-
     async def toggle(self) -> dict[str, Any]:
         """Toggle status."""
-        return await self.set_state(turn="off" if self.output else "on")
+        return await self.device.set_state(
+            self.type, self.channel, turn="off" if self.output else "on"
+        )
 
     def __getattr__(self, attr: str) -> str | None:
         """Get attribute."""
@@ -629,8 +631,8 @@ class LightBlock(Block, blk_type="light"):
     async def set_state(self, **kwargs: Any) -> dict[str, Any]:
         """Set light state."""
         if self.device.settings["device"]["type"] == MODEL_RGBW2:
-            path = f"{self.device.settings['mode']}/{self.channel}"
+            path = f"{self.device.settings['mode']}"
         else:
-            path = f"{self.type}/{self.channel}"
+            path = f"{self.type}"
 
-        return await self.device.http_request("get", path, kwargs)
+        return await self.device.set_state(path, self.channel, **kwargs)
