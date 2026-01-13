@@ -72,14 +72,14 @@ async def test_configure_coiot_protocol_sends_correct_parameters(
     mock_block_device: BlockDevice,
 ) -> None:
     """Test that configure_coiot_protocol calls http_request with expected params."""
-    mock_block_device.http_request = AsyncMock()
+    mock_block_device._http_request = AsyncMock()
 
     test_address = "10.10.10.10"
     test_port = 5683
 
     await mock_block_device.configure_coiot_protocol(test_address, test_port)
 
-    mock_block_device.http_request.assert_awaited_once_with(
+    mock_block_device._http_request.assert_awaited_once_with(
         "post",
         "settings/advanced",
         {
@@ -94,7 +94,9 @@ async def test_configure_coiot_protocol_propagates_exceptions(
     mock_block_device: BlockDevice,
 ) -> None:
     """Test that exceptions from http_request bubble up (no silent swallow)."""
-    mock_block_device.http_request = AsyncMock(side_effect=RuntimeError("HTTP failure"))
+    mock_block_device._http_request = AsyncMock(
+        side_effect=RuntimeError("HTTP failure")
+    )
 
     with pytest.raises(RuntimeError):
         await mock_block_device.configure_coiot_protocol("10.10.10.10", 5683)
