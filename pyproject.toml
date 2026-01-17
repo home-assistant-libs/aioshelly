@@ -154,7 +154,8 @@ commands =
     check-yaml \
     check-json \
     check-toml \
-    mixed-line-ending --all-files
+    mixed-line-ending \
+    --all-files
 deps =
   .[lint]
 
