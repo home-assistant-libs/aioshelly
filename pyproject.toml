@@ -147,7 +147,14 @@ deps =
 basepython = python3
 ignore_errors = True
 commands =
-  prek check ./
+  prek run \
+    check-executables-have-shebangs \
+    trailing-whitespace \
+    end-of-file-fixer \
+    check-yaml \
+    check-json \
+    check-toml \
+    mixed-line-ending
 deps =
   .[lint]
 
