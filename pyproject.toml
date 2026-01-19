@@ -34,13 +34,13 @@ dependencies = [
 [project.optional-dependencies]
 lint = [
   "mypy==1.19.1",
+  "prek==0.2.28",
   "pydocstyle==6.3.0",
   "ruff==0.14.13",
   "types-requests",
 ]
 dev = [
   "aioresponses==0.7.8",
-  "pre-commit==4.5.1",
   "pytest-asyncio==1.3.0",
   "pytest-cov==7.0.0",
   "pytest==9.0.2",
@@ -123,12 +123,12 @@ max-complexity = 18
 legacy_tox_ini = """
 
 [tox]
-envlist = py311, py312, py313, py314, lint, mypy, tests
+envlist = py311, py312, py313, py314, lint, prek, mypy, tests
 skip_missing_interpreters = True
 
 [gh-actions]
 python =
-  3.11: py311, lint, mypy
+  3.11: py311, lint, prek, mypy
   3.12: py312, tests
   3.13: py313, tests
   3.14: py314, tests
@@ -140,6 +140,22 @@ commands =
   ruff format --check ./
   ruff check ./
   pydocstyle aioshelly
+deps =
+  .[lint]
+
+[testenv:prek]
+basepython = python3
+ignore_errors = True
+commands =
+  prek run \
+    check-executables-have-shebangs \
+    trailing-whitespace \
+    end-of-file-fixer \
+    check-yaml \
+    check-json \
+    check-toml \
+    mixed-line-ending \
+    --all-files
 deps =
   .[lint]
 
