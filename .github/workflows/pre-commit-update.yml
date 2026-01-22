@@ -11,15 +11,17 @@ jobs:
       - uses: actions/checkout@v6.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: astral-sh/setup-uv@v7
         with:
+          enable-cache: true
+          activate-environment: true
           python-version: "3.x"
 
       - name: Install prek
-        run: pip install prek
+        run: uv pip install prek
 
       - name: Run prek auto-update
-        run: prek auto-update
+        run: uv run prek auto-update
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8.1.0
