@@ -36,7 +36,7 @@ lint = [
   "mypy==1.19.1",
   "prek==0.3.0",
   "pydocstyle==6.3.0",
-  "ruff==0.14.13",
+  "ruff==0.14.14",
   "types-requests",
 ]
 dev = [
