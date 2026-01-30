@@ -52,7 +52,7 @@ repos:
       - id: prettier
         stages: [manual]
   - repo: https://github.com/NSPBot911/ty-pre-commit
-    rev: v0.0.13
+    rev: v0.0.14
     hooks:
       - id: ty-check
         files: ^aioshelly/.+\.py$
