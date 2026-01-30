@@ -1,5 +1,7 @@
 #!/bin/bash
 
-pip3 --disable-pip-version-check --no-cache-dir install .[dev] .[lint]
-pip3 install -e .
+pip3 --disable-pip-version-check --no-cache-dir install uv
+uv venv venv --seed --clear
+source venv/bin/activate
+uv pip install --no-cache-dir .[dev] .[lint]
 prek install
