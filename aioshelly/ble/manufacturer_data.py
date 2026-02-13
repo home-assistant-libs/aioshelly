@@ -79,7 +79,7 @@ def parse_shelly_manufacturer_data(
             LOGGER.debug("Unknown block type in manufacturer data: 0x%02X", block_type)
             break
 
-    return result if result else None
+    return result or None
 
 
 def has_rpc_over_ble(manufacturer_data: dict[int, bytes]) -> bool:
