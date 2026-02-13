@@ -158,7 +158,8 @@ async def main() -> None:  # noqa: PLR0915
         # Prompt user to select a device
         while True:
             try:
-                choice = input(f"\nSelect device (1-{len(devices)}): ").strip()
+                prompt = f"\nSelect device (1-{len(devices)}): "
+                choice = (await asyncio.to_thread(input, prompt)).strip()
                 device_idx = int(choice) - 1
                 if 0 <= device_idx < len(devices):
                     ble_device = devices[device_idx]
@@ -197,9 +198,8 @@ async def main() -> None:  # noqa: PLR0915
     else:
         # Prompt for SSID - can select from list or enter custom
         print()
-        ssid_input = input(
-            f"Enter network number (1-{len(networks)}) or custom SSID: "
-        ).strip()
+        prompt = f"Enter network number (1-{len(networks)}) or custom SSID: "
+        ssid_input = (await asyncio.to_thread(input, prompt)).strip()
         if not ssid_input:
             print("No SSID provided, skipping WiFi configuration.")
             return
