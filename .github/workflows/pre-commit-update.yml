@@ -21,7 +21,7 @@ jobs:
         run: uv pip install prek
 
       - name: Run prek auto-update
-        run: uv run prek auto-update
+        run: prek auto-update
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8.1.0
