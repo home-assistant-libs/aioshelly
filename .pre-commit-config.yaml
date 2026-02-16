@@ -56,3 +56,5 @@ repos:
     hooks:
       - id: ty-check
         files: ^aioshelly/.+\.py$
+        args:
+          - --python=venv
