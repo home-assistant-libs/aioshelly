@@ -37,7 +37,7 @@ lint = [
   "pydocstyle==6.3.0",
   "ruff==0.15.5",
   "types-requests",
-  "ty==0.0.19",
+  "ty==0.0.21",
 ]
 dev = [
   "aioresponses==0.7.8",
