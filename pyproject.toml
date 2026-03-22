@@ -33,7 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 lint = [
-  "prek==0.3.5",
+  "prek==0.3.6",
   "pydocstyle==6.3.0",
   "ruff==0.15.6",
   "types-requests",
