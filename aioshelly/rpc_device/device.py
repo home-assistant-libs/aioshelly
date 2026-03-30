@@ -367,7 +367,7 @@ class RpcDevice:
 
     async def blu_trv_set_boost(self, trv_id: int, duration: int | None = None) -> None:
         """Start boost mode for BLU TRV."""
-        params = {
+        params: dict[str, Any] = {
             "id": trv_id,
             "method": "Trv.SetBoost",
         }

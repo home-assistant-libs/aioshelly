@@ -227,7 +227,7 @@ class BleRPC:
 
         # Build RPC request
         call_id = self._next_id
-        request = {
+        request: dict[str, Any] = {
             "id": call_id,
             "method": method,
         }
