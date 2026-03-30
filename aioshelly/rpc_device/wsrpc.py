@@ -440,7 +440,7 @@ class WsRPC(WsBase):
             # mypy does not know that .result is never
             # None when all_successful is True so we need
             # to ignore the type check here
-            return [call.result for call in results]  # type: ignore[misc]
+            return [call.result for call in results if call.result is not UNDEFINED]
 
         # Partial success, try to update auth and retry
         to_retry: list[RPCCall] = []
