@@ -526,7 +526,6 @@ class Block:
     """Shelly CoAP block."""
 
     TYPES: ClassVar[dict] = {}
-    type = None
 
     def __init_subclass__(cls, blk_type: str = "", **kwargs: Any) -> None:
         """Initialize a subclass, register if possible."""
