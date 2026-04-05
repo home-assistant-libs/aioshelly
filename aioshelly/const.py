@@ -83,6 +83,7 @@ MODEL_PLUS_WALL_DIMMER = "SNDM-0013US"
 MODEL_PRO_1 = "SPSW-001XE16EU"
 MODEL_PRO_1_V2 = "SPSW-101XE16EU"
 MODEL_PRO_1_V3 = "SPSW-201XE16EU"
+MODEL_PRO_1_V3_UL = "SPSW-201XE15UL"
 MODEL_PRO_1PM = "SPSW-001PE16EU"
 MODEL_PRO_1PM_V2 = "SPSW-101PE16EU"
 MODEL_PRO_1PM_V3 = "SPSW-201PE16EU"
@@ -733,6 +734,14 @@ DEVICES = {
     MODEL_PRO_1_V3: ShellyDevice(
         model=MODEL_PRO_1_V3,
         name="Shelly Pro 1",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=None,  # Uses same model ID as MODEL_PRO_1
+    ),
+    MODEL_PRO_1_V3_UL: ShellyDevice(
+        model=MODEL_PRO_1_V3_UL,
+        name="Shelly Pro 1 UL",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
         supported=True,
