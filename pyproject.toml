@@ -35,9 +35,9 @@ dependencies = [
 lint = [
   "prek==0.3.8",
   "pydocstyle==6.3.0",
-  "ruff==0.15.8",
+  "ruff==0.15.9",
   "types-requests",
-  "ty==0.0.26",
+  "ty==0.0.28",
 ]
 dev = [
   "aioresponses==0.7.8",
@@ -45,7 +45,7 @@ dev = [
   "pytest-cov==7.1.0",
   "pytest==9.0.2",
   "requests",
-  "tox==4.51.0",
+  "tox==4.52.0",
 ]
 
 [project.urls]
