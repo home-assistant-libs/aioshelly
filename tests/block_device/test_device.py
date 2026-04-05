@@ -110,6 +110,55 @@ async def test_block_toggle_calls_set_state(mock_aiohttp_session: Mock) -> None:
     mock_aiohttp_session.request.assert_called()
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method_name", "endpoint", "attr_name", "payload"),
+    [
+        ("update_status", "status", "_status", {"wifi_sta": {"connected": True}}),
+        (
+            "update_settings",
+            "settings",
+            "_settings",
+            {"device": {"name": "Test Device"}},
+        ),
+    ],
+)
+async def test_update_methods_use_private_http_request(
+    mock_aiohttp_session: Mock,
+    method_name: str,
+    endpoint: str,
+    attr_name: str,
+    payload: dict[str, Any],
+) -> None:
+    """Test update methods call _http_request and store responses."""
+    dev = build_dummy_device(mock_aiohttp_session)
+    dev._http_request = AsyncMock(return_value=payload)
+
+    await getattr(dev, method_name)()
+
+    dev._http_request.assert_awaited_once_with("get", endpoint)
+    assert getattr(dev, attr_name) == payload
+
+
+@pytest.mark.asyncio
+async def test_update_cit_d_uses_http_on_supported_firmware(
+    mock_aiohttp_session: Mock,
+) -> None:
+    """Test _update_cit_d prefers HTTP endpoint when firmware supports it."""
+    dev = build_dummy_device(mock_aiohttp_session)
+    dev._shelly["fw"] = "20990101-000000/v1.0.0"
+    cit_d_payload = {"tmp": {"value": 21.5}}
+    dev._http_request = AsyncMock(return_value=cit_d_payload)
+    dev._update_d = Mock()
+    dev._update_cit = AsyncMock()
+
+    await dev._update_cit_d()
+
+    dev._http_request.assert_awaited_once_with("get", "cit/d")
+    dev._update_d.assert_called_once_with(cit_d_payload)
+    dev._update_cit.assert_not_awaited()
+
+
 def _build_block_device(client_session: ClientSession) -> BlockDevice:
     """Create a BlockDevice ready for direct _http_request testing."""
     coap_context = COAP()
@@ -211,6 +260,123 @@ async def test_configure_coiot_protocol_propagates_exceptions(
 
     with pytest.raises(RuntimeError):
         await mock_block_device.configure_coiot_protocol("10.10.10.10", 5683)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    (
+        "method_name",
+        "args",
+        "kwargs",
+        "expected_call_args",
+        "expected_call_kwargs",
+    ),
+    [
+        (
+            "switch_light_mode",
+            ("color",),
+            {},
+            ("get", "settings", {"mode": "color"}),
+            {},
+        ),
+        (
+            "trigger_ota_update",
+            (),
+            {},
+            ("get", "ota"),
+            {"params": {"update": "true"}},
+        ),
+        (
+            "trigger_ota_update",
+            (),
+            {"beta": True},
+            ("get", "ota"),
+            {"params": {"beta": "true"}},
+        ),
+        (
+            "trigger_ota_update",
+            (),
+            {"url": "http://example.com/fw.zip"},
+            ("get", "ota"),
+            {"params": {"url": "http://example.com/fw.zip"}},
+        ),
+        (
+            "set_state",
+            ("relay", "0"),
+            {"turn": "on"},
+            ("get", "relay/0", {"turn": "on"}),
+            {},
+        ),
+    ],
+)
+async def test_blockdevice_request_wrappers_return_http_result(
+    mock_block_device: BlockDevice,
+    method_name: str,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    expected_call_args: tuple[Any, ...],
+    expected_call_kwargs: dict[str, Any],
+) -> None:
+    """Test wrapper methods that return _http_request payload."""
+    expected_result = {"ok": True}
+    mock_block_device._http_request = AsyncMock(return_value=expected_result)
+
+    result = await getattr(mock_block_device, method_name)(*args, **kwargs)
+
+    assert result == expected_result
+    mock_block_device._http_request.assert_awaited_once_with(
+        *expected_call_args,
+        **expected_call_kwargs,
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method_name", "args", "kwargs", "expected_call"),
+    [
+        ("trigger_reboot", (), {}, ("get", "reboot")),
+        ("trigger_shelly_gas_self_test", (), {}, ("get", "self_test")),
+        ("trigger_shelly_gas_mute", (), {}, ("get", "mute")),
+        ("trigger_shelly_gas_unmute", (), {}, ("get", "unmute")),
+        (
+            "set_shelly_motion_detection",
+            (True,),
+            {},
+            ("get", "settings", {"motion_enable": "true"}),
+        ),
+        (
+            "set_shelly_motion_detection",
+            (False,),
+            {},
+            ("get", "settings", {"motion_enable": "false"}),
+        ),
+        (
+            "set_thermostat_state",
+            (),
+            {"target_t": 20.0},
+            ("get", "thermostat/0", {"target_t": 20.0}),
+        ),
+        (
+            "set_thermostat_state",
+            (2,),
+            {"target_t": 21.0},
+            ("get", "thermostat/2", {"target_t": 21.0}),
+        ),
+    ],
+)
+async def test_blockdevice_request_wrappers_forward_params(
+    mock_block_device: BlockDevice,
+    method_name: str,
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    expected_call: tuple[Any, ...],
+) -> None:
+    """Test wrapper methods forward the expected request payload to _http_request."""
+    mock_block_device._http_request = AsyncMock(return_value={"ok": True})
+
+    await getattr(mock_block_device, method_name)(*args, **kwargs)
+
+    mock_block_device._http_request.assert_awaited_once_with(*expected_call)
 
 
 @pytest.mark.asyncio
