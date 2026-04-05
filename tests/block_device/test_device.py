@@ -75,19 +75,26 @@ def build_dummy_device(
 
 
 @pytest.mark.asyncio
-async def test_blockdevice_set_state_basic(mock_aiohttp_session: Mock) -> None:
-    """Test BlockDevice.set_state with typical path/channel."""
+@pytest.mark.parametrize(
+    ("path", "channel", "kwargs"),
+    [
+        ("relay", "0", {"foo": "bar"}),
+        (None, None, {"foo": 1}),
+        ("relay", None, {"turn": "on"}),
+        (None, "0", {"foo": "bar"}),
+    ],
+)
+async def test_blockdevice_set_state_various_args(
+    mock_aiohttp_session: Mock,
+    path: str | None,
+    channel: str | None,
+    kwargs: dict[str, Any],
+) -> None:
+    """Test BlockDevice.set_state with various path/channel combinations."""
     dev = build_dummy_device(mock_aiohttp_session)
-    result = await dev.set_state("relay", "0", foo="bar")
+    result = await dev.set_state(path, channel, **kwargs)
     assert result == {"ok": True}
-
-
-@pytest.mark.asyncio
-async def test_blockdevice_set_state_none_path(mock_aiohttp_session: Mock) -> None:
-    """Test BlockDevice.set_state with None path and channel."""
-    dev = build_dummy_device(mock_aiohttp_session)
-    result = await dev.set_state(None, None, foo=1)
-    assert result == {"ok": True}
+    mock_aiohttp_session.request.assert_called()
 
 
 @pytest.mark.asyncio
@@ -100,23 +107,6 @@ async def test_block_toggle_calls_set_state(mock_aiohttp_session: Mock) -> None:
     mock_aiohttp_session.request.assert_called()
     block.output = False
     await block.toggle()
-    mock_aiohttp_session.request.assert_called()
-
-
-@pytest.mark.asyncio
-async def test_lightblock_set_state_calls_device(mock_aiohttp_session: Mock) -> None:
-    """Test LightBlock.set_state calls device.set_state with correct parameters."""
-    dummy_device = build_dummy_device(mock_aiohttp_session)
-    # RGBW2 device
-    dummy_device.settings["device"]["type"] = "SHRGBW2"
-    dummy_device.settings["mode"] = "color"
-    block = LightBlock(dummy_device, "light", {"I": "0", "D": "light_0"}, {})
-    await block.set_state(brightness=100)
-    mock_aiohttp_session.request.assert_called()
-    # Non-RGBW2 device
-    dummy_device.settings["device"]["type"] = "SHSW-1"
-    block = LightBlock(dummy_device, "light", {"I": "0", "D": "light_0"}, {})
-    await block.set_state(brightness=50)
     mock_aiohttp_session.request.assert_called()
 
 
@@ -279,60 +269,95 @@ async def test_http_request_unauthorized_maps_to_invalid_auth(
 
 
 @pytest.mark.asyncio
-async def test_http_request_timeout_retries_once(client_session: ClientSession) -> None:
-    """Test _http_request retries once after timeout and then succeeds."""
+@pytest.mark.parametrize(
+    ("error_factory", "retry_succeeds", "expected_exception", "expected_error_type"),
+    [
+        (TimeoutError, True, None, None),
+        (
+            TimeoutError,
+            False,
+            DeviceConnectionTimeoutError,
+            DeviceConnectionTimeoutError,
+        ),
+        (lambda: OSError("boom"), True, None, None),
+        (ClientError, False, DeviceConnectionError, DeviceConnectionError),
+    ],
+)
+async def test_http_request_retry_logic(
+    client_session: ClientSession,
+    error_factory: Any,
+    retry_succeeds: bool,
+    expected_exception: type[Exception] | None,
+    expected_error_type: type[Exception] | None,
+) -> None:
+    """Test _http_request retry behavior on errors."""
     block_device = _build_block_device(client_session)
-    response = AsyncMock()
-    response.json = AsyncMock(return_value={"ok": True})
-    client_session.request = AsyncMock(side_effect=[TimeoutError(), response])
 
-    result = await block_device._http_request("get", "status")
+    if retry_succeeds:
+        response = AsyncMock()
+        response.json = AsyncMock(return_value={"ok": True})
+        client_session.request = AsyncMock(side_effect=[error_factory(), response])
+        result = await block_device._http_request("get", "status")
+        assert result == {"ok": True}
+    else:
+        client_session.request = AsyncMock(
+            side_effect=[error_factory(), error_factory()]
+        )
+        with pytest.raises(expected_exception):
+            await block_device._http_request("get", "status")
+        assert isinstance(block_device.last_error, expected_error_type)
 
-    assert result == {"ok": True}
     assert client_session.request.await_count == 2
 
 
 @pytest.mark.asyncio
-async def test_http_request_timeout_retry_exhausted(
+@pytest.mark.parametrize(
+    ("status_code", "path"),
+    [
+        (400, "status"),
+        (403, "settings"),
+        (500, "status"),
+    ],
+)
+async def test_http_request_client_response_errors(
     client_session: ClientSession,
+    status_code: int,
+    path: str,
 ) -> None:
-    """Test _http_request raises DeviceConnectionTimeoutError after retry."""
+    """Test _http_request handles non-401 ClientResponseError."""
     block_device = _build_block_device(client_session)
-    client_session.request = AsyncMock(side_effect=[TimeoutError(), TimeoutError()])
-
-    with pytest.raises(DeviceConnectionTimeoutError):
-        await block_device._http_request("get", "status")
-
-    assert client_session.request.await_count == 2
-    assert isinstance(block_device.last_error, DeviceConnectionTimeoutError)
-
-
-@pytest.mark.asyncio
-async def test_http_request_connect_error_retries_once(
-    client_session: ClientSession,
-) -> None:
-    """Test _http_request retries once after connect error and succeeds."""
-    block_device = _build_block_device(client_session)
-    response = AsyncMock()
-    response.json = AsyncMock(return_value={"ok": True})
-    client_session.request = AsyncMock(side_effect=[OSError("boom"), response])
-
-    result = await block_device._http_request("get", "status")
-
-    assert result == {"ok": True}
-    assert client_session.request.await_count == 2
-
-
-@pytest.mark.asyncio
-async def test_http_request_connect_error_retry_exhausted(
-    client_session: ClientSession,
-) -> None:
-    """Test _http_request raises DeviceConnectionError after retry."""
-    block_device = _build_block_device(client_session)
-    client_session.request = AsyncMock(side_effect=[ClientError(), ClientError()])
+    request_info = Mock(real_url=URL(f"http://10.10.10.10/{path}"))
+    client_session.request = AsyncMock(
+        side_effect=ClientResponseError(request_info, (), status=status_code)
+    )
 
     with pytest.raises(DeviceConnectionError):
-        await block_device._http_request("get", "status")
+        await block_device._http_request("get", path)
 
-    assert client_session.request.await_count == 2
     assert isinstance(block_device.last_error, DeviceConnectionError)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("device_type", "mode", "kwargs"),
+    [
+        ("SHRGBW2", "color", {"brightness": 100, "effect": 5}),
+        ("SHSW-1", None, {"brightness": 50}),
+    ],
+)
+async def test_lightblock_set_state_device_types(
+    mock_aiohttp_session: Mock,
+    device_type: str,
+    mode: str | None,
+    kwargs: dict[str, Any],
+) -> None:
+    """Test LightBlock.set_state for different device types."""
+    dummy_device = build_dummy_device(mock_aiohttp_session)
+    dummy_device.settings["device"]["type"] = device_type
+    if mode:
+        dummy_device.settings["mode"] = mode
+    block = LightBlock(dummy_device, "light", {"I": "0", "D": "light_0"}, {})
+
+    await block.set_state(**kwargs)
+
+    mock_aiohttp_session.request.assert_called()
