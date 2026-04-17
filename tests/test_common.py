@@ -115,6 +115,29 @@ async def test_get_info_mac_mismatch() -> None:
     await session.close()
 
 
+@pytest.mark.asyncio
+async def test_get_info_mac_mixed_case() -> None:
+    """Test get_info function when MAC differs in string case only."""
+    mock_response = await load_device_fixture("shellyplus2pm", "shelly.json")
+    ip_address = "10.10.10.10"
+
+    session = ClientSession()
+
+    with aioresponses() as session_mock:
+        session_mock.get(
+            URL.build(
+                scheme="http", host=ip_address, port=DEFAULT_HTTP_PORT, path="/shelly"
+            ),
+            payload=mock_response,
+        )
+
+        result = await get_info(session, ip_address, "aabbccddeeff")
+
+    await session.close()
+
+    assert result == mock_response
+
+
 @pytest.mark.parametrize(
     ("exc", "expected_exc"),
     [
