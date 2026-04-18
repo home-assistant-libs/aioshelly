@@ -1828,11 +1828,11 @@ async def test_kvs_get(
 
 
 @pytest.mark.asyncio
-async def test_media_player_play_or_pause(
+async def test_media_play_or_pause(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_play_or_pause() method."""
-    await rpc_device.media_player_play_or_pause()
+    """Test RpcDevice media_play_or_pause() method."""
+    await rpc_device.media_play_or_pause()
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1841,11 +1841,11 @@ async def test_media_player_play_or_pause(
 
 
 @pytest.mark.asyncio
-async def test_media_player_stop(
+async def test_media_stop(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_stop() method."""
-    await rpc_device.media_player_stop()
+    """Test RpcDevice media_stop() method."""
+    await rpc_device.media_stop()
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1854,11 +1854,11 @@ async def test_media_player_stop(
 
 
 @pytest.mark.asyncio
-async def test_media_player_next(
+async def test_media_next(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_next() method."""
-    await rpc_device.media_player_next()
+    """Test RpcDevice media_next() method."""
+    await rpc_device.media_next()
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1867,11 +1867,11 @@ async def test_media_player_next(
 
 
 @pytest.mark.asyncio
-async def test_media_player_previous(
+async def test_media_previous(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_previous() method."""
-    await rpc_device.media_player_previous()
+    """Test RpcDevice media_previous() method."""
+    await rpc_device.media_previous()
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1880,11 +1880,11 @@ async def test_media_player_previous(
 
 
 @pytest.mark.asyncio
-async def test_media_player_set_volume(
+async def test_media_set_volume(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_set_volume() method."""
-    await rpc_device.media_player_set_volume(50)
+    """Test RpcDevice media_set_volume() method."""
+    await rpc_device.media_set_volume(50)
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1894,11 +1894,11 @@ async def test_media_player_set_volume(
 
 
 @pytest.mark.asyncio
-async def test_media_player_play_media(
+async def test_media_play_media(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_play_media() method."""
-    await rpc_device.media_player_play_media(3)
+    """Test RpcDevice media_play_media() method."""
+    await rpc_device.media_play_media(3)
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1908,10 +1908,10 @@ async def test_media_player_play_media(
 
 
 @pytest.mark.asyncio
-async def test_media_player_list_media(
+async def test_media_list_media(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_list_media() method."""
+    """Test RpcDevice media_list_media() method."""
     rpc_device.call_rpc_multiple.return_value = [
         {
             "list": [
@@ -1935,7 +1935,7 @@ async def test_media_player_list_media(
         }
     ]
 
-    result = await rpc_device.media_player_list_media()
+    result = await rpc_device.media_list_media()
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1947,11 +1947,11 @@ async def test_media_player_list_media(
 
 
 @pytest.mark.asyncio
-async def test_media_player_play_fav_radio(
+async def test_media_play_radio_station(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_play_fav_radio() method."""
-    await rpc_device.media_player_play_fav_radio(5)
+    """Test RpcDevice media_play_radio_station() method."""
+    await rpc_device.media_play_radio_station(5)
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -1961,10 +1961,10 @@ async def test_media_player_play_fav_radio(
 
 
 @pytest.mark.asyncio
-async def test_media_player_list_fav_radios(
+async def test_media_list_radio_stations(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice media_player_list_fav_radios() method."""
+    """Test RpcDevice media_list_radio_stations() method."""
     rpc_device.call_rpc_multiple.return_value = [
         {
             "list": [
@@ -1984,7 +1984,7 @@ async def test_media_player_list_fav_radios(
         }
     ]
 
-    result = await rpc_device.media_player_list_fav_radios()
+    result = await rpc_device.media_list_radio_stations()
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
