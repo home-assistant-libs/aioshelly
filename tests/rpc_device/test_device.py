@@ -1958,3 +1958,38 @@ async def test_media_player_play_fav_radio(
 
     assert call_args_list[0][0][0][0][0] == "Media.Radio.PlayFavourite"
     assert call_args_list[0][0][0][0][1] == {"id": 5}
+
+
+@pytest.mark.asyncio
+async def test_media_player_list_fav_radios(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_list_fav_radios() method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {
+            "list": [
+                {
+                    "country_code": "PL",
+                    "icon": "https://radio1.pl/favicon.png",
+                    "id": 0,
+                    "name": "Radio Station 1",
+                },
+                {
+                    "country_code": "PL",
+                    "icon": "https://radio2.pl/favicon.png",
+                    "id": 1,
+                    "name": "Radio Station 2",
+                },
+            ]
+        }
+    ]
+
+    result = await rpc_device.media_player_list_fav_radios()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.Radio.ListFavourites"
+
+    assert isinstance(result, list)
+    assert len(result) == 2
