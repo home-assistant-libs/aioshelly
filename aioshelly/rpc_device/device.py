@@ -602,6 +602,37 @@ class RpcDevice:
         params = {"key": key, "value": val}
         await self.call_rpc("KVS.Set", params)
 
+    async def media_player_play_or_pause(self) -> None:
+        """Send play or pause command."""
+        await self.call_rpc("Media.MediaPlayer.PlayOrPause")
+
+    async def media_player_stop(self) -> None:
+        """Send stop command."""
+        await self.call_rpc("Media.MediaPlayer.Stop")
+
+    async def media_player_next(self) -> None:
+        """Send next command."""
+        await self.call_rpc("Media.MediaPlayer.Next")
+
+    async def media_player_previous(self) -> None:
+        """Send previous command."""
+        await self.call_rpc("Media.MediaPlayer.Previous")
+
+    async def media_player_set_volume(self, volume: int) -> None:
+        """Set media volume."""
+        params = {"volume": volume}
+        await self.call_rpc("Media.MediaPlayer.SetVolume", params)
+
+    async def media_player_play_media(self, media_id: int) -> None:
+        """Play media by ID."""
+        params = {"id": media_id}
+        await self.call_rpc("Media.MediaPlayer.Play", params)
+
+    async def media_player_play_fav_radio(self, media_id: int) -> None:
+        """Play favorite radio station by ID."""
+        params = {"id": media_id}
+        await self.call_rpc("Media.Radio.PlayFavourite", params)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
