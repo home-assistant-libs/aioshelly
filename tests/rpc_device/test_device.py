@@ -1889,7 +1889,7 @@ async def test_media_set_volume(
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
 
-    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.SetVolume"
+    assert call_args_list[0][0][0][0][0] == "Media.SetVolume"
     assert call_args_list[0][0][0][0][1] == {"volume": 50}
 
 

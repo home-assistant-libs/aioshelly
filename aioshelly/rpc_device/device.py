@@ -621,7 +621,7 @@ class RpcDevice:
     async def media_set_volume(self, volume: int) -> None:
         """Set media volume."""
         params = {"volume": volume}
-        await self.call_rpc("Media.MediaPlayer.SetVolume", params)
+        await self.call_rpc("Media.SetVolume", params)
 
     async def media_play_media(self, media_id: int) -> None:
         """Play media by ID."""
