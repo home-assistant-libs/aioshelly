@@ -628,10 +628,20 @@ class RpcDevice:
         params = {"id": media_id}
         await self.call_rpc("Media.MediaPlayer.Play", params)
 
+    async def media_player_list_media(self) -> list[dict[str, Any]]:
+        """List media."""
+        result = await self.call_rpc("Media.List")
+        return result["list"]
+
     async def media_player_play_fav_radio(self, media_id: int) -> None:
         """Play favorite radio station by ID."""
         params = {"id": media_id}
         await self.call_rpc("Media.Radio.PlayFavourite", params)
+
+    async def media_player_list_fav_radios(self) -> list[dict[str, Any]]:
+        """List favorite radio stations."""
+        result = await self.call_rpc("Media.Radio.ListFavourites")
+        return result["list"]
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""

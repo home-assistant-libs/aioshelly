@@ -1825,3 +1825,136 @@ async def test_kvs_get(
 
     assert call_args_list[0][0][0][0][0] == "KVS.Get"
     assert call_args_list[0][0][0][0][1] == {"key": "key1"}
+
+
+@pytest.mark.asyncio
+async def test_media_player_play_or_pause(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_play_or_pause() method."""
+    await rpc_device.media_player_play_or_pause()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.PlayOrPause"
+
+
+@pytest.mark.asyncio
+async def test_media_player_stop(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_stop() method."""
+    await rpc_device.media_player_stop()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Stop"
+
+
+@pytest.mark.asyncio
+async def test_media_player_next(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_next() method."""
+    await rpc_device.media_player_next()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Next"
+
+
+@pytest.mark.asyncio
+async def test_media_player_previous(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_previous() method."""
+    await rpc_device.media_player_previous()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Previous"
+
+
+@pytest.mark.asyncio
+async def test_media_player_set_volume(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_set_volume() method."""
+    await rpc_device.media_player_set_volume(50)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.SetVolume"
+    assert call_args_list[0][0][0][0][1] == {"volume": 50}
+
+
+@pytest.mark.asyncio
+async def test_media_player_play_media(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_play_media() method."""
+    await rpc_device.media_player_play_media(3)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Play"
+    assert call_args_list[0][0][0][0][1] == {"id": 3}
+
+
+@pytest.mark.asyncio
+async def test_media_player_list_media(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_list_media() method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {
+            "list": [
+                {
+                    "album": "Album 1",
+                    "artist": "Artist 1",
+                    "filename": "track1.mp3",
+                    "id": 1,
+                    "title": "Track One",
+                    "type": "AUDIO",
+                },
+                {
+                    "album": "Album 2",
+                    "artist": "Artist 2",
+                    "filename": "track2.mp3",
+                    "id": 2,
+                    "title": "Track Two",
+                    "type": "AUDIO",
+                },
+            ]
+        }
+    ]
+
+    result = await rpc_device.media_player_list_media()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.List"
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+
+
+@pytest.mark.asyncio
+async def test_media_player_play_fav_radio(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_player_play_fav_radio() method."""
+    await rpc_device.media_player_play_fav_radio(5)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.Radio.PlayFavourite"
+    assert call_args_list[0][0][0][0][1] == {"id": 5}
