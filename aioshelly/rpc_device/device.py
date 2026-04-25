@@ -745,7 +745,10 @@ class RpcDevice:
         timeout: float = DEVICE_IO_TIMEOUT,
     ) -> dict[str, Any]:
         """Call RPC method."""
-        return (await self.call_rpc_multiple(((method, params),), timeout))[0]
+        result = await self.call_rpc_multiple(((method, params),), timeout)
+        if result:
+            return result[0]
+        return None
 
     async def call_rpc_multiple(
         self,
