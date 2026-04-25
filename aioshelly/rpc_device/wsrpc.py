@@ -9,7 +9,6 @@ import hashlib
 import logging
 import secrets
 import socket
-import time
 from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass
@@ -113,15 +112,9 @@ class AuthData:
 
     def get_auth(self) -> dict[str, Any]:
         """Get auth for RPC calls with current nc value."""
-        # Generate cnonce based on nonce type
-        old_firmware = isinstance(self.nonce, int)
-        if old_firmware:
-            cnonce = int(time.time())
-        else:
-            random_bytes = secrets.token_bytes(16)
-            cnonce = base64.b64encode(random_bytes).decode("ascii")
+        random_bytes = secrets.token_bytes(16)
+        cnonce = base64.b64encode(random_bytes).decode("ascii")
 
-        # https://shelly-api-docs.shelly.cloud/gen2/Overview/CommonDeviceTraits/#authentication-over-websocket
         # Calculate response hash: SHA256(HA1:nonce:nc:cnonce:qop:HA2)
         hashed = hex_hash(f"{self.ha1}:{self.nonce}:{self.nc}:{cnonce}:auth:{HA2}")
 
@@ -136,8 +129,7 @@ class AuthData:
         }
 
         # Increment nc after each auth calculation
-        if not old_firmware:
-            self.nc += 1
+        self.nc += 1
 
         return frame
 
