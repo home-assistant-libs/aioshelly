@@ -43,6 +43,7 @@ async def test_device_wscall_auth_retry(ws_rpc_with_auth: WsRPCMocker) -> None:
         "shellyplus2pm", "Cover.Close_success"
     )
     calls = [("Cover.Close", {"id": 0})]
+    ws_rpc_with_auth.set_auth_data("auth_domain", "username", "password")
     responses = [cover_close_auth_fail, cover_close_success]
     results = await ws_rpc_with_auth.calls_with_mocked_responses(calls, responses)
     assert results[0] == cover_close_success["result"]
