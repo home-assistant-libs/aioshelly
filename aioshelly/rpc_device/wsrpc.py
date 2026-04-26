@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import contextlib
 import hashlib
 import logging
 import secrets
@@ -36,10 +35,8 @@ from yarl import URL
 from ..const import (
     DEFAULT_HTTP_PORT,
     NOTIFY_WS_CLOSED,
-    UNDEFINED,
     WS_API_URL,
     WS_HEARTBEAT,
-    UndefinedType,
 )
 from ..exceptions import (
     ConnectionClosed,
@@ -86,6 +83,11 @@ def hex_hash(message: str) -> str:
     return hashlib.sha256(message.encode("utf-8")).hexdigest()
 
 
+def _current_task_cancelled() -> bool:
+    """Return whether the currently running task has been cancelled."""
+    return bool((current_task := asyncio.current_task()) and current_task.cancelled())
+
+
 HA2 = hex_hash("dummy_method:dummy_uri")
 
 
@@ -107,7 +109,11 @@ class AuthData:
     def update_challenge(self, auth_challenge: dict[str, Any]) -> None:
         """Update authentication challenge data from server."""
         self.nonce = auth_challenge["nonce"]
-        self.algorithm = auth_challenge["algorithm"]
+        # The only algorithm currently supported is SHA-256
+        if self.algorithm != auth_challenge["algorithm"]:
+            raise InvalidAuthError(
+                f"Unsupported auth algorithm: {auth_challenge['algorithm']}"
+            )
         self.nc = auth_challenge.get("nc", 1)
 
     def get_auth(self) -> dict[str, Any]:
@@ -173,7 +179,7 @@ class RPCCall:
         self.src = session.src
         self.dst = session.dst
         self.resolve = resolve
-        self.result: dict[str, Any] | UndefinedType = UNDEFINED
+        self.result: dict[str, Any] = {}
 
     def __repr__(self) -> str:
         """Return representation of the call."""
@@ -186,8 +192,7 @@ class RPCCall:
             ">"
         )
 
-    @property
-    def request_frame(self) -> dict[str, Any]:
+    def build_request_frame(self) -> dict[str, Any]:
         """Request frame."""
         msg: dict[str, Any] = {
             "id": self.call_id,
@@ -284,8 +289,11 @@ class WsRPC(WsBase):
         """Disconnect all sessions."""
         if self._rx_task is not None:
             self._rx_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
+            try:
                 await self._rx_task
+            except asyncio.CancelledError:
+                if _current_task_cancelled():
+                    raise
             self._rx_task = None
         if self._client is None:
             return
@@ -468,7 +476,7 @@ class WsRPC(WsBase):
                     self._loop.create_future(),
                 )
                 self._calls[call_id] = call
-                await self._send_json(call.request_frame)
+                await self._send_json(call.build_request_frame())
 
                 # Wait response
                 response = await call.resolve
@@ -486,9 +494,12 @@ class WsRPC(WsBase):
                     )
                 call.result = response["result"]
         except TimeoutError as exc:
-            with contextlib.suppress(asyncio.CancelledError):
-                call.resolve.cancel()
+            call.resolve.cancel()
+            try:
                 await call.resolve
+            except asyncio.CancelledError:
+                if _current_task_cancelled():
+                    raise
             # Ensure the call is removed from the calls dict
             # on failure
             self._calls.pop(call.call_id, None)
@@ -514,14 +525,16 @@ class WsRPC(WsBase):
             # sequential: each call uses fresh nc from prior challenge,
             # first call seeds the nonce via 401 challenge
             results = []
+            deadline = self._loop.time() + timeout
             for method, params in calls:
+                remaining = deadline - self._loop.time()
                 results.append(
-                    await self._rpc_call_with_auth_retry(method, params, timeout)
+                    await self._rpc_call_with_auth_retry(method, params, remaining)
                 )
             return results
 
         results = await self._rpc_calls(calls, timeout)
-        return [call.result for call in results if call.result is not UNDEFINED]
+        return [call.result for call in results]
 
     async def _rpc_calls(
         self, rpc_calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: float
@@ -549,7 +562,7 @@ class WsRPC(WsBase):
                     call = RPCCall(call_id, method, params, self._session, future)
                     sent_calls.append(call)
                     self._calls[call_id] = call
-                    await self._send_json(call.request_frame)
+                    await self._send_json(call.build_request_frame())
 
                 # Wait for all the responses
                 for call in sent_calls:
@@ -562,9 +575,12 @@ class WsRPC(WsBase):
                         call.result = response["result"]
         except TimeoutError as exc:
             for call in sent_calls:
-                with contextlib.suppress(asyncio.CancelledError):
-                    call.resolve.cancel()
+                call.resolve.cancel()
+                try:
                     await call.resolve
+                except asyncio.CancelledError:
+                    if _current_task_cancelled():
+                        raise
                 # Ensure the call is removed from the calls dict
                 # on failure
                 self._calls.pop(call.call_id, None)
