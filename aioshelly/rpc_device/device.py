@@ -681,7 +681,7 @@ class RpcDevice:
 
         mac = self.shelly["mac"]
         device_mac = self.options.device_mac
-        if device_mac and device_mac != mac:
+        if device_mac and device_mac.lower() != mac.lower():
             raise MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
 
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]

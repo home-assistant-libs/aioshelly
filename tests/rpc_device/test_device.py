@@ -837,6 +837,34 @@ async def test_device_mac_address_mismatch(
 
 
 @pytest.mark.asyncio
+async def test_device_mac_address_mixed_case(
+    client_session: ClientSession,
+    ws_context: WsServer,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize method when MAC differs in string case only."""
+    options = ConnectionOptions("10.10.10.10", device_mac="aabbccddeeff")
+
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device.call_rpc_multiple = AsyncMock()
+
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+
+    await rpc_device.initialize()
+
+    assert rpc_device.initialized is True
+    assert rpc_device.status is not None
+
+
+@pytest.mark.asyncio
 async def test_cover_update_status(
     rpc_device: RpcDevice,
     shelly2pmg3_status: dict[str, Any],
