@@ -133,6 +133,19 @@ async def test_wscall_not_connected_with_auth(ws_rpc: WsRPCMocker) -> None:
 
 
 @pytest.mark.asyncio
+async def test_disconnect_reraises_cancelled_error(ws_rpc: WsRPCMocker) -> None:
+    """Test disconnect re-raises CancelledError when current task is cancelled."""
+    ws_rpc._rx_task = asyncio.get_running_loop().create_future()
+    ws_rpc._rx_task.cancel()
+
+    with (
+        patch("aioshelly.rpc_device.wsrpc._current_task_cancelled", return_value=True),
+        pytest.raises(asyncio.CancelledError),
+    ):
+        await ws_rpc.disconnect()
+
+
+@pytest.mark.asyncio
 async def test_wscall_timeout_without_auth_raises_device_connection_timeout_error(
     ws_rpc: WsRPCMocker,
 ) -> None:
