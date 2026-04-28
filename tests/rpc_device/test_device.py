@@ -105,6 +105,18 @@ async def shelly2pmg3_cover_status() -> AsyncGenerator[dict[str, Any], None]:
     yield await load_device_fixture("shelly2pmg3", "Cover.GetStatus")
 
 
+@pytest_asyncio.fixture
+async def st1820_list_methods() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for ST1820 list methods."""
+    yield await load_device_fixture("st1820", "Shelly.ListMethods")
+
+
+@pytest_asyncio.fixture
+async def shelly2pmg3_list_methods() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Shelly 2PM Gen3 list methods."""
+    yield await load_device_fixture("shelly2pmg3", "Shelly.ListMethods")
+
+
 def test_mergedicts() -> None:
     """Test the recursive dict merge."""
     dest = {"a": 1, "b": {"c": 2, "d": 3}}
@@ -694,6 +706,23 @@ async def test_script_getcode(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_methods_list(
+    rpc_device: RpcDevice,
+    shelly2pmg3_list_methods: dict[str, Any],
+) -> None:
+    """Test RpcDevice methods_list method."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [shelly2pmg3_list_methods],
+    ]
+
+    result = await rpc_device.methods_list()
+
+    assert result == shelly2pmg3_list_methods["methods"]
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.ListMethods"
+
+
+@pytest.mark.asyncio
 async def test_script_list(rpc_device: RpcDevice) -> None:
     """Test RpcDevice script_list method."""
     rpc_device.call_rpc_multiple.return_value = [
@@ -1014,44 +1043,31 @@ async def test_incorrect_shutdown(
     assert "error during shutdown: KeyError('AABBCCDDEEFF')" in caplog.text
 
 
-@pytest.mark.parametrize(
-    ("side_effect", "supports_scripts"),
-    [
-        (RpcCallError(-105, "Argument 'id', value 1 not found!"), True),
-        (RpcCallError(-114, "Method Script.GetCode failed: Method not found!"), False),
-        (RpcCallError(404, "No handler for Script.GetCode"), False),
-        (
-            [
-                {
-                    "id": 5,
-                    "src": "shellyplus2pm-a8032ab720ac",
-                    "dst": "aios-2293750469632",
-                    "result": {"data": "script"},
-                }
-            ],
-            True,
-        ),
-    ],
-)
 @pytest.mark.asyncio
 async def test_supports_scripts(
     rpc_device: RpcDevice,
-    side_effect: Exception | dict[str, Any],
-    supports_scripts: bool,
+    st1820_list_methods: dict[str, Any],
+    shelly2pmg3_list_methods: dict[str, Any],
 ) -> None:
     """Test supports_scripts method."""
-    rpc_device.call_rpc_multiple.side_effect = [side_effect]
+    # ST1820 does not support scripts
+    rpc_device.call_rpc_multiple.side_effect = [
+        [st1820_list_methods],
+    ]
 
     result = await rpc_device.supports_scripts()
 
-    assert result == supports_scripts
+    assert result is False
     assert rpc_device.call_rpc_multiple.call_count == 1
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
-        "id": 1,
-        "len": 0,
-        "offset": 0,
-    }
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.ListMethods"
+
+    # Shelly 2PM G3 supports scripts
+    rpc_device.call_rpc_multiple.side_effect = [
+        [shelly2pmg3_list_methods],
+    ]
+
+    result = await rpc_device.supports_scripts()
+    assert result is True
 
 
 @pytest.mark.asyncio
