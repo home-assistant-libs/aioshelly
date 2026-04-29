@@ -46,7 +46,7 @@ async def test_create_scanner(
             "enable": True,
             "rpc": {"enable": False},
         },
-        {"rpc": {"enable": False}},
+        {"rpc": {"enable": False}},  # for fw 2.0.0+ where "enable" is removed
     ],
 )
 @pytest.mark.asyncio
