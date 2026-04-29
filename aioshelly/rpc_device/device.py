@@ -674,7 +674,8 @@ class RpcDevice:
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
         # Auth only supported on WebSocket transport
         if (
-            self.options.username
+            self.requires_auth
+            and self.options.username
             and self.options.password
             and isinstance(self._rpc, WsRPC)
         ):
