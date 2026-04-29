@@ -56,9 +56,14 @@ from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
 
-RPC_CALL_ERR_METHOD_NOT_FOUND = -114
-RPC_CALL_ERR_INVALID_ARG = -105
-RPC_CALL_ERR_NO_HANDLER = 404
+SCRIPT_SUPPORT_METHODS = {
+    "Script.List",
+    "Script.GetCode",
+    "Script.PutCode",
+    "Script.Create",
+    "Script.Start",
+    "Script.Stop",
+}
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -711,6 +716,11 @@ class RpcDevice:
             first_page["components"].extend(next_page["components"])
         return first_page
 
+    async def methods_list(self) -> list[str]:
+        """Get a list of supported methods from 'Shelly.ListMethods'."""
+        result = await self.call_rpc("Shelly.ListMethods")
+        return result["methods"]
+
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
         data = await self.call_rpc("Script.List")
@@ -1065,32 +1075,8 @@ class RpcDevice:
     async def supports_scripts(self) -> bool:
         """Check if the device supports scripts.
 
-        Try to read 0 byte from a script to check if the device supports scripts,
-        if it supports scripts, it should reply with '{"data":"", "left":0}'
-        or a specific error code if the script does not exist.
-        {"code":-105,"message":"Argument 'id', value 1 not found!"}
-
-        Errors by devices that do not support scripts:
-
-        Shelly Wall display:
-        {"code":-114,"message":"Method Script.GetCode failed: Method not found!"}
-
-        Shelly X MOD1
-        {"code":404,"message":"No handler for Script.GetCode"}
+        Check if SCRIPT_SUPPORT_METHODS are in the list of supported methods,
+        if not then the device does not support scripts.
         """
-        try:
-            await self.script_getcode(1, bytes_to_read=0)
-        except RpcCallError as err:
-            # The device supports scripts, but the script does not exist
-            if err.code == RPC_CALL_ERR_INVALID_ARG:
-                return True
-            # The device does not support scripts
-            if err.code in [
-                RPC_CALL_ERR_METHOD_NOT_FOUND,
-                RPC_CALL_ERR_NO_HANDLER,
-            ]:
-                return False
-            raise
-
-        # The device returned a script response, it supports scripts
-        return True
+        methods = await self.methods_list()
+        return SCRIPT_SUPPORT_METHODS.issubset(methods)
