@@ -106,7 +106,9 @@ async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
     be enabled.
     """
     ble_config = await device.ble_getconfig()
-    if ble_config["enable"]:
+    # The enable property has been removed in firmware 2.0.0.
+    # Bluetooth scanning now auto-activates when needed by scripts.
+    if ble_config.get("enable", True):
         return False
     ble_enable = await device.ble_setconfig(enable=True, enable_rpc=False)
     if not ble_enable["restart_required"]:

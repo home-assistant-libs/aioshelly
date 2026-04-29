@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -38,15 +39,23 @@ async def test_create_scanner(
     assert scanner.current_mode == current_mode
 
 
+@pytest.mark.parametrize(
+    "ble_config",
+    [
+        {
+            "enable": True,
+            "rpc": {"enable": False},
+        },
+        {"rpc": {"enable": False}},  # for fw 2.0.0+ where "enable" is removed
+    ],
+)
 @pytest.mark.asyncio
 async def test_async_ensure_ble_enabled_already_enabled(
     mock_rpc_device: AsyncMock,
+    ble_config: dict[str, Any],
 ) -> None:
     """Test async_ensure_ble_enabled method when BLE is already enabled."""
-    mock_rpc_device.ble_getconfig.return_value = {
-        "enable": True,
-        "rpc": {"enable": False},
-    }
+    mock_rpc_device.ble_getconfig.return_value = ble_config
 
     result = await async_ensure_ble_enabled(mock_rpc_device)
     assert result is False
