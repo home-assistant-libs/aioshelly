@@ -114,6 +114,8 @@ class AuthData:
             raise InvalidAuthError(
                 f"Unsupported auth algorithm: {auth_challenge['algorithm']}"
             )
+
+        # Shelly WallDisplay sends nc as a string but it should be an integer
         self.nc = int(auth_challenge.get("nc", 1))
 
     def get_auth(self) -> dict[str, Any]:
