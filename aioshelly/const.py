@@ -1187,14 +1187,6 @@ DEVICES = {
         supported=True,
         model_id=0x1028,
     ),
-    MODEL_1_MINI_G4: ShellyDevice(
-        model=MODEL_1_MINI_G4,
-        name="Shelly 1 Mini Gen4",
-        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
-        gen=GEN4,
-        supported=True,
-        model_id=0x1030,
-    ),
     MODEL_1L_G4: ShellyDevice(
         model=MODEL_1L_G4,
         name="Shelly 1L Gen4",
@@ -1202,6 +1194,14 @@ DEVICES = {
         gen=GEN4,
         supported=True,
         model_id=0x1035,
+    ),
+    MODEL_1_MINI_G4: ShellyDevice(
+        model=MODEL_1_MINI_G4,
+        name="Shelly 1 Mini Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1030,
     ),
     MODEL_1PM_G4: ShellyDevice(
         model=MODEL_1PM_G4,
