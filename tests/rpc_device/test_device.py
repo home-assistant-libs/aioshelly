@@ -379,6 +379,32 @@ async def test_device_initialize_and_shutdown(
     assert rpc_device._unsub_ws is None
 
 
+@pytest.mark.parametrize("auth_en", [False, True])
+@pytest.mark.asyncio
+async def test_device_init_auth_matches_device_setting(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+    auth_en: bool,
+) -> None:
+    """Test RpcDevice initialize sets auth based on device auth_en setting."""
+    blu_gateway_device_info["auth_en"] = auth_en
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+
+    await rpc_device.initialize()
+
+    assert rpc_device.connected is True
+    assert rpc_device.requires_auth is auth_en
+    assert bool(rpc_device._rpc._session.auth_data) is auth_en
+
+
 @pytest.mark.asyncio
 async def test_device_initialize_lock(
     rpc_device: RpcDevice,
