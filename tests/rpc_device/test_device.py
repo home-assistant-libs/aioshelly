@@ -2069,8 +2069,8 @@ async def test_media_list_radio_stations(
 @pytest.mark.parametrize(
     ("config", "expected"),
     [
-        pytest.param({"sys": {"device": {"add_on": "Sensor"}}}, True),
-        pytest.param({"sys": {"device": {"add_on": None}}}, False),
+        pytest.param({"sys": {"device": {"addon_type": "Sensor"}}}, True),
+        pytest.param({"sys": {"device": {"addon_type": None}}}, False),
     ],
 )
 async def test_add_on_installed(
@@ -2102,7 +2102,7 @@ async def test_add_on_info_not_installed(
 ) -> None:
     """Test add_on_info returns empty dict when add-on is not installed."""
     rpc_device.initialized = True
-    rpc_device._config = {"sys": {"device": {"add_on": None}}}
+    rpc_device._config = {"sys": {"device": {"addon_type": None}}}
 
     result = await rpc_device.add_on_info()
 
@@ -2111,30 +2111,14 @@ async def test_add_on_info_not_installed(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("rpc_response", "expected"),
-    [
-        pytest.param(
-            {"type": "Sensor", "version": "1.0"}, {"type": "Sensor", "version": "1.0"}
-        ),
-        pytest.param(
-            {"code": 404, "message": "No handler for AddOn.GetInfo"},
-            {},
-        ),
-    ],
-)
-async def test_add_on_info_with_rpc(
+async def test_add_on_info_with_sensor_add_on(
     rpc_device: RpcDevice,
-    rpc_response: dict[str, Any],
-    expected: dict[str, Any],
 ) -> None:
-    """Test add_on_info method when RPC is called."""
+    """Test add_on_info returns sensor info without RPC for sensor add-on."""
     rpc_device.initialized = True
-    rpc_device._config = {"sys": {"device": {"add_on": "Sensor"}}}
-    rpc_device.call_rpc_multiple.return_value = [rpc_response]
+    rpc_device._config = {"sys": {"device": {"addon_type": "sensor"}}}
 
     result = await rpc_device.add_on_info()
 
-    assert result == expected
-    rpc_device.call_rpc_multiple.assert_called_once()
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
+    assert result == {"type": "Sensor"}
+    rpc_device.call_rpc_multiple.assert_not_called()

@@ -1014,7 +1014,7 @@ class RpcDevice:
     @property
     def add_on_installed(self) -> bool:
         """Return True if add-on is installed."""
-        return self.config["sys"]["device"]["add_on"] is not None
+        return self.config["sys"]["device"]["addon_type"] is not None
 
     async def add_on_info(self) -> dict[str, Any]:
         """Return add-on info."""
@@ -1022,7 +1022,7 @@ class RpcDevice:
             return {}
 
         # Shelly Sensor Add-On
-        if self.config["sys"]["device"]["add_on"] is None:
+        if self.config["sys"]["device"]["addon_type"] == "sensor":
             return {"type": "Sensor"}
 
         # Shelly Uart / LoRa Add-On
