@@ -2063,3 +2063,80 @@ async def test_media_list_radio_stations(
 
     assert isinstance(result, list)
     assert len(result) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("shelly", "config", "expected"),
+    [
+        pytest.param({"gen": 1}, None, False),
+        pytest.param({"gen": 3}, {"sys": {"device": {"add_on": "Sensor"}}}, True),
+        pytest.param({"gen": 3}, {"sys": {"device": {"add_on": None}}}, False),
+    ],
+)
+async def test_add_on_installed(
+    rpc_device: RpcDevice,
+    shelly: dict[str, Any],
+    config: dict[str, Any] | None,
+    expected: bool,
+) -> None:
+    """Test add_on_installed property."""
+    rpc_device._shelly = shelly
+    rpc_device._config = config
+
+    assert rpc_device.add_on_installed is expected
+
+
+@pytest.mark.asyncio
+async def test_add_on_installed_not_initialized(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test add_on_installed raises NotInitialized when config is not set."""
+    rpc_device._shelly = {"gen": 3}
+
+    with pytest.raises(NotInitialized):
+        _ = rpc_device.add_on_installed
+
+
+@pytest.mark.asyncio
+async def test_add_on_info_not_installed(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test add_on_info returns empty dict when add-on is not installed."""
+    rpc_device._shelly = {"gen": 3}
+    rpc_device._config = {"sys": {"device": {"add_on": None}}}
+
+    result = await rpc_device.add_on_info()
+
+    assert result == {}
+    rpc_device.call_rpc_multiple.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("rpc_response", "expected"),
+    [
+        pytest.param(
+            {"type": "Sensor", "version": "1.0"}, {"type": "Sensor", "version": "1.0"}
+        ),
+        pytest.param(
+            {"code": 404, "message": "No handler for AddOn.GetInfo"},
+            {},
+        ),
+    ],
+)
+async def test_add_on_info_with_rpc(
+    rpc_device: RpcDevice,
+    rpc_response: dict[str, Any],
+    expected: dict[str, Any],
+) -> None:
+    """Test add_on_info method when RPC is called."""
+    rpc_device._shelly = {"gen": 3}
+    rpc_device._config = {"sys": {"device": {"add_on": "Sensor"}}}
+    rpc_device.call_rpc_multiple.return_value = [rpc_response]
+
+    result = await rpc_device.add_on_info()
+
+    assert result == expected
+    rpc_device.call_rpc_multiple.assert_called_once()
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
