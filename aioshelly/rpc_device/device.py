@@ -30,7 +30,6 @@ from ..const import (
     GEN4,
     MODEL_BLU_GATEWAY_G3,
     NOTIFY_WS_CLOSED,
-    RPC_GENERATIONS,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
 from ..exceptions import (
@@ -1015,26 +1014,18 @@ class RpcDevice:
     @property
     def add_on_installed(self) -> bool:
         """Return True if add-on is installed."""
-        if self.gen not in RPC_GENERATIONS:
-            return False
-
-        if self._config is None:
-            raise NotInitialized
-
-        return self._config["sys"]["device"]["add_on"] is not None
+        return self.config["sys"]["device"]["add_on"] is not None
 
     async def add_on_info(self) -> dict[str, Any]:
         """Return add-on info."""
         if not self.add_on_installed:
             return {}
 
-        if self._config is None:
-            raise NotInitialized
-
         # Shelly Sensor Add-On
-        if self._config["sys"]["device"]["add_on"] is None:
+        if self.config["sys"]["device"]["add_on"] is None:
             return {"type": "Sensor"}
 
+        # Shelly Uart / LoRa Add-On
         info = await self.call_rpc("AddOn.GetInfo")
         if info.get("code") == RPC_CALL_ERR_NO_HANDLER:
             return {}

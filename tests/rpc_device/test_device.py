@@ -2067,21 +2067,19 @@ async def test_media_list_radio_stations(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("shelly", "config", "expected"),
+    ("config", "expected"),
     [
-        pytest.param({"gen": 1}, None, False),
-        pytest.param({"gen": 3}, {"sys": {"device": {"add_on": "Sensor"}}}, True),
-        pytest.param({"gen": 3}, {"sys": {"device": {"add_on": None}}}, False),
+        pytest.param({"sys": {"device": {"add_on": "Sensor"}}}, True),
+        pytest.param({"sys": {"device": {"add_on": None}}}, False),
     ],
 )
 async def test_add_on_installed(
     rpc_device: RpcDevice,
-    shelly: dict[str, Any],
-    config: dict[str, Any] | None,
+    config: dict[str, Any],
     expected: bool,
 ) -> None:
     """Test add_on_installed property."""
-    rpc_device._shelly = shelly
+    rpc_device.initialized = True
     rpc_device._config = config
 
     assert rpc_device.add_on_installed is expected
@@ -2103,7 +2101,7 @@ async def test_add_on_info_not_installed(
     rpc_device: RpcDevice,
 ) -> None:
     """Test add_on_info returns empty dict when add-on is not installed."""
-    rpc_device._shelly = {"gen": 3}
+    rpc_device.initialized = True
     rpc_device._config = {"sys": {"device": {"add_on": None}}}
 
     result = await rpc_device.add_on_info()
@@ -2131,7 +2129,7 @@ async def test_add_on_info_with_rpc(
     expected: dict[str, Any],
 ) -> None:
     """Test add_on_info method when RPC is called."""
-    rpc_device._shelly = {"gen": 3}
+    rpc_device.initialized = True
     rpc_device._config = {"sys": {"device": {"add_on": "Sensor"}}}
     rpc_device.call_rpc_multiple.return_value = [rpc_response]
 
