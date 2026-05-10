@@ -3,7 +3,7 @@
 import re
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -911,16 +911,20 @@ async def test_device_mac_address_mismatch(
 @pytest.mark.asyncio
 async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) -> None:
     """Test _connect_websocket re-raises MacAddressMismatchError unchanged."""
-    rpc_device._rpc.connect = AsyncMock()
-    rpc_device._rpc.disconnect = AsyncMock()
     error = MacAddressMismatchError("device MAC mismatch")
     rpc_device._init_calls = AsyncMock(side_effect=error)
 
-    with pytest.raises(MacAddressMismatchError):
+    with (
+        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(
+            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+        ) as disconnect_mock,
+        pytest.raises(MacAddressMismatchError),
+    ):
         await rpc_device._connect_websocket()
 
     assert rpc_device._last_error is error
-    rpc_device._rpc.disconnect.assert_called_once()
+    disconnect_mock.assert_awaited_once()
 
 
 @pytest.mark.asyncio
