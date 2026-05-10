@@ -2132,3 +2132,30 @@ async def test_add_on_info_with_sensor_add_on(
 
     assert result == {"type": "Sensor"}
     rpc_device.call_rpc_multiple.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("rpc_response", "expected"),
+    [
+        pytest.param(
+            {"type": "LoRa", "version": "1.0"}, {"type": "LoRa", "version": "1.0"}
+        ),
+        pytest.param({"code": 404, "message": "No handler for AddOn.GetInfo"}, {}),
+    ],
+)
+async def test_add_on_info_with_non_sensor_add_on(
+    rpc_device: RpcDevice,
+    rpc_response: dict[str, Any],
+    expected: dict[str, Any],
+) -> None:
+    """Test add_on_info calls RPC for non-sensor add-ons."""
+    rpc_device.initialized = True
+    rpc_device._config = {"sys": {"device": {"addon_type": "uart"}}}
+    rpc_device.call_rpc_multiple.return_value = [rpc_response]
+
+    result = await rpc_device.add_on_info()
+
+    assert result == expected
+    rpc_device.call_rpc_multiple.assert_called_once()
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
