@@ -1045,6 +1045,16 @@ async def test_trigger_ota_update(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_trigger_add_on_ota_update(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice trigger_add_on_ota_update method."""
+    await rpc_device.trigger_add_on_ota_update(timeout=600)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.Update"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"timeout": 600}
+
+
+@pytest.mark.asyncio
 async def test_incorrect_shutdown(
     client_session: ClientSession,
     caplog: pytest.LogCaptureFixture,
