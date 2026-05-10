@@ -328,6 +328,11 @@ class RpcDevice:
         params = {"stage": "beta"} if beta else {"stage": "stable"}
         await self.call_rpc("Shelly.Update", params)
 
+    async def trigger_add_on_ota_update(self, timeout: int = 300) -> None:
+        """Trigger an add-on ota update."""
+        params = {"timeout": timeout}
+        await self.call_rpc("AddOn.Update", params)
+
     async def trigger_reboot(self, delay_ms: int = 1000) -> None:
         """Trigger a device reboot."""
         await self.call_rpc("Shelly.Reboot", {"delay_ms": delay_ms})
