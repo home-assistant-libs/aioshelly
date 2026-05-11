@@ -3,7 +3,7 @@
 import re
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -732,6 +732,23 @@ async def test_script_getcode(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_script_getcode_with_length(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_getcode method with explicit read length."""
+    rpc_device.call_rpc_multiple.return_value = [{"data": "partial script"}]
+
+    result = await rpc_device.script_getcode(8, offset=4, bytes_to_read=16)
+
+    assert result == {"data": "partial script"}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 8,
+        "offset": 4,
+        "len": 16,
+    }
+
+
+@pytest.mark.asyncio
 async def test_methods_list(
     rpc_device: RpcDevice,
     shelly2pmg3_list_methods: dict[str, Any],
@@ -889,6 +906,25 @@ async def test_device_mac_address_mismatch(
 
     with pytest.raises(MacAddressMismatchError):
         await rpc_device.initialize()
+
+
+@pytest.mark.asyncio
+async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) -> None:
+    """Test _connect_websocket re-raises MacAddressMismatchError unchanged."""
+    error = MacAddressMismatchError("device MAC mismatch")
+    rpc_device._init_calls = AsyncMock(side_effect=error)
+
+    with (
+        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(
+            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+        ) as disconnect_mock,
+        pytest.raises(MacAddressMismatchError),
+    ):
+        await rpc_device._connect_websocket()
+
+    assert rpc_device._last_error is error
+    disconnect_mock.assert_awaited_once()
 
 
 @pytest.mark.asyncio
