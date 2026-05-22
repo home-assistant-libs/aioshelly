@@ -56,7 +56,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
         if device is None or event_type is None or data_version is None:
             return False
         # Import here to avoid a circular import with aioshelly.ble.
-        from aioshelly import ble as _ble
+        from aioshelly import ble as _ble  # noqa: PLC0415
 
         async with self._active_window_lock:
             try:
