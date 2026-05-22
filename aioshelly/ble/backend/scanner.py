@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 from bluetooth_data_tools import monotonic_time_coarse
 from habluetooth import BaseHaRemoteScanner
 
+from aioshelly import ble as _ble
+
 from ...exceptions import RpcCallError
 from ..const import BLE_SCAN_RESULT_EVENT
 from ..parser import parse_ble_scan_result_event
@@ -55,8 +57,6 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
         data_version = self._active_window_data_version
         if device is None or event_type is None or data_version is None:
             return False
-        # Import here to avoid a circular import with aioshelly.ble.
-        from aioshelly import ble as _ble  # noqa: PLC0415
 
         async with self._active_window_lock:
             try:
