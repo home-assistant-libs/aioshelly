@@ -90,7 +90,12 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                         )
                     )
                 except RpcCallError as err:
-                    LOGGER.debug(
+                    # Restore failures leave the device stuck in active
+                    # mode (drawing power, contradicting requested_mode
+                    # in habluetooth) until the next successful window;
+                    # surface that at warning so operators can see it
+                    # without flipping the package to debug.
+                    LOGGER.warning(
                         "%s: failed to restore scan mode after active window: %s",
                         self.name,
                         err,
