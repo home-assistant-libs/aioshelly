@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -81,3 +82,47 @@ async def test_async_request_active_window_restore_failure_swallowed() -> None:
     with patch("aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)):
         assert await scanner.async_request_active_window(0.0) is True
     assert call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_async_request_active_window_rejects_overlap() -> None:
+    """A second request while a window is open returns False without flipping."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    device = AsyncMock()
+    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    gate = asyncio.Event()
+
+    async def fake_start(*_args: object, **kwargs: object) -> None:
+        if kwargs.get("active"):
+            await gate.wait()
+
+    with patch(
+        "aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)
+    ) as mock_start:
+        first = asyncio.create_task(scanner.async_request_active_window(0.0))
+        # Yield so the first task acquires the lock and blocks inside the entry call.
+        await asyncio.sleep(0)
+        assert await scanner.async_request_active_window(0.0) is False
+        # Only the first task has called async_start_scanner (the entry flip).
+        assert mock_start.await_count == 1
+        gate.set()
+        assert await first is True
+
+
+@pytest.mark.asyncio
+async def test_async_request_active_window_restore_runs_under_cancellation() -> None:
+    """Cancelling the task during the window still fires the restore call."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    device = AsyncMock()
+    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+
+    with patch("aioshelly.ble.async_start_scanner", AsyncMock()) as mock_start:
+        task = asyncio.create_task(scanner.async_request_active_window(3600.0))
+        # Let the entry call complete and the task enter the sleep.
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    actives = [call.kwargs["active"] for call in mock_start.await_args_list]
+    assert actives == [True, False]

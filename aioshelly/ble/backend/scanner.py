@@ -49,13 +49,16 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
 
         Called by habluetooth's auto-mode scheduler. The Shelly BLE
         script is reprovisioned in active mode, then reverted to passive
-        once the window ends. Concurrent requests are serialized so the
-        device only sees one mode transition pair at a time.
+        once the window ends. Only one window may be open at a time; a
+        request that arrives while another window is in flight returns
+        ``False`` immediately so the caller can decide whether to retry.
         """
         device = self._active_window_device
         event_type = self._active_window_event_type
         data_version = self._active_window_data_version
         if device is None or event_type is None or data_version is None:
+            return False
+        if self._active_window_lock.locked():
             return False
 
         async with self._active_window_lock:
@@ -74,12 +77,17 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
             try:
                 await asyncio.sleep(duration)
             finally:
+                # Shield the restore so a cancellation mid-window still
+                # reverts the device to passive instead of leaving it
+                # burning battery in active mode.
                 try:
-                    await _ble.async_start_scanner(
-                        device,
-                        active=False,
-                        event_type=event_type,
-                        data_version=data_version,
+                    await asyncio.shield(
+                        _ble.async_start_scanner(
+                            device,
+                            active=False,
+                            event_type=event_type,
+                            data_version=data_version,
+                        )
                     )
                 except RpcCallError as err:
                     LOGGER.debug(
