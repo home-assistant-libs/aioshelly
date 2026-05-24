@@ -13,6 +13,8 @@ from aioshelly.ble import (
     async_ensure_ble_enabled,
     async_get_ble_script_id,
     async_set_active_mode,
+    async_start_scanner,
+    async_stop_scanner,
     create_scanner,
     get_device_from_model_id,
     get_name_from_model_id,
