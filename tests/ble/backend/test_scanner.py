@@ -48,6 +48,22 @@ def _bind(scanner: object) -> AsyncMock:
 
 
 @pytest.mark.asyncio
+async def test_async_request_active_window_resolve_failure_returns_false() -> None:
+    """A ShellyError while resolving the script id yields False without flipping."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    _bind(scanner)
+    with (
+        patch(
+            "aioshelly.ble.async_get_ble_script_id",
+            AsyncMock(side_effect=RpcCallError(500, "list failed")),
+        ),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set,
+    ):
+        assert await scanner.async_request_active_window(0.0) is False
+    mock_set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_async_request_active_window_no_script() -> None:
     """If the integration script isn't installed, return False without flipping."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
