@@ -85,12 +85,13 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                 try:
                     await _ble.async_set_active_mode(device, script_id, active=False)
                 except ShellyError as err:
-                    # Restore failures leave the device in active mode
-                    # until the next successful window or integration
-                    # restart, which re-runs async_start_scanner and
-                    # re-bakes the initial passive default. Surface at
-                    # warning so operators can see it without flipping
-                    # the package to debug.
+                    # Restore failures almost always mean the WS to the
+                    # device dropped, in which case habluetooth's reload
+                    # cycle restarts the scanner anyway. Otherwise the
+                    # device stays in active mode until the next window's
+                    # restore succeeds or the device reboots; both are
+                    # acceptable for a battery safeguard. Surface at
+                    # warning so operators can still see it.
                     LOGGER.warning(
                         "%s: failed to restore scan mode after active window: %s",
                         self.name,
