@@ -1016,25 +1016,18 @@ class RpcDevice:
 
         return "zigbee" in self._config
 
-    @property
-    def add_on_installed(self) -> bool:
-        """Return True if add-on is installed."""
-        return self.config["sys"]["device"].get("addon_type") is not None
-
     async def add_on_info(self) -> dict[str, Any]:
         """Return add-on info."""
-        if not self.add_on_installed:
+        # Add-on not installed
+        if not (add_on_type := self.config["sys"]["device"].get("addon_type")):
             return {}
 
         # Shelly Sensor Add-On
-        if self.config["sys"]["device"]["addon_type"] == "sensor":
-            return {"type": "Sensor"}
+        if add_on_type == "sensor":
+            return {"type": add_on_type}
 
         # Shelly Uart / LoRa Add-On
-        info = await self.call_rpc("AddOn.GetInfo")
-        if info.get("code") == RPC_CALL_ERR_NO_HANDLER:
-            return {}
-        return info
+        return await self.call_rpc("AddOn.GetInfo")
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""
