@@ -11,6 +11,8 @@ from habluetooth import BluetoothScanningMode
 
 from aioshelly.ble import (
     async_ensure_ble_enabled,
+    async_get_ble_script_id,
+    async_set_active_mode,
     create_scanner,
     get_device_from_model_id,
     get_name_from_model_id,
@@ -123,6 +125,43 @@ def test_get_name_from_model_id() -> None:
     # Test with invalid model ID
     name = get_name_from_model_id(0x9999)
     assert name is None
+
+
+@pytest.mark.asyncio
+async def test_async_get_ble_script_id_found() -> None:
+    """The integration script id is resolved by name."""
+    device = AsyncMock()
+    device.script_list = AsyncMock(
+        return_value=[
+            {"name": "other", "id": 1},
+            {"name": "aioshelly_ble_integration", "id": 7},
+        ]
+    )
+    assert await async_get_ble_script_id(device) == 7
+
+
+@pytest.mark.asyncio
+async def test_async_get_ble_script_id_missing() -> None:
+    """If no integration script is installed the helper returns None."""
+    device = AsyncMock()
+    device.script_list = AsyncMock(return_value=[{"name": "other", "id": 1}])
+    assert await async_get_ble_script_id(device) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("active", "expected_code"),
+    [
+        (True, "setActive(true)"),
+        (False, "setActive(false)"),
+    ],
+)
+async def test_async_set_active_mode(active: bool, expected_code: str) -> None:
+    """Script.Eval is called with the right setActive expression."""
+    device = AsyncMock()
+    device.script_eval = AsyncMock()
+    await async_set_active_mode(device, 7, active=active)
+    device.script_eval.assert_awaited_once_with(7, expected_code)
 
 
 def test_duplicate_model_ids() -> None:
