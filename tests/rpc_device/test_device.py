@@ -706,6 +706,19 @@ async def test_script_create(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_script_eval(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_eval method."""
+    await rpc_device.script_eval(7, "setActive(true)")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.Eval"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 7,
+        "code": "setActive(true)",
+    }
+
+
+@pytest.mark.asyncio
 async def test_script_putcode(rpc_device: RpcDevice) -> None:
     """Test RpcDevice script_putcode method."""
     await rpc_device.script_putcode(9, "lorem ipsum")
