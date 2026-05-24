@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from aioshelly.ble import create_scanner
-from aioshelly.exceptions import RpcCallError
+from aioshelly.exceptions import DeviceConnectionError, RpcCallError
 
 
 @pytest.mark.asyncio
@@ -78,6 +78,37 @@ async def test_async_request_active_window_restore_failure_swallowed() -> None:
         call_count += 1
         if call_count == 2:
             raise RpcCallError(500, "restore failed")
+
+    with patch("aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)):
+        assert await scanner.async_request_active_window(0.0) is True
+    assert call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_async_request_active_window_entry_device_error_returns_false() -> None:
+    """A DeviceConnectionError on entry yields False; the contract is bool-only."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    device = AsyncMock()
+    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    mock_start = AsyncMock(side_effect=DeviceConnectionError("disconnected"))
+    with patch("aioshelly.ble.async_start_scanner", mock_start):
+        assert await scanner.async_request_active_window(0.0) is False
+    assert mock_start.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_async_request_active_window_restore_device_error_swallowed() -> None:
+    """A DeviceConnectionError on restore is swallowed; the window still reports True."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    device = AsyncMock()
+    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    call_count = 0
+
+    async def fake_start(*_args: object, **_kwargs: object) -> None:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise DeviceConnectionError("disconnected mid-window")
 
     with patch("aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)):
         assert await scanner.async_request_active_window(0.0) is True

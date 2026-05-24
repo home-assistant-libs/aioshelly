@@ -11,7 +11,7 @@ from habluetooth import BaseHaRemoteScanner
 
 from aioshelly import ble as _ble
 
-from ...exceptions import RpcCallError
+from ...exceptions import ShellyError
 from ..const import BLE_SCAN_RESULT_EVENT
 from ..parser import parse_ble_scan_result_event
 
@@ -69,7 +69,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                     event_type=event_type,
                     data_version=data_version,
                 )
-            except RpcCallError as err:
+            except ShellyError as err:
                 LOGGER.debug(
                     "%s: failed to enter active scan window: %s", self.name, err
                 )
@@ -89,7 +89,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                             data_version=data_version,
                         )
                     )
-                except RpcCallError as err:
+                except ShellyError as err:
                     # Restore failures leave the device stuck in active
                     # mode (drawing power, contradicting requested_mode
                     # in habluetooth) until the next successful window;
