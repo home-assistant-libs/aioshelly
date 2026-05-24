@@ -326,6 +326,11 @@ class RpcDevice:
         params = {"stage": "beta"} if beta else {"stage": "stable"}
         await self.call_rpc("Shelly.Update", params)
 
+    async def trigger_add_on_ota_update(self, timeout: int = 300) -> None:
+        """Trigger an add-on ota update."""
+        params = {"timeout": timeout}
+        await self.call_rpc("AddOn.Update", params)
+
     async def trigger_reboot(self, delay_ms: int = 1000) -> None:
         """Trigger a device reboot."""
         await self.call_rpc("Shelly.Reboot", {"delay_ms": delay_ms})
@@ -757,6 +762,10 @@ class RpcDevice:
     async def script_stop(self, script_id: int) -> None:
         """Stop a script using 'Script.Stop'."""
         await self.call_rpc("Script.Stop", {"id": script_id})
+
+    async def script_eval(self, script_id: int, code: str) -> Any:
+        """Evaluate code in a running script using 'Script.Eval'."""
+        return await self.call_rpc("Script.Eval", {"id": script_id, "code": code})
 
     async def ble_setconfig(self, enable: bool, enable_rpc: bool) -> ShellyBLESetConfig:
         """Enable or disable ble with BLE.SetConfig."""

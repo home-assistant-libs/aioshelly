@@ -13,7 +13,7 @@ VAR_ACTIVE = "%active%"
 VAR_VERSION = "%version%"
 
 BLE_CODE = """
-// aioshelly BLE script 2.0
+// aioshelly BLE script 2.1
 // Script automatically installed by Home Assistant for Bluetooth proxy support
 // https://www.home-assistant.io/integrations/bluetooth/#remote-adapters-bluetooth-proxies
 const queueServeTimer = 100; // in ms, timer for events emitting
@@ -66,13 +66,40 @@ function bleCallback(event, res) {
   }
 }
 
-// Skip starting if scanner is active
-if (!BLE.Scanner.isRunning()) {
+// Flip the scanner's active mode at runtime via Script.Eval; this is
+// how on-demand active scan windows avoid rewriting the script body
+// (and thus avoid a flash write) on every transition.
+//
+// Two device quirks shape this dance:
+//   1. BLE.Scanner.Stop() is asynchronous - a Start() issued in the
+//      same JS frame races with the still-in-progress stop and
+//      silently fails. Defer Start onto a Timer so the underlying BLE
+//      stack has time to settle.
+//   2. BLE.Scanner.Subscribe() does NOT survive a Stop/Start cycle -
+//      the subscription is dropped on Stop and must be re-attached
+//      after each Start, or no scan results will be delivered.
+let pendingActive = null;
+function applyPendingActive() {
+  if (pendingActive === null) {
+    return;
+  }
   BLE.Scanner.Start({
     duration_ms: -1,
-    active: %active%,
+    active: pendingActive,
   });
+  BLE.Scanner.Subscribe(bleCallback);
+  pendingActive = null;
 }
 
-BLE.Scanner.Subscribe(bleCallback);
+function setActive(v) {
+  pendingActive = v;
+  if (BLE.Scanner.isRunning()) {
+    BLE.Scanner.Stop();
+    Timer.set(250, false, applyPendingActive);
+  } else {
+    applyPendingActive();
+  }
+}
+
+setActive(%active%);
 """  # noqa: E501

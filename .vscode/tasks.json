@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Pytest tests",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "tests/"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Pytest tests with coverage",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": [
+        "-m",
+        "pytest",
+        "tests/",
+        "--cov=aioshelly",
+        "--cov-report=term-missing:skip-covered"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

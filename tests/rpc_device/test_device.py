@@ -3,7 +3,7 @@
 import re
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -706,6 +706,19 @@ async def test_script_create(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_script_eval(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_eval method."""
+    await rpc_device.script_eval(7, "setActive(true)")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.Eval"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 7,
+        "code": "setActive(true)",
+    }
+
+
+@pytest.mark.asyncio
 async def test_script_putcode(rpc_device: RpcDevice) -> None:
     """Test RpcDevice script_putcode method."""
     await rpc_device.script_putcode(9, "lorem ipsum")
@@ -729,6 +742,23 @@ async def test_script_getcode(rpc_device: RpcDevice) -> None:
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 8, "offset": 0}
+
+
+@pytest.mark.asyncio
+async def test_script_getcode_with_length(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_getcode method with explicit read length."""
+    rpc_device.call_rpc_multiple.return_value = [{"data": "partial script"}]
+
+    result = await rpc_device.script_getcode(8, offset=4, bytes_to_read=16)
+
+    assert result == {"data": "partial script"}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 8,
+        "offset": 4,
+        "len": 16,
+    }
 
 
 @pytest.mark.asyncio
@@ -892,6 +922,25 @@ async def test_device_mac_address_mismatch(
 
 
 @pytest.mark.asyncio
+async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) -> None:
+    """Test _connect_websocket re-raises MacAddressMismatchError unchanged."""
+    error = MacAddressMismatchError("device MAC mismatch")
+    rpc_device._init_calls = AsyncMock(side_effect=error)
+
+    with (
+        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(
+            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+        ) as disconnect_mock,
+        pytest.raises(MacAddressMismatchError),
+    ):
+        await rpc_device._connect_websocket()
+
+    assert rpc_device._last_error is error
+    disconnect_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_device_mac_address_mixed_case(
     client_session: ClientSession,
     ws_context: WsServer,
@@ -1042,6 +1091,16 @@ async def test_trigger_ota_update(rpc_device: RpcDevice) -> None:
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.Update"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"stage": "beta"}
+
+
+@pytest.mark.asyncio
+async def test_trigger_add_on_ota_update(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice trigger_add_on_ota_update method."""
+    await rpc_device.trigger_add_on_ota_update(timeout=600)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.Update"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"timeout": 600}
 
 
 @pytest.mark.asyncio
