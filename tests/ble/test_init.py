@@ -168,6 +168,7 @@ def test_duplicate_model_ids() -> None:
         ([{"name": "other", "id": 1}, {"name": BLE_SCRIPT_NAME, "id": 2}], [call(2)]),
         ([{"name": "other", "id": 1}], []),
     ],
+    ids=["script_present", "script_absent"],
 )
 async def test_async_stop_scanner(
     mock_rpc_device: AsyncMock,
@@ -241,6 +242,11 @@ async def test_async_stop_scanner(
             [],
             [call(9)],
         ),
+    ],
+    ids=[
+        "script_missing_create_and_update",
+        "script_present_code_mismatch_update",
+        "script_present_code_match_no_update",
     ],
 )
 async def test_async_start_scanner(
