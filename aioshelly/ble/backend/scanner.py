@@ -28,47 +28,35 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
         """Initialize the scanner."""
         super().__init__(*args, **kwargs)
         self._active_window_device: RpcDevice | None = None
-        self._active_window_event_type: str | None = None
-        self._active_window_data_version: int | None = None
         self._active_window_lock = asyncio.Lock()
 
-    def set_active_window_provider(
-        self, device: RpcDevice, event_type: str, data_version: int
-    ) -> None:
+    def set_active_window_provider(self, device: RpcDevice) -> None:
         """Bind the RpcDevice used to flip the BLE script for active windows.
 
         Without this, async_request_active_window is a no-op returning
         False (matching the BaseHaScanner default).
         """
         self._active_window_device = device
-        self._active_window_event_type = event_type
-        self._active_window_data_version = data_version
 
     async def async_request_active_window(self, duration: float) -> bool:
         """Flip the Shelly's BLE script to active for ``duration`` seconds.
 
         Called by habluetooth's auto-mode scheduler. The Shelly BLE
-        script is reprovisioned in active mode, then reverted to passive
-        once the window ends. Only one window may be open at a time; a
-        request that arrives while another window is in flight returns
-        ``False`` immediately so the caller can decide whether to retry.
+        script's scanner is flipped to active mode via Script.Eval,
+        then reverted to passive once the window ends. Only one window
+        may be open at a time; a request that arrives while another
+        window is in flight returns ``False`` immediately so the
+        caller can decide whether to retry.
         """
         device = self._active_window_device
-        event_type = self._active_window_event_type
-        data_version = self._active_window_data_version
-        if device is None or event_type is None or data_version is None:
+        if device is None:
             return False
         if self._active_window_lock.locked():
             return False
 
         async with self._active_window_lock:
             try:
-                await _ble.async_start_scanner(
-                    device,
-                    active=True,
-                    event_type=event_type,
-                    data_version=data_version,
-                )
+                await _ble.async_set_active_mode(device, active=True)
             except ShellyError as err:
                 LOGGER.debug(
                     "%s: failed to enter active scan window: %s", self.name, err
@@ -82,12 +70,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                 # burning battery in active mode.
                 try:
                     await asyncio.shield(
-                        _ble.async_start_scanner(
-                            device,
-                            active=False,
-                            event_type=event_type,
-                            data_version=data_version,
-                        )
+                        _ble.async_set_active_mode(device, active=False)
                     )
                 except ShellyError as err:
                     # Restore failures leave the device stuck in active

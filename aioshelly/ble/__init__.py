@@ -75,6 +75,27 @@ async def async_start_scanner(
     await device.script_start(ble_script_id)
 
 
+async def async_set_active_mode(device: RpcDevice, active: bool) -> None:
+    """Flip the BLE scanner's active mode via Script.Eval.
+
+    The script body exposes a ``setActive(v)`` function (see BLE_CODE
+    in const.py) that stops and restarts BLE.Scanner with the new
+    active flag. Driving the toggle via Script.Eval keeps the script
+    body byte-identical across windows, so the device's flash is not
+    rewritten on every transition.
+
+    Assumes the script is already installed and running via
+    ``async_start_scanner``. Raises RpcCallError if the script is not
+    installed on the device.
+    """
+    script_name_to_id = await _async_get_scripts_by_name(device)
+    if (ble_script_id := script_name_to_id.get(BLE_SCRIPT_NAME)) is None:
+        raise RpcCallError(0, f"{BLE_SCRIPT_NAME} script not installed")
+    await device.script_eval(
+        ble_script_id, f"setActive({'true' if active else 'false'})"
+    )
+
+
 def create_scanner(
     source: str,
     name: str,

@@ -11,11 +11,13 @@ from habluetooth import BluetoothScanningMode
 
 from aioshelly.ble import (
     async_ensure_ble_enabled,
+    async_set_active_mode,
     create_scanner,
     get_device_from_model_id,
     get_name_from_model_id,
 )
 from aioshelly.const import DEVICES
+from aioshelly.exceptions import RpcCallError
 
 
 @pytest.mark.asyncio
@@ -123,6 +125,36 @@ def test_get_name_from_model_id() -> None:
     # Test with invalid model ID
     name = get_name_from_model_id(0x9999)
     assert name is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("active", "expected_code"),
+    [
+        (True, "setActive(true)"),
+        (False, "setActive(false)"),
+    ],
+)
+async def test_async_set_active_mode(active: bool, expected_code: str) -> None:
+    """Script.Eval is called with the right setActive expression."""
+    device = AsyncMock()
+    device.script_list = AsyncMock(
+        return_value=[{"name": "aioshelly_ble_integration", "id": 7}]
+    )
+    device.script_eval = AsyncMock()
+    await async_set_active_mode(device, active=active)
+    device.script_eval.assert_awaited_once_with(7, expected_code)
+
+
+@pytest.mark.asyncio
+async def test_async_set_active_mode_missing_script() -> None:
+    """If the script is not installed the helper raises RpcCallError."""
+    device = AsyncMock()
+    device.script_list = AsyncMock(return_value=[{"name": "other_script", "id": 1}])
+    device.script_eval = AsyncMock()
+    with pytest.raises(RpcCallError):
+        await async_set_active_mode(device, active=True)
+    device.script_eval.assert_not_awaited()
 
 
 def test_duplicate_model_ids() -> None:

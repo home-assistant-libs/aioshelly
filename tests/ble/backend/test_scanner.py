@@ -46,10 +46,10 @@ async def test_async_request_active_window_flips_then_restores() -> None:
     """The Shelly is reprovisioned active then reverted to passive."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
-    with patch("aioshelly.ble.async_start_scanner", AsyncMock()) as mock_start:
+    scanner.set_active_window_provider(device)
+    with patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set:
         assert await scanner.async_request_active_window(0.0) is True
-    actives = [call.kwargs["active"] for call in mock_start.await_args_list]
+    actives = [call.kwargs["active"] for call in mock_set.await_args_list]
     assert actives == [True, False]
 
 
@@ -58,11 +58,11 @@ async def test_async_request_active_window_entry_failure_returns_false() -> None
     """A failure on the entry call yields False; no restore is attempted."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
-    mock_start = AsyncMock(side_effect=RpcCallError(500, "boom"))
-    with patch("aioshelly.ble.async_start_scanner", mock_start):
+    scanner.set_active_window_provider(device)
+    mock_set = AsyncMock(side_effect=RpcCallError(500, "boom"))
+    with patch("aioshelly.ble.async_set_active_mode", mock_set):
         assert await scanner.async_request_active_window(0.0) is False
-    assert mock_start.await_count == 1
+    assert mock_set.await_count == 1
 
 
 @pytest.mark.asyncio
@@ -70,16 +70,16 @@ async def test_async_request_active_window_restore_failure_swallowed() -> None:
     """If the restore call fails the window still reports success."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    scanner.set_active_window_provider(device)
     call_count = 0
 
-    async def fake_start(*_args: object, **_kwargs: object) -> None:
+    async def fake_set(*_args: object, **_kwargs: object) -> None:
         nonlocal call_count
         call_count += 1
         if call_count == 2:
             raise RpcCallError(500, "restore failed")
 
-    with patch("aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)):
+    with patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)):
         assert await scanner.async_request_active_window(0.0) is True
     assert call_count == 2
 
@@ -89,11 +89,11 @@ async def test_async_request_active_window_entry_device_error_returns_false() ->
     """A DeviceConnectionError on entry yields False; the contract is bool-only."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
-    mock_start = AsyncMock(side_effect=DeviceConnectionError("disconnected"))
-    with patch("aioshelly.ble.async_start_scanner", mock_start):
+    scanner.set_active_window_provider(device)
+    mock_set = AsyncMock(side_effect=DeviceConnectionError("disconnected"))
+    with patch("aioshelly.ble.async_set_active_mode", mock_set):
         assert await scanner.async_request_active_window(0.0) is False
-    assert mock_start.await_count == 1
+    assert mock_set.await_count == 1
 
 
 @pytest.mark.asyncio
@@ -101,16 +101,16 @@ async def test_async_request_active_window_restore_device_error_swallowed() -> N
     """A DeviceConnectionError on restore is swallowed, window still reports True."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    scanner.set_active_window_provider(device)
     call_count = 0
 
-    async def fake_start(*_args: object, **_kwargs: object) -> None:
+    async def fake_set(*_args: object, **_kwargs: object) -> None:
         nonlocal call_count
         call_count += 1
         if call_count == 2:
             raise DeviceConnectionError("disconnected mid-window")
 
-    with patch("aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)):
+    with patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)):
         assert await scanner.async_request_active_window(0.0) is True
     assert call_count == 2
 
@@ -120,22 +120,22 @@ async def test_async_request_active_window_rejects_overlap() -> None:
     """A second request while a window is open returns False without flipping."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    scanner.set_active_window_provider(device)
     gate = asyncio.Event()
 
-    async def fake_start(*_args: object, **kwargs: object) -> None:
+    async def fake_set(*_args: object, **kwargs: object) -> None:
         if kwargs.get("active"):
             await gate.wait()
 
     with patch(
-        "aioshelly.ble.async_start_scanner", AsyncMock(side_effect=fake_start)
-    ) as mock_start:
+        "aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)
+    ) as mock_set:
         first = asyncio.create_task(scanner.async_request_active_window(0.0))
         # Yield so the first task acquires the lock and blocks inside the entry call.
         await asyncio.sleep(0)
         assert await scanner.async_request_active_window(0.0) is False
-        # Only the first task has called async_start_scanner (the entry flip).
-        assert mock_start.await_count == 1
+        # Only the first task has called async_set_active_mode (the entry flip).
+        assert mock_set.await_count == 1
         gate.set()
         assert await first is True
 
@@ -145,9 +145,9 @@ async def test_async_request_active_window_restore_runs_under_cancellation() -> 
     """Cancelling the task during the window still fires the restore call."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
     device = AsyncMock()
-    scanner.set_active_window_provider(device, "ble.scan_result", 2)
+    scanner.set_active_window_provider(device)
 
-    with patch("aioshelly.ble.async_start_scanner", AsyncMock()) as mock_start:
+    with patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set:
         task = asyncio.create_task(scanner.async_request_active_window(3600.0))
         # Let the entry call complete and the task enter the sleep.
         await asyncio.sleep(0)
@@ -155,5 +155,5 @@ async def test_async_request_active_window_restore_runs_under_cancellation() -> 
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
-    actives = [call.kwargs["active"] for call in mock_start.await_args_list]
+    actives = [call.kwargs["active"] for call in mock_set.await_args_list]
     assert actives == [True, False]

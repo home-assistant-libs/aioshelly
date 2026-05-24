@@ -763,6 +763,10 @@ class RpcDevice:
         """Stop a script using 'Script.Stop'."""
         await self.call_rpc("Script.Stop", {"id": script_id})
 
+    async def script_eval(self, script_id: int, code: str) -> Any:
+        """Evaluate code in a running script using 'Script.Eval'."""
+        return await self.call_rpc("Script.Eval", {"id": script_id, "code": code})
+
     async def ble_setconfig(self, enable: bool, enable_rpc: bool) -> ShellyBLESetConfig:
         """Enable or disable ble with BLE.SetConfig."""
         return cast(
