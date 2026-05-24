@@ -85,8 +85,6 @@ async def test_async_request_active_window_restore_failure_swallowed() -> None:
 
 
 @pytest.mark.asyncio
-<<<<<<< Updated upstream
-=======
 async def test_async_request_active_window_entry_device_error_returns_false() -> None:
     """A DeviceConnectionError on entry yields False; the contract is bool-only."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
@@ -118,7 +116,6 @@ async def test_async_request_active_window_restore_device_error_swallowed() -> N
 
 
 @pytest.mark.asyncio
->>>>>>> Stashed changes
 async def test_async_request_active_window_rejects_overlap() -> None:
     """A second request while a window is open returns False without flipping."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
