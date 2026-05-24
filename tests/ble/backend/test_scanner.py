@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from aioshelly.ble import create_scanner
-from aioshelly.exceptions import RpcCallError
+from aioshelly.exceptions import DeviceConnectionError, RpcCallError
 
 
 @pytest.mark.asyncio
