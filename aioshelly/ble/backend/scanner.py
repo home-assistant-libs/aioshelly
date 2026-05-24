@@ -28,6 +28,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
         """Initialize the scanner."""
         super().__init__(*args, **kwargs)
         self._active_window_device: RpcDevice | None = None
+        self._active_window_script_id: int | None = None
         self._active_window_lock = asyncio.Lock()
 
     def set_active_window_provider(self, device: RpcDevice) -> None:
@@ -55,8 +56,24 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
             return False
 
         async with self._active_window_lock:
+            script_id = self._active_window_script_id
+            if script_id is None:
+                try:
+                    script_id = await _ble.async_get_ble_script_id(device)
+                except ShellyError as err:
+                    LOGGER.debug(
+                        "%s: failed to resolve BLE script id: %s", self.name, err
+                    )
+                    return False
+                if script_id is None:
+                    LOGGER.debug(
+                        "%s: BLE script not installed, skipping active window",
+                        self.name,
+                    )
+                    return False
+                self._active_window_script_id = script_id
             try:
-                await _ble.async_set_active_mode(device, active=True)
+                await _ble.async_set_active_mode(device, script_id, active=True)
             except ShellyError as err:
                 LOGGER.debug(
                     "%s: failed to enter active scan window: %s", self.name, err
@@ -65,19 +82,15 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
             try:
                 await asyncio.sleep(duration)
             finally:
-                # Shield the restore so a cancellation mid-window still
-                # reverts the device to passive instead of leaving it
-                # burning battery in active mode.
                 try:
-                    await asyncio.shield(
-                        _ble.async_set_active_mode(device, active=False)
-                    )
+                    await _ble.async_set_active_mode(device, script_id, active=False)
                 except ShellyError as err:
-                    # Restore failures leave the device stuck in active
-                    # mode (drawing power, contradicting requested_mode
-                    # in habluetooth) until the next successful window;
-                    # surface that at warning so operators can see it
-                    # without flipping the package to debug.
+                    # Restore failures leave the device in active mode
+                    # until the next successful window or integration
+                    # restart, which re-runs async_start_scanner and
+                    # re-bakes the initial passive default. Surface at
+                    # warning so operators can see it without flipping
+                    # the package to debug.
                     LOGGER.warning(
                         "%s: failed to restore scan mode after active window: %s",
                         self.name,

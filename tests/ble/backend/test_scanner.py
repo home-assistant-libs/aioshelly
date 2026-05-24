@@ -41,26 +41,68 @@ async def test_async_request_active_window_no_provider() -> None:
     assert await scanner.async_request_active_window(0.0) is False
 
 
+def _bind(scanner: object) -> AsyncMock:
+    device = AsyncMock()
+    scanner.set_active_window_provider(device)  # type: ignore[attr-defined]
+    return device
+
+
+@pytest.mark.asyncio
+async def test_async_request_active_window_no_script() -> None:
+    """If the integration script isn't installed, return False without flipping."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    _bind(scanner)
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=None)),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set,
+    ):
+        assert await scanner.async_request_active_window(0.0) is False
+    mock_set.assert_not_awaited()
+
+
 @pytest.mark.asyncio
 async def test_async_request_active_window_flips_then_restores() -> None:
-    """The Shelly is reprovisioned active then reverted to passive."""
+    """The Shelly is flipped active then reverted to passive."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
-    with patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set:
+    _bind(scanner)
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set,
+    ):
         assert await scanner.async_request_active_window(0.0) is True
     actives = [call.kwargs["active"] for call in mock_set.await_args_list]
     assert actives == [True, False]
+    # script_id is passed positionally as the second arg.
+    script_ids = [call.args[1] for call in mock_set.await_args_list]
+    assert script_ids == [7, 7]
+
+
+@pytest.mark.asyncio
+async def test_async_request_active_window_caches_script_id() -> None:
+    """Across two windows the script id is resolved exactly once."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    _bind(scanner)
+    with (
+        patch(
+            "aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)
+        ) as mock_get,
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock()),
+    ):
+        assert await scanner.async_request_active_window(0.0) is True
+        assert await scanner.async_request_active_window(0.0) is True
+    assert mock_get.await_count == 1
 
 
 @pytest.mark.asyncio
 async def test_async_request_active_window_entry_failure_returns_false() -> None:
     """A failure on the entry call yields False; no restore is attempted."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
+    _bind(scanner)
     mock_set = AsyncMock(side_effect=RpcCallError(500, "boom"))
-    with patch("aioshelly.ble.async_set_active_mode", mock_set):
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", mock_set),
+    ):
         assert await scanner.async_request_active_window(0.0) is False
     assert mock_set.await_count == 1
 
@@ -69,8 +111,7 @@ async def test_async_request_active_window_entry_failure_returns_false() -> None
 async def test_async_request_active_window_restore_failure_swallowed() -> None:
     """If the restore call fails the window still reports success."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
+    _bind(scanner)
     call_count = 0
 
     async def fake_set(*_args: object, **_kwargs: object) -> None:
@@ -79,7 +120,10 @@ async def test_async_request_active_window_restore_failure_swallowed() -> None:
         if call_count == 2:
             raise RpcCallError(500, "restore failed")
 
-    with patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)):
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)),
+    ):
         assert await scanner.async_request_active_window(0.0) is True
     assert call_count == 2
 
@@ -88,10 +132,12 @@ async def test_async_request_active_window_restore_failure_swallowed() -> None:
 async def test_async_request_active_window_entry_device_error_returns_false() -> None:
     """A DeviceConnectionError on entry yields False; the contract is bool-only."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
+    _bind(scanner)
     mock_set = AsyncMock(side_effect=DeviceConnectionError("disconnected"))
-    with patch("aioshelly.ble.async_set_active_mode", mock_set):
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", mock_set),
+    ):
         assert await scanner.async_request_active_window(0.0) is False
     assert mock_set.await_count == 1
 
@@ -100,8 +146,7 @@ async def test_async_request_active_window_entry_device_error_returns_false() ->
 async def test_async_request_active_window_restore_device_error_swallowed() -> None:
     """A DeviceConnectionError on restore is swallowed, window still reports True."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
+    _bind(scanner)
     call_count = 0
 
     async def fake_set(*_args: object, **_kwargs: object) -> None:
@@ -110,7 +155,10 @@ async def test_async_request_active_window_restore_device_error_swallowed() -> N
         if call_count == 2:
             raise DeviceConnectionError("disconnected mid-window")
 
-    with patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)):
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)),
+    ):
         assert await scanner.async_request_active_window(0.0) is True
     assert call_count == 2
 
@@ -119,17 +167,19 @@ async def test_async_request_active_window_restore_device_error_swallowed() -> N
 async def test_async_request_active_window_rejects_overlap() -> None:
     """A second request while a window is open returns False without flipping."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
+    _bind(scanner)
     gate = asyncio.Event()
 
     async def fake_set(*_args: object, **kwargs: object) -> None:
         if kwargs.get("active"):
             await gate.wait()
 
-    with patch(
-        "aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)
-    ) as mock_set:
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch(
+            "aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)
+        ) as mock_set,
+    ):
         first = asyncio.create_task(scanner.async_request_active_window(0.0))
         # Yield so the first task acquires the lock and blocks inside the entry call.
         await asyncio.sleep(0)
@@ -144,10 +194,12 @@ async def test_async_request_active_window_rejects_overlap() -> None:
 async def test_async_request_active_window_restore_runs_under_cancellation() -> None:
     """Cancelling the task during the window still fires the restore call."""
     scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
-    device = AsyncMock()
-    scanner.set_active_window_provider(device)
+    _bind(scanner)
 
-    with patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set:
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock()) as mock_set,
+    ):
         task = asyncio.create_task(scanner.async_request_active_window(3600.0))
         # Let the entry call complete and the task enter the sleep.
         await asyncio.sleep(0)
