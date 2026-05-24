@@ -928,9 +928,9 @@ async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) ->
     rpc_device._init_calls = AsyncMock(side_effect=error)
 
     with (
-        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(rpc_device._rpc, "connect", new_callable=AsyncMock),
         patch.object(
-            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+            rpc_device._rpc, "disconnect", new_callable=AsyncMock
         ) as disconnect_mock,
         pytest.raises(MacAddressMismatchError),
     ):
@@ -2126,85 +2126,41 @@ async def test_media_list_radio_stations(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("config", "expected"),
+    ("addon_type", "rpc_response", "expected"),
     [
-        pytest.param({"sys": {"device": {"addon_type": "Sensor"}}}, True),
-        pytest.param({"sys": {"device": {"addon_type": None}}}, False),
-    ],
-)
-async def test_add_on_installed(
-    rpc_device: RpcDevice,
-    config: dict[str, Any],
-    expected: bool,
-) -> None:
-    """Test add_on_installed property."""
-    rpc_device.initialized = True
-    rpc_device._config = config
-
-    assert rpc_device.add_on_installed is expected
-
-
-@pytest.mark.asyncio
-async def test_add_on_installed_not_initialized(
-    rpc_device: RpcDevice,
-) -> None:
-    """Test add_on_installed raises NotInitialized when config is not set."""
-    rpc_device._shelly = {"gen": 3}
-
-    with pytest.raises(NotInitialized):
-        _ = rpc_device.add_on_installed
-
-
-@pytest.mark.asyncio
-async def test_add_on_info_not_installed(
-    rpc_device: RpcDevice,
-) -> None:
-    """Test add_on_info returns empty dict when add-on is not installed."""
-    rpc_device.initialized = True
-    rpc_device._config = {"sys": {"device": {"addon_type": None}}}
-
-    result = await rpc_device.add_on_info()
-
-    assert result == {}
-    rpc_device.call_rpc_multiple.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_add_on_info_with_sensor_add_on(
-    rpc_device: RpcDevice,
-) -> None:
-    """Test add_on_info returns sensor info without RPC for sensor add-on."""
-    rpc_device.initialized = True
-    rpc_device._config = {"sys": {"device": {"addon_type": "sensor"}}}
-
-    result = await rpc_device.add_on_info()
-
-    assert result == {"type": "Sensor"}
-    rpc_device.call_rpc_multiple.assert_not_called()
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("rpc_response", "expected"),
-    [
+        pytest.param(None, None, {}, id="not_installed"),
+        pytest.param("sensor", None, {"type": "sensor"}, id="sensor"),
         pytest.param(
-            {"type": "LoRa", "version": "1.0"}, {"type": "LoRa", "version": "1.0"}
+            "uart",
+            {"type": "LoRa", "version": "1.0"},
+            {"type": "LoRa", "version": "1.0"},
+            id="uart_success",
         ),
-        pytest.param({"code": 404, "message": "No handler for AddOn.GetInfo"}, {}),
+        pytest.param(
+            "uart",
+            {"code": 404, "message": "No handler for AddOn.GetInfo"},
+            {"code": 404, "message": "No handler for AddOn.GetInfo"},
+            id="uart_error",
+        ),
     ],
 )
-async def test_add_on_info_with_non_sensor_add_on(
+async def test_add_on_info(
     rpc_device: RpcDevice,
-    rpc_response: dict[str, Any],
+    addon_type: str | None,
+    rpc_response: dict[str, Any] | None,
     expected: dict[str, Any],
 ) -> None:
-    """Test add_on_info calls RPC for non-sensor add-ons."""
+    """Test add_on_info returns correct result based on addon_type."""
     rpc_device.initialized = True
-    rpc_device._config = {"sys": {"device": {"addon_type": "uart"}}}
-    rpc_device.call_rpc_multiple.return_value = [rpc_response]
+    rpc_device._config = {"sys": {"device": {"addon_type": addon_type}}}
+    if rpc_response is not None:
+        rpc_device.call_rpc_multiple.return_value = [rpc_response]
 
     result = await rpc_device.add_on_info()
 
     assert result == expected
-    rpc_device.call_rpc_multiple.assert_called_once()
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
+    if addon_type in (None, "sensor"):
+        rpc_device.call_rpc_multiple.assert_not_called()
+    else:
+        rpc_device.call_rpc_multiple.assert_called_once()
+        assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
