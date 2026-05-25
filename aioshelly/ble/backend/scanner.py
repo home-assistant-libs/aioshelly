@@ -85,21 +85,31 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                 await asyncio.sleep(duration)
             finally:
                 try:
-                    await _ble.async_set_active_mode(device, script_id, active=False)
-                except ShellyError as err:
-                    # Restore failures almost always mean the WS to the
-                    # device dropped, in which case habluetooth's reload
-                    # cycle restarts the scanner anyway. Otherwise the
-                    # device stays in active mode until the next window's
-                    # restore succeeds or the device reboots; both are
-                    # acceptable for a battery safeguard. Surface at
-                    # warning so operators can still see it.
-                    LOGGER.warning(
-                        "%s: failed to restore scan mode after active window: %s",
-                        self.name,
-                        err,
-                    )
-                self.set_current_mode(previous_mode)  # ty: ignore[unresolved-attribute]
+                    try:
+                        await _ble.async_set_active_mode(
+                            device, script_id, active=False
+                        )
+                    except ShellyError as err:
+                        # Restore failures almost always mean the WS to the
+                        # device dropped, in which case habluetooth's reload
+                        # cycle restarts the scanner anyway. Otherwise the
+                        # device stays in active mode until the next window's
+                        # restore succeeds or the device reboots; both are
+                        # acceptable for a battery safeguard. Surface at
+                        # warning so operators can still see it.
+                        LOGGER.warning(
+                            "%s: failed to restore scan mode after active window: %s",
+                            self.name,
+                            err,
+                        )
+                finally:
+                    # Always reflect that the window has ended, even if the
+                    # restore RPC was cancelled or raised an unexpected error.
+                    # The device may still be sweeping actively, but
+                    # habluetooth's reload cycle reconciles on the next
+                    # scanner start, and leaving current_mode stuck at ACTIVE
+                    # would mislead the manager and UI indefinitely.
+                    self.set_current_mode(previous_mode)  # ty: ignore[unresolved-attribute]
         return True
 
     def async_on_event(self, event: dict[str, Any]) -> None:

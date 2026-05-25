@@ -283,3 +283,34 @@ async def test_async_request_active_window_restore_runs_under_cancellation() -> 
             await task
     actives = [call.kwargs["active"] for call in mock_set.await_args_list]
     assert actives == [True, False]
+
+
+@pytest.mark.asyncio
+async def test_active_window_restores_current_mode_when_restore_is_cancelled() -> None:
+    """Cancellation mid-restore still flips current_mode back to the prior value."""
+    scanner = create_scanner(
+        "AA:BB:CC:DD:EE:FF",
+        "shelly",
+        requested_mode=BluetoothScanningMode.PASSIVE,
+        current_mode=BluetoothScanningMode.PASSIVE,
+    )
+    _bind(scanner)
+    restore_started = asyncio.Event()
+
+    async def fake_set(*_args: object, **kwargs: object) -> None:
+        if not kwargs.get("active"):
+            restore_started.set()
+            await asyncio.sleep(3600)
+
+    with (
+        patch("aioshelly.ble.async_get_ble_script_id", AsyncMock(return_value=7)),
+        patch("aioshelly.ble.async_set_active_mode", AsyncMock(side_effect=fake_set)),
+    ):
+        task = asyncio.create_task(scanner.async_request_active_window(0.0))
+        await restore_started.wait()
+        # Window is past entry; the restore RPC is in flight.
+        assert scanner.current_mode is BluetoothScanningMode.ACTIVE
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert scanner.current_mode is BluetoothScanningMode.PASSIVE
