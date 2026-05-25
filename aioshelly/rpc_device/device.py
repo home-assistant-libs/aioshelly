@@ -56,6 +56,8 @@ from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
 
+RPC_CALL_ERR_NO_HANDLER = 404
+
 SCRIPT_SUPPORT_METHODS = {
     "Script.List",
     "Script.GetCode",
@@ -1017,6 +1019,19 @@ class RpcDevice:
             raise NotInitialized
 
         return "zigbee" in self._config
+
+    async def add_on_info(self) -> dict[str, Any]:
+        """Return add-on info."""
+        # Add-on not installed
+        if not (add_on_type := self.config["sys"]["device"].get("addon_type")):
+            return {}
+
+        # Shelly Sensor Add-On
+        if add_on_type == "sensor":
+            return {"type": add_on_type}
+
+        # Shelly Uart / LoRa Add-On
+        return await self.call_rpc("AddOn.GetInfo")
 
     async def get_dynamic_components(self) -> None:
         """Return a list of dynamic components."""

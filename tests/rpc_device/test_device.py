@@ -928,9 +928,9 @@ async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) ->
     rpc_device._init_calls = AsyncMock(side_effect=error)
 
     with (
-        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(rpc_device._rpc, "connect", new_callable=AsyncMock),
         patch.object(
-            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+            rpc_device._rpc, "disconnect", new_callable=AsyncMock
         ) as disconnect_mock,
         pytest.raises(MacAddressMismatchError),
     ):
@@ -2122,3 +2122,45 @@ async def test_media_list_radio_stations(
 
     assert isinstance(result, list)
     assert len(result) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("addon_type", "rpc_response", "expected"),
+    [
+        pytest.param(None, None, {}, id="not_installed"),
+        pytest.param("sensor", None, {"type": "sensor"}, id="sensor"),
+        pytest.param(
+            "uart",
+            {"type": "LoRa", "version": "1.0"},
+            {"type": "LoRa", "version": "1.0"},
+            id="uart_success",
+        ),
+        pytest.param(
+            "uart",
+            {"code": 404, "message": "No handler for AddOn.GetInfo"},
+            {"code": 404, "message": "No handler for AddOn.GetInfo"},
+            id="uart_error",
+        ),
+    ],
+)
+async def test_add_on_info(
+    rpc_device: RpcDevice,
+    addon_type: str | None,
+    rpc_response: dict[str, Any] | None,
+    expected: dict[str, Any],
+) -> None:
+    """Test add_on_info returns correct result based on addon_type."""
+    rpc_device.initialized = True
+    rpc_device._config = {"sys": {"device": {"addon_type": addon_type}}}
+    if rpc_response is not None:
+        rpc_device.call_rpc_multiple.return_value = [rpc_response]
+
+    result = await rpc_device.add_on_info()
+
+    assert result == expected
+    if addon_type in (None, "sensor"):
+        rpc_device.call_rpc_multiple.assert_not_called()
+    else:
+        rpc_device.call_rpc_multiple.assert_called_once()
+        assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
