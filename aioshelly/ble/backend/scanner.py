@@ -7,7 +7,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from bluetooth_data_tools import monotonic_time_coarse
-from habluetooth import BaseHaRemoteScanner
+from habluetooth import BaseHaRemoteScanner, BluetoothScanningMode
 
 from aioshelly import ble as _ble
 
@@ -79,6 +79,8 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                     "%s: failed to enter active scan window: %s", self.name, err
                 )
                 return False
+            previous_mode = self.current_mode
+            self.set_current_mode(BluetoothScanningMode.ACTIVE)  # ty: ignore[unresolved-attribute]
             try:
                 await asyncio.sleep(duration)
             finally:
@@ -97,6 +99,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                         self.name,
                         err,
                     )
+                self.set_current_mode(previous_mode)  # ty: ignore[unresolved-attribute]
         return True
 
     def async_on_event(self, event: dict[str, Any]) -> None:

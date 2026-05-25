@@ -25,7 +25,7 @@ dependencies = [
   "aiohttp>=3.11.1",
   "bleak-retry-connector>=3.0.0",
   "bluetooth-data-tools>=1.28.0",
-  "habluetooth>=3.42.0",
+  "habluetooth>=5.10.0",
   "orjson>=3.11.6",
   "yarl",
   "zeroconf>=0.148.0"
