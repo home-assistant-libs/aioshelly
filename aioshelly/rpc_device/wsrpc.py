@@ -13,7 +13,7 @@ from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass
 from enum import Enum, auto
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from aiohttp import (
     ClientSession,
@@ -22,6 +22,7 @@ from aiohttp import (
     WSMsgType,
     client_exceptions,
 )
+from aiohttp.http_websocket import WSMessageTextBytes
 from aiohttp.web import (
     Application,
     AppRunner,
@@ -60,7 +61,7 @@ class RPCSource(Enum):
     SERVER = auto()
 
 
-def _receive_json_or_raise(msg: WSMessage) -> dict[str, Any]:
+def _receive_json_or_raise(msg: WSMessage | WSMessageTextBytes) -> dict[str, Any]:
     """Receive json or raise."""
     if msg.type is WSMsgType.TEXT:
         try:
@@ -240,7 +241,7 @@ class WsRPC(WsBase):
         self._port = port
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
-        self._client: ClientWebSocketResponse | None = None
+        self._client: ClientWebSocketResponse[Literal[False]] | None = None
         self._calls: dict[int, RPCCall] = {}
         self._call_id = 0
         self._session = SessionData(f"aios-{id(self)}", None, None)
@@ -263,6 +264,7 @@ class WsRPC(WsBase):
                     scheme="http", host=self._ip_address, port=self._port, path="/rpc"
                 ),
                 heartbeat=WS_HEARTBEAT,
+                decode_text=False,
             )
         except (
             client_exceptions.WSServerHandshakeError,

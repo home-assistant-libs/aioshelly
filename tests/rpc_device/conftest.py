@@ -81,7 +81,7 @@ class WsRPCMocker(WsRPC):
         shallow_copy = response.copy()
         self.next_id_mock += 1
         shallow_copy["id"] = self.next_id_mock
-        response_with_correct_id = dumps(shallow_copy).decode()
+        response_with_correct_id = dumps(shallow_copy)
         await self.response_mocker.mock_ws_message(
             WSMessage(WSMsgType.TEXT, response_with_correct_id, None)
         )
