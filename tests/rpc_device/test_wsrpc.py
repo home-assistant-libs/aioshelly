@@ -21,14 +21,17 @@ from .conftest import WsRPCMocker
 
 def test_receive_json_or_raise_text_returns_decoded_json() -> None:
     """Test text message with JSON payload returns decoded dict."""
-    msg = WSMessage(WSMsgType.TEXT, '{"key":"value","n":1}', None)
+    msg = WSMessage(WSMsgType.TEXT, b'{"key":"value","n":1}', None)
 
     assert _receive_json_or_raise(msg) == {"key": "value", "n": 1}
 
 
-def test_receive_json_or_raise_text_invalid_json_raises_invalid_message() -> None:
+@pytest.mark.parametrize("data", [b"not-json", "not-json"])
+def test_receive_json_or_raise_text_invalid_json_raises_invalid_message(
+    data: bytes | str,
+) -> None:
     """Test text message with invalid JSON raises InvalidMessage."""
-    msg = WSMessage(WSMsgType.TEXT, "not-json", None)
+    msg = WSMessage(WSMsgType.TEXT, data, None)
 
     with pytest.raises(InvalidMessage, match="Received invalid JSON: not-json"):
         _receive_json_or_raise(msg)
