@@ -26,11 +26,14 @@ def test_receive_json_or_raise_text_returns_decoded_json() -> None:
     assert _receive_json_or_raise(msg) == {"key": "value", "n": 1}
 
 
-def test_receive_json_or_raise_text_invalid_json_raises_invalid_message() -> None:
+@pytest.mark.parametrize("data", [b"not-json", "not-json"])
+def test_receive_json_or_raise_text_invalid_json_raises_invalid_message(
+    data: bytes | str,
+) -> None:
     """Test text message with invalid JSON raises InvalidMessage."""
-    msg = WSMessage(WSMsgType.TEXT, b"not-json", None)
+    msg = WSMessage(WSMsgType.TEXT, data, None)
 
-    with pytest.raises(InvalidMessage, match="Received invalid JSON: b'not-json'"):
+    with pytest.raises(InvalidMessage, match="Received invalid JSON: not-json"):
         _receive_json_or_raise(msg)
 
 

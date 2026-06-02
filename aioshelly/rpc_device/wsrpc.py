@@ -67,7 +67,10 @@ def _receive_json_or_raise(msg: WSMessage | WSMessageTextBytes) -> dict[str, Any
         try:
             data: dict[str, Any] = json_loads(msg.data)
         except ValueError as err:
-            raise InvalidMessage(f"Received invalid JSON: {msg.data}") from err
+            payload = msg.data
+            if isinstance(payload, bytes):
+                payload = payload.decode("utf-8", errors="replace")
+            raise InvalidMessage(f"Received invalid JSON: {payload}") from err
         return data
 
     if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
