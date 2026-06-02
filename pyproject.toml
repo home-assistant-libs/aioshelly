@@ -40,7 +40,6 @@ lint = [
   "ty==0.0.40",
 ]
 dev = [
-  "aioresponses==0.7.8",
   "pytest-asyncio==1.4.0",
   "pytest-cov==7.1.0",
   "pytest==9.0.3",
