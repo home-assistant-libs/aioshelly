@@ -193,6 +193,13 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         help="Check if device supports scripts",
     )
 
+    parser.add_argument(
+        "--no_verify_ssl",
+        "-nvs",
+        action="store_true",
+        help="Disable SSL certificate verification (useful for self-signed certs)",
+    )
+
     arguments = parser.parse_args()
 
     return parser, arguments
@@ -227,6 +234,7 @@ async def main() -> None:
             args.password,
             device_mac=args.mac,
             port=args.device_port,
+            verify_ssl=not args.no_verify_ssl,
         )
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)
