@@ -928,9 +928,9 @@ async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) ->
     rpc_device._init_calls = AsyncMock(side_effect=error)
 
     with (
-        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(rpc_device._rpc, "connect", new_callable=AsyncMock),
         patch.object(
-            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+            rpc_device._rpc, "disconnect", new_callable=AsyncMock
         ) as disconnect_mock,
         pytest.raises(MacAddressMismatchError),
     ):
@@ -2122,3 +2122,56 @@ async def test_media_list_radio_stations(
 
     assert isinstance(result, list)
     assert len(result) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("addon_type", "methods", "rpc_response", "expected", "call_count"),
+    [
+        pytest.param(None, [], None, {"type": None}, 1, id="not_installed"),
+        pytest.param("sensor", [], None, {"type": "sensor"}, 1, id="sensor"),
+        pytest.param("uart", [], None, {"type": "uart"}, 1, id="uart_no_method"),
+        pytest.param(
+            "uart",
+            ["AddOn.GetInfo"],
+            {"type": "LoRa", "version": "1.0"},
+            {"type": "LoRa", "version": "1.0"},
+            2,
+            id="uart_success",
+        ),
+        pytest.param(
+            "uart",
+            ["AddOn.GetInfo"],
+            {"code": 404, "message": "No handler for AddOn.GetInfo"},
+            {"type": "uart", "code": 404, "message": "No handler for AddOn.GetInfo"},
+            2,
+            id="uart_error",
+        ),
+    ],
+)
+async def test_add_on_info(
+    rpc_device: RpcDevice,
+    addon_type: str | None,
+    methods: list[str],
+    rpc_response: dict[str, Any] | None,
+    expected: dict[str, Any],
+    call_count: int,
+) -> None:
+    """Test add_on_info returns correct result based on addon_type."""
+    rpc_device.initialized = True
+    rpc_device._config = {"sys": {"device": {"addon_type": addon_type}}}
+    side_effect: list[list[dict[str, Any]]] = [[{"methods": methods}]]
+    if rpc_response is not None:
+        side_effect.append([rpc_response])
+    rpc_device.call_rpc_multiple.side_effect = side_effect
+
+    result = await rpc_device.add_on_info()
+
+    assert result == expected
+    assert rpc_device.call_rpc_multiple.call_count == call_count
+    assert (
+        rpc_device.call_rpc_multiple.call_args_list[0][0][0][0][0]
+        == "Shelly.ListMethods"
+    )
+    if call_count > 1:
+        assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
