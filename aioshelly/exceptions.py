@@ -63,6 +63,16 @@ class CustomPortNotSupported(ShellyError):
     """Raise if GEN1 devices are access with custom port."""
 
 
+class CameraError(ShellyError):
+    """Raised to indicate camera errors."""
+
+    def __init__(self, code: int, message: str = "") -> None:
+        """Initialize."""
+        self.code = code
+        self.message = message
+        super().__init__(code, message)
+
+
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 
