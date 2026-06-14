@@ -1398,5 +1398,3 @@ MODEL_ID_TO_DEVICE: dict[int, ShellyDevice] = {
     for device in DEVICES.values()
     if device.model_id is not None
 }
-
-CAMERA_SNAPSHOT_URL = "http://{host}:{port}/camera/{camera_id}/snapshot"
