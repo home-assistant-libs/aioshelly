@@ -8,10 +8,11 @@ from collections.abc import Callable, Iterable
 from contextlib import suppress
 from enum import Enum, auto
 from functools import partial
-from typing import TYPE_CHECKING, Any, cast
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any, cast
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
+from yarl import URL
 
 from ..common import (
     ConnectionOptions,
@@ -23,7 +24,6 @@ from ..const import (
     BLU_TRV_IDENTIFIER,
     BLU_TRV_MODEL_ID,
     BLU_TRV_TIMEOUT,
-    CAMERA_SNAPSHOT_URL,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
@@ -54,6 +54,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
+from .utils import parse_sdp_ice_credentials
 from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
@@ -668,18 +669,96 @@ class RpcDevice:
 
     async def camera_get_image(self, camera_id: int) -> bytes | None:
         """Return a still image from the camera's HTTP snapshot endpoint."""
+        if self.aiohttp_session is None:
+            raise ValueError("aiohttp_session required")
+
         async with self.aiohttp_session.get(
-            CAMERA_SNAPSHOT_URL.format(
+            URL.build(
+                scheme="http",
                 host=self.ip_address,
                 port=self.port,
-                camera_id=camera_id,
+                path=f"/camera/{camera_id}/snapshot",
             ),
-            timeout=DEVICE_IO_TIMEOUT,
+            timeout=ClientTimeout(total=DEVICE_IO_TIMEOUT),
         ) as resp:
             if resp.status == HTTPStatus.OK:
                 return await resp.read()
 
         return None
+
+    async def camera_start_webrtc_session(
+        self, camera_id: int, stream_id: int, offer_sdp: str
+    ) -> tuple[str, str | None, tuple[str, str]]:
+        """Create a WHEP session for a camera stream."""
+        if self.aiohttp_session is None:
+            raise ValueError("aiohttp_session required")
+
+        async with self.aiohttp_session.post(
+            URL.build(
+                scheme="http",
+                host=self.ip_address,
+                port=self.port,
+                path=f"/camera/{camera_id}/whep/{stream_id}",
+            ),
+            data=offer_sdp,
+            headers={"Content-Type": "application/sdp"},
+            timeout=ClientTimeout(total=DEVICE_IO_TIMEOUT),
+        ) as resp:
+            if resp.status != HTTPStatus.CREATED:
+                raise RpcCallError(
+                    resp.status, f"WHEP endpoint returned HTTP {resp.status}"
+                )
+
+            answer_sdp = await resp.text()
+            location = resp.headers.get("Location", "")
+
+        session_url = None
+        if location:
+            session_url = (
+                f"http://{self.ip_address}:{self.port}{location}"
+                if location.startswith("/")
+                else location
+            )
+
+        return answer_sdp, session_url, parse_sdp_ice_credentials(offer_sdp)
+
+    async def camera_send_webrtc_candidate(
+        self,
+        session_url: str,
+        offer_ice_credentials: tuple[str, str],
+        candidate: str,
+        sdp_mid: str | None = None,
+    ) -> None:
+        """Forward a trickle ICE candidate to a WHEP session."""
+        if self.aiohttp_session is None:
+            raise ValueError("aiohttp_session required")
+
+        ufrag, pwd = offer_ice_credentials
+        mid = sdp_mid or "0"
+        candidate_value = candidate.removeprefix("a=")
+        body = (
+            f"a=ice-ufrag:{ufrag}\r\n"
+            f"a=ice-pwd:{pwd}\r\n"
+            f"m=video 9 RTP/AVP 0\r\n"
+            f"a=mid:{mid}\r\n"
+            f"a=candidate:{candidate_value}\r\n"
+        )
+
+        await self.aiohttp_session.patch(
+            session_url,
+            data=body,
+            headers={"Content-Type": "application/trickle-ice-sdpfrag"},
+            timeout=ClientTimeout(total=5),
+        )
+
+    async def camera_close_webrtc_session(self, session_url: str) -> None:
+        """Close a WHEP session on the camera."""
+        if self.aiohttp_session is None:
+            raise ValueError("aiohttp_session required")
+
+        await self.aiohttp_session.delete(
+            session_url, timeout=ClientTimeout(total=DEVICE_IO_TIMEOUT)
+        )
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
