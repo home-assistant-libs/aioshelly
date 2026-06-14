@@ -666,13 +666,13 @@ class RpcDevice:
         result = await self.call_rpc("Media.Radio.ListFavourites")
         return result["list"]
 
-    async def camera_get_image(self, id_: int) -> bytes | None:
+    async def camera_get_image(self, camera_id: int) -> bytes | None:
         """Return a still image from the camera's HTTP snapshot endpoint."""
         async with self.aiohttp_session.get(
             CAMERA_SNAPSHOT_URL.format(
                 host=self.ip_address,
                 port=self.port,
-                camera_id=id_,
+                camera_id=camera_id,
             ),
             timeout=DEVICE_IO_TIMEOUT,
         ) as resp:
