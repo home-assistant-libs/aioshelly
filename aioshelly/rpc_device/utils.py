@@ -15,3 +15,15 @@ def bluetooth_mac_from_primary_mac(primary_mac: str) -> str:
     :return: Bluetooth MAC address
     """
     return f"{(int(primary_mac, 16) + 2):012X}"
+
+
+def parse_sdp_ice_credentials(sdp: str) -> tuple[str, str]:
+    """Extract ice-ufrag and ice-pwd from an SDP string."""
+    ufrag = ""
+    pwd = ""
+    for line in sdp.splitlines():
+        if line.startswith("a=ice-ufrag:"):
+            ufrag = line[12:]
+        elif line.startswith("a=ice-pwd:"):
+            pwd = line[10:]
+    return ufrag, pwd
