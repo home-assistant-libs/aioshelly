@@ -328,6 +328,22 @@ async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> No
 
 
 @pytest.mark.asyncio
+async def test_model_present(rpc_device: RpcDevice) -> None:
+    """Test model property returns model string when present."""
+    rpc_device._shelly = {"model": "SNSW-001P16EU"}
+
+    assert rpc_device.model == "SNSW-001P16EU"
+
+
+@pytest.mark.asyncio
+async def test_model_missing(rpc_device: RpcDevice) -> None:
+    """Test model property returns empty string when model key is absent."""
+    rpc_device._shelly = {"fw_id": "20231209-144328/1.0.0-gbf89ed5"}
+
+    assert rpc_device.model == ""
+
+
+@pytest.mark.asyncio
 async def test_shelly_gen1(client_session: ClientSession, ws_context: WsServer) -> None:
     """Test Shelly Gen1 device."""
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
