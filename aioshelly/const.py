@@ -125,6 +125,7 @@ MODEL_3EM_63_G3 = "S3EM-003CXCEU63"
 MODEL_AZ_HT = "S3SN-1U12A"
 MODEL_AZ_PLUG = "S3PL-10112EU"
 MODEL_BLU_GATEWAY_G3 = "S3GW-1DBT001"
+MODEL_CAMERA = "S1CM-0DXW00"
 MODEL_DALI_DIMMER_G3 = "S3DM-0A1WW"
 MODEL_DIMMER_10V_G3 = "S3DM-0010WW"
 MODEL_DIMMER_G3 = "S3DM-0A101WWL"
@@ -526,6 +527,14 @@ DEVICES = {
         gen=GEN3,
         supported=True,
         model_id=0x1817,
+    ),
+    MODEL_CAMERA: ShellyDevice(
+        model=MODEL_CAMERA,
+        name="Shelly Camera",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+        model_id=0x5000,
     ),
     MODEL_PLUS_1: ShellyDevice(
         model=MODEL_PLUS_1,
