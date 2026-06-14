@@ -30,11 +30,13 @@ from ..const import (
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     GEN4,
+    HTTP_CALL_TIMEOUT,
     MODEL_BLU_GATEWAY_G3,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
 from ..exceptions import (
+    CameraError,
     DeviceConnectionError,
     InvalidAuthError,
     MacAddressMismatchError,
@@ -656,7 +658,7 @@ class RpcDevice:
         result = await self.call_rpc("Media.Radio.ListFavourites")
         return result["list"]
 
-    async def camera_get_image(self, camera_id: int) -> bytes | None:
+    async def camera_get_image(self, camera_id: int) -> bytes:
         """Return a still image from the camera's HTTP snapshot endpoint."""
         if self.aiohttp_session is None:
             raise ValueError("aiohttp_session required")
@@ -668,12 +670,14 @@ class RpcDevice:
                 port=self.port,
                 path=f"/camera/{camera_id}/snapshot",
             ),
-            timeout=ClientTimeout(total=DEVICE_IO_TIMEOUT),
+            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
         ) as resp:
-            if resp.status == HTTPStatus.OK:
-                return await resp.read()
+            if resp.status != HTTPStatus.OK:
+                raise CameraError(
+                    resp.status, f"Snapshot endpoint returned HTTP {resp.status}"
+                )
 
-        return None
+            return await resp.read()
 
     async def camera_start_webrtc_session(
         self, camera_id: int, stream_id: int, offer_sdp: str
@@ -691,10 +695,10 @@ class RpcDevice:
             ),
             data=offer_sdp,
             headers={"Content-Type": "application/sdp"},
-            timeout=ClientTimeout(total=DEVICE_IO_TIMEOUT),
+            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
         ) as resp:
             if resp.status != HTTPStatus.CREATED:
-                raise RpcCallError(
+                raise CameraError(
                     resp.status, f"WHEP endpoint returned HTTP {resp.status}"
                 )
 
@@ -737,7 +741,7 @@ class RpcDevice:
             session_url,
             data=body,
             headers={"Content-Type": "application/trickle-ice-sdpfrag"},
-            timeout=ClientTimeout(total=5),
+            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
         )
 
     async def camera_close_webrtc_session(self, session_url: str) -> None:
@@ -746,7 +750,7 @@ class RpcDevice:
             raise ValueError("aiohttp_session required")
 
         await self.aiohttp_session.delete(
-            session_url, timeout=ClientTimeout(total=DEVICE_IO_TIMEOUT)
+            session_url, timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT)
         )
 
     async def poll(self) -> None:
