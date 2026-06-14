@@ -9,6 +9,7 @@ from contextlib import suppress
 from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
+from http import HTTPStatus
 
 from aiohttp import ClientSession
 
@@ -22,6 +23,7 @@ from ..const import (
     BLU_TRV_IDENTIFIER,
     BLU_TRV_MODEL_ID,
     BLU_TRV_TIMEOUT,
+    CAMERA_SNAPSHOT_URL,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
@@ -663,6 +665,21 @@ class RpcDevice:
         """List favourite radio stations."""
         result = await self.call_rpc("Media.Radio.ListFavourites")
         return result["list"]
+
+    async def camera_get_image(self, id_: int) -> bytes | None:
+        """Return a still image from the camera's HTTP snapshot endpoint."""
+        async with self.aiohttp_session.get(
+            CAMERA_SNAPSHOT_URL.format(
+                host=self.ip_address,
+                port=self.port,
+                camera_id=id_,
+            ),
+            timeout=DEVICE_IO_TIMEOUT,
+        ) as resp:
+            if resp.status == HTTPStatus.OK:
+                return await resp.read()
+
+        return None
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
