@@ -63,8 +63,8 @@ class CustomPortNotSupported(ShellyError):
     """Raise if GEN1 devices are access with custom port."""
 
 
-class CameraError(ShellyError):
-    """Raised to indicate camera errors."""
+class HttpCallError(ShellyError):
+    """Raised to indicate HTTP call errors."""
 
     def __init__(self, code: int, message: str = "") -> None:
         """Initialize."""
