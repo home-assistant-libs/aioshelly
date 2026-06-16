@@ -36,8 +36,8 @@ from ..const import (
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
 from ..exceptions import (
-    CameraError,
     DeviceConnectionError,
+    HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -672,8 +672,10 @@ class RpcDevice:
             ),
             timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
         ) as resp:
+            if resp.status == HTTPStatus.UNAUTHORIZED:
+                raise InvalidAuthError(resp.status)
             if resp.status != HTTPStatus.OK:
-                raise CameraError(
+                raise HttpCallError(
                     resp.status, f"Snapshot endpoint returned HTTP {resp.status}"
                 )
 
@@ -697,8 +699,10 @@ class RpcDevice:
             headers={"Content-Type": "application/sdp"},
             timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
         ) as resp:
+            if resp.status == HTTPStatus.UNAUTHORIZED:
+                raise InvalidAuthError(resp.status)
             if resp.status != HTTPStatus.CREATED:
-                raise CameraError(
+                raise HttpCallError(
                     resp.status, f"WHEP endpoint returned HTTP {resp.status}"
                 )
 
