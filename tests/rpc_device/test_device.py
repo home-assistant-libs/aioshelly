@@ -3,7 +3,7 @@
 import re
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -103,6 +103,18 @@ async def shelly2pmg3_status() -> AsyncGenerator[dict[str, Any], None]:
 async def shelly2pmg3_cover_status() -> AsyncGenerator[dict[str, Any], None]:
     """Fixture for Shelly 2PM Gen3 cover status."""
     yield await load_device_fixture("shelly2pmg3", "Cover.GetStatus")
+
+
+@pytest_asyncio.fixture
+async def st1820_list_methods() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for ST1820 list methods."""
+    yield await load_device_fixture("st1820", "Shelly.ListMethods")
+
+
+@pytest_asyncio.fixture
+async def shelly2pmg3_list_methods() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Shelly 2PM Gen3 list methods."""
+    yield await load_device_fixture("shelly2pmg3", "Shelly.ListMethods")
 
 
 def test_mergedicts() -> None:
@@ -316,6 +328,22 @@ async def test_get_dynamic_components_not_supported(rpc_device: RpcDevice) -> No
 
 
 @pytest.mark.asyncio
+async def test_model_present(rpc_device: RpcDevice) -> None:
+    """Test model property returns model string when present."""
+    rpc_device._shelly = {"model": "SNSW-001P16EU"}
+
+    assert rpc_device.model == "SNSW-001P16EU"
+
+
+@pytest.mark.asyncio
+async def test_model_missing(rpc_device: RpcDevice) -> None:
+    """Test model property returns empty string when model key is absent."""
+    rpc_device._shelly = {"fw_id": "20231209-144328/1.0.0-gbf89ed5"}
+
+    assert rpc_device.model == ""
+
+
+@pytest.mark.asyncio
 async def test_shelly_gen1(client_session: ClientSession, ws_context: WsServer) -> None:
     """Test Shelly Gen1 device."""
     options = ConnectionOptions("10.10.10.10", device_mac="AABBCCDDEEFF")
@@ -365,6 +393,32 @@ async def test_device_initialize_and_shutdown(
 
     assert rpc_device._update_listener is None
     assert rpc_device._unsub_ws is None
+
+
+@pytest.mark.parametrize("auth_en", [False, True])
+@pytest.mark.asyncio
+async def test_device_init_auth_matches_device_setting(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+    auth_en: bool,
+) -> None:
+    """Test RpcDevice initialize sets auth based on device auth_en setting."""
+    blu_gateway_device_info["auth_en"] = auth_en
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+
+    await rpc_device.initialize()
+
+    assert rpc_device.connected is True
+    assert rpc_device.requires_auth is auth_en
+    assert bool(rpc_device._rpc._session.auth_data) is auth_en
 
 
 @pytest.mark.asyncio
@@ -668,6 +722,19 @@ async def test_script_create(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_script_eval(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_eval method."""
+    await rpc_device.script_eval(7, "setActive(true)")
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.Eval"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 7,
+        "code": "setActive(true)",
+    }
+
+
+@pytest.mark.asyncio
 async def test_script_putcode(rpc_device: RpcDevice) -> None:
     """Test RpcDevice script_putcode method."""
     await rpc_device.script_putcode(9, "lorem ipsum")
@@ -691,6 +758,40 @@ async def test_script_getcode(rpc_device: RpcDevice) -> None:
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 8, "offset": 0}
+
+
+@pytest.mark.asyncio
+async def test_script_getcode_with_length(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice script_getcode method with explicit read length."""
+    rpc_device.call_rpc_multiple.return_value = [{"data": "partial script"}]
+
+    result = await rpc_device.script_getcode(8, offset=4, bytes_to_read=16)
+
+    assert result == {"data": "partial script"}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 8,
+        "offset": 4,
+        "len": 16,
+    }
+
+
+@pytest.mark.asyncio
+async def test_methods_list(
+    rpc_device: RpcDevice,
+    shelly2pmg3_list_methods: dict[str, Any],
+) -> None:
+    """Test RpcDevice methods_list method."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [shelly2pmg3_list_methods],
+    ]
+
+    result = await rpc_device.methods_list()
+
+    assert result == shelly2pmg3_list_methods["methods"]
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.ListMethods"
 
 
 @pytest.mark.asyncio
@@ -837,6 +938,53 @@ async def test_device_mac_address_mismatch(
 
 
 @pytest.mark.asyncio
+async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) -> None:
+    """Test _connect_websocket re-raises MacAddressMismatchError unchanged."""
+    error = MacAddressMismatchError("device MAC mismatch")
+    rpc_device._init_calls = AsyncMock(side_effect=error)
+
+    with (
+        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
+        patch.object(
+            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
+        ) as disconnect_mock,
+        pytest.raises(MacAddressMismatchError),
+    ):
+        await rpc_device._connect_websocket()
+
+    assert rpc_device._last_error is error
+    disconnect_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_device_mac_address_mixed_case(
+    client_session: ClientSession,
+    ws_context: WsServer,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test RpcDevice initialize method when MAC differs in string case only."""
+    options = ConnectionOptions("10.10.10.10", device_mac="aabbccddeeff")
+
+    rpc_device = await RpcDevice.create(client_session, ws_context, options)
+    rpc_device.call_rpc_multiple = AsyncMock()
+
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+
+    await rpc_device.initialize()
+
+    assert rpc_device.initialized is True
+    assert rpc_device.status is not None
+
+
+@pytest.mark.asyncio
 async def test_cover_update_status(
     rpc_device: RpcDevice,
     shelly2pmg3_status: dict[str, Any],
@@ -962,6 +1110,16 @@ async def test_trigger_ota_update(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_trigger_add_on_ota_update(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice trigger_add_on_ota_update method."""
+    await rpc_device.trigger_add_on_ota_update(timeout=600)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.Update"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"timeout": 600}
+
+
+@pytest.mark.asyncio
 async def test_incorrect_shutdown(
     client_session: ClientSession,
     caplog: pytest.LogCaptureFixture,
@@ -986,44 +1144,31 @@ async def test_incorrect_shutdown(
     assert "error during shutdown: KeyError('AABBCCDDEEFF')" in caplog.text
 
 
-@pytest.mark.parametrize(
-    ("side_effect", "supports_scripts"),
-    [
-        (RpcCallError(-105, "Argument 'id', value 1 not found!"), True),
-        (RpcCallError(-114, "Method Script.GetCode failed: Method not found!"), False),
-        (RpcCallError(404, "No handler for Script.GetCode"), False),
-        (
-            [
-                {
-                    "id": 5,
-                    "src": "shellyplus2pm-a8032ab720ac",
-                    "dst": "aios-2293750469632",
-                    "result": {"data": "script"},
-                }
-            ],
-            True,
-        ),
-    ],
-)
 @pytest.mark.asyncio
 async def test_supports_scripts(
     rpc_device: RpcDevice,
-    side_effect: Exception | dict[str, Any],
-    supports_scripts: bool,
+    st1820_list_methods: dict[str, Any],
+    shelly2pmg3_list_methods: dict[str, Any],
 ) -> None:
     """Test supports_scripts method."""
-    rpc_device.call_rpc_multiple.side_effect = [side_effect]
+    # ST1820 does not support scripts
+    rpc_device.call_rpc_multiple.side_effect = [
+        [st1820_list_methods],
+    ]
 
     result = await rpc_device.supports_scripts()
 
-    assert result == supports_scripts
+    assert result is False
     assert rpc_device.call_rpc_multiple.call_count == 1
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Script.GetCode"
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
-        "id": 1,
-        "len": 0,
-        "offset": 0,
-    }
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Shelly.ListMethods"
+
+    # Shelly 2PM G3 supports scripts
+    rpc_device.call_rpc_multiple.side_effect = [
+        [shelly2pmg3_list_methods],
+    ]
+
+    result = await rpc_device.supports_scripts()
+    assert result is True
 
 
 @pytest.mark.asyncio
@@ -1825,3 +1970,171 @@ async def test_kvs_get(
 
     assert call_args_list[0][0][0][0][0] == "KVS.Get"
     assert call_args_list[0][0][0][0][1] == {"key": "key1"}
+
+
+@pytest.mark.asyncio
+async def test_media_play_or_pause(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_play_or_pause() method."""
+    await rpc_device.media_play_or_pause()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.PlayOrPause"
+
+
+@pytest.mark.asyncio
+async def test_media_stop(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_stop() method."""
+    await rpc_device.media_stop()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Stop"
+
+
+@pytest.mark.asyncio
+async def test_media_next(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_next() method."""
+    await rpc_device.media_next()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Next"
+
+
+@pytest.mark.asyncio
+async def test_media_previous(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_previous() method."""
+    await rpc_device.media_previous()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Previous"
+
+
+@pytest.mark.asyncio
+async def test_media_set_volume(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_set_volume() method."""
+    await rpc_device.media_set_volume(50)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.SetVolume"
+    assert call_args_list[0][0][0][0][1] == {"volume": 50}
+
+
+@pytest.mark.asyncio
+async def test_media_play_media(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_play_media() method."""
+    await rpc_device.media_play_media(3)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.MediaPlayer.Play"
+    assert call_args_list[0][0][0][0][1] == {"id": 3}
+
+
+@pytest.mark.asyncio
+async def test_media_list_media(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_list_media() method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {
+            "list": [
+                {
+                    "album": "Album 1",
+                    "artist": "Artist 1",
+                    "filename": "track1.mp3",
+                    "id": 1,
+                    "title": "Track One",
+                    "type": "AUDIO",
+                },
+                {
+                    "album": "Album 2",
+                    "artist": "Artist 2",
+                    "filename": "track2.mp3",
+                    "id": 2,
+                    "title": "Track Two",
+                    "type": "AUDIO",
+                },
+            ]
+        }
+    ]
+
+    result = await rpc_device.media_list_media()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.List"
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+
+
+@pytest.mark.asyncio
+async def test_media_play_radio_station(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_play_radio_station() method."""
+    await rpc_device.media_play_radio_station(5)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.Radio.PlayFavourite"
+    assert call_args_list[0][0][0][0][1] == {"id": 5}
+
+
+@pytest.mark.asyncio
+async def test_media_list_radio_stations(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice media_list_radio_stations() method."""
+    rpc_device.call_rpc_multiple.return_value = [
+        {
+            "list": [
+                {
+                    "country_code": "PL",
+                    "icon": "https://radio1.pl/favicon.png",
+                    "id": 0,
+                    "name": "Radio Station 1",
+                },
+                {
+                    "country_code": "PL",
+                    "icon": "https://radio2.pl/favicon.png",
+                    "id": 1,
+                    "name": "Radio Station 2",
+                },
+            ]
+        }
+    ]
+
+    result = await rpc_device.media_list_radio_stations()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Media.Radio.ListFavourites"
+
+    assert isinstance(result, list)
+    assert len(result) == 2

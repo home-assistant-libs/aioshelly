@@ -56,9 +56,14 @@ from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
 
-RPC_CALL_ERR_METHOD_NOT_FOUND = -114
-RPC_CALL_ERR_INVALID_ARG = -105
-RPC_CALL_ERR_NO_HANDLER = 404
+SCRIPT_SUPPORT_METHODS = {
+    "Script.List",
+    "Script.GetCode",
+    "Script.PutCode",
+    "Script.Create",
+    "Script.Start",
+    "Script.Stop",
+}
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -320,6 +325,11 @@ class RpcDevice:
         """Trigger an ota update."""
         params = {"stage": "beta"} if beta else {"stage": "stable"}
         await self.call_rpc("Shelly.Update", params)
+
+    async def trigger_add_on_ota_update(self, timeout: int = 300) -> None:
+        """Trigger an add-on ota update."""
+        params = {"timeout": timeout}
+        await self.call_rpc("AddOn.Update", params)
 
     async def trigger_reboot(self, delay_ms: int = 1000) -> None:
         """Trigger a device reboot."""
@@ -602,6 +612,47 @@ class RpcDevice:
         params = {"key": key, "value": val}
         await self.call_rpc("KVS.Set", params)
 
+    async def media_play_or_pause(self) -> None:
+        """Send play or pause command."""
+        await self.call_rpc("Media.MediaPlayer.PlayOrPause")
+
+    async def media_stop(self) -> None:
+        """Send stop command."""
+        await self.call_rpc("Media.MediaPlayer.Stop")
+
+    async def media_next(self) -> None:
+        """Send next command."""
+        await self.call_rpc("Media.MediaPlayer.Next")
+
+    async def media_previous(self) -> None:
+        """Send previous command."""
+        await self.call_rpc("Media.MediaPlayer.Previous")
+
+    async def media_set_volume(self, volume: int) -> None:
+        """Set media volume."""
+        params = {"volume": volume}
+        await self.call_rpc("Media.SetVolume", params)
+
+    async def media_play_media(self, media_id: int) -> None:
+        """Play media by ID."""
+        params = {"id": media_id}
+        await self.call_rpc("Media.MediaPlayer.Play", params)
+
+    async def media_list_media(self) -> list[dict[str, Any]]:
+        """List media."""
+        result = await self.call_rpc("Media.List")
+        return result["list"]
+
+    async def media_play_radio_station(self, media_id: int) -> None:
+        """Play favourite radio station by ID."""
+        params = {"id": media_id}
+        await self.call_rpc("Media.Radio.PlayFavourite", params)
+
+    async def media_list_radio_stations(self) -> list[dict[str, Any]]:
+        """List favourite radio stations."""
+        result = await self.call_rpc("Media.Radio.ListFavourites")
+        return result["list"]
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
@@ -628,7 +679,8 @@ class RpcDevice:
         self._shelly = await self.call_rpc("Shelly.GetDeviceInfo")
         # Auth only supported on WebSocket transport
         if (
-            self.options.username
+            self.requires_auth
+            and self.options.username
             and self.options.password
             and isinstance(self._rpc, WsRPC)
         ):
@@ -640,7 +692,7 @@ class RpcDevice:
 
         mac = self.shelly["mac"]
         device_mac = self.options.device_mac
-        if device_mac and device_mac != mac:
+        if device_mac and device_mac.lower() != mac.lower():
             raise MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
 
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
@@ -669,6 +721,11 @@ class RpcDevice:
             )
             first_page["components"].extend(next_page["components"])
         return first_page
+
+    async def methods_list(self) -> list[str]:
+        """Get a list of supported methods from 'Shelly.ListMethods'."""
+        result = await self.call_rpc("Shelly.ListMethods")
+        return result["methods"]
 
     async def script_list(self) -> list[ShellyScript]:
         """Get a list of scripts from 'Script.List'."""
@@ -705,6 +762,10 @@ class RpcDevice:
     async def script_stop(self, script_id: int) -> None:
         """Stop a script using 'Script.Stop'."""
         await self.call_rpc("Script.Stop", {"id": script_id})
+
+    async def script_eval(self, script_id: int, code: str) -> Any:
+        """Evaluate code in a running script using 'Script.Eval'."""
+        return await self.call_rpc("Script.Eval", {"id": script_id, "code": code})
 
     async def ble_setconfig(self, enable: bool, enable_rpc: bool) -> ShellyBLESetConfig:
         """Enable or disable ble with BLE.SetConfig."""
@@ -902,8 +963,8 @@ class RpcDevice:
 
     @property
     def model(self) -> str:
-        """Device model."""
-        return cast(str, self.shelly["model"])
+        """Device model or empty string if not provisioned."""
+        return cast(str, self.shelly.get("model", ""))
 
     @property
     def xmod_info(self) -> dict[str, Any]:
@@ -1024,32 +1085,8 @@ class RpcDevice:
     async def supports_scripts(self) -> bool:
         """Check if the device supports scripts.
 
-        Try to read 0 byte from a script to check if the device supports scripts,
-        if it supports scripts, it should reply with '{"data":"", "left":0}'
-        or a specific error code if the script does not exist.
-        {"code":-105,"message":"Argument 'id', value 1 not found!"}
-
-        Errors by devices that do not support scripts:
-
-        Shelly Wall display:
-        {"code":-114,"message":"Method Script.GetCode failed: Method not found!"}
-
-        Shelly X MOD1
-        {"code":404,"message":"No handler for Script.GetCode"}
+        Check if SCRIPT_SUPPORT_METHODS are in the list of supported methods,
+        if not then the device does not support scripts.
         """
-        try:
-            await self.script_getcode(1, bytes_to_read=0)
-        except RpcCallError as err:
-            # The device supports scripts, but the script does not exist
-            if err.code == RPC_CALL_ERR_INVALID_ARG:
-                return True
-            # The device does not support scripts
-            if err.code in [
-                RPC_CALL_ERR_METHOD_NOT_FOUND,
-                RPC_CALL_ERR_NO_HANDLER,
-            ]:
-                return False
-            raise
-
-        # The device returned a script response, it supports scripts
-        return True
+        methods = await self.methods_list()
+        return SCRIPT_SUPPORT_METHODS.issubset(methods)

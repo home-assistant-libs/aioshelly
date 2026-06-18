@@ -143,9 +143,11 @@ MODEL_SHUTTER_G3 = "S3SH-0A2P4EU"
 MODEL_X_MOD1 = "S3MX-0A"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
+MODEL_1L_G4 = "S4SW-0A1X1EUL"
 MODEL_1_MINI_G4 = "S4SW-001X8EU"
 MODEL_1PM_G4 = "S4SW-001P16EU"
 MODEL_1PM_MINI_G4 = "S4SW-001P8EU"
+MODEL_2L_G4 = "S4SW-0A2X4EUL"
 MODEL_2PM_G4 = "S4SW-002P16EU"
 MODEL_CURY_G4 = "S4PB-00CU000002"
 MODEL_DIMMER_G4 = "S4DM-0A101WWL"
@@ -1185,6 +1187,14 @@ DEVICES = {
         supported=True,
         model_id=0x1028,
     ),
+    MODEL_1L_G4: ShellyDevice(
+        model=MODEL_1L_G4,
+        name="Shelly 1L Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1035,
+    ),
     MODEL_1_MINI_G4: ShellyDevice(
         model=MODEL_1_MINI_G4,
         name="Shelly 1 Mini Gen4",
@@ -1208,6 +1218,14 @@ DEVICES = {
         gen=GEN4,
         supported=True,
         model_id=0x1031,
+    ),
+    MODEL_2L_G4: ShellyDevice(
+        model=MODEL_2L_G4,
+        name="Shelly 2L Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1034,
     ),
     MODEL_2PM_G4: ShellyDevice(
         model=MODEL_2PM_G4,

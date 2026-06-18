@@ -81,7 +81,7 @@ class WsRPCMocker(WsRPC):
         shallow_copy = response.copy()
         self.next_id_mock += 1
         shallow_copy["id"] = self.next_id_mock
-        response_with_correct_id = dumps(shallow_copy).decode()
+        response_with_correct_id = dumps(shallow_copy)
         await self.response_mocker.mock_ws_message(
             WSMessage(WSMsgType.TEXT, response_with_correct_id, None)
         )
@@ -90,7 +90,7 @@ class WsRPCMocker(WsRPC):
 @pytest_asyncio.fixture
 async def rpc_websocket_responses() -> AsyncGenerator[ResponseMocker, None]:
     """Fixture for a WebSocket responses."""
-    return ResponseMocker()
+    yield ResponseMocker()
 
 
 @pytest_asyncio.fixture
@@ -101,7 +101,7 @@ async def rpc_websocket_response(
     mock = MagicMock(spec=ClientWebSocketResponse)
     mock.receive = rpc_websocket_responses.read
     mock.closed = False
-    return mock
+    yield mock
 
 
 @pytest_asyncio.fixture
@@ -111,13 +111,13 @@ async def client_session(
     """Fixture for a ClientSession."""
     mock = MagicMock(spec=ClientSession)
     mock.ws_connect = AsyncMock(return_value=rpc_websocket_response)
-    return mock
+    yield mock
 
 
 @pytest_asyncio.fixture
 async def notify_history() -> AsyncGenerator[NotifyHistory, None]:
     """Fixture to track notify history."""
-    return NotifyHistory()
+    yield NotifyHistory()
 
 
 @pytest_asyncio.fixture

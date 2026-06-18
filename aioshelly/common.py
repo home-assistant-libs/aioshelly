@@ -116,7 +116,7 @@ async def get_info(
         raise error from err
 
     mac = result["mac"]
-    if device_mac and device_mac != mac:
+    if device_mac and device_mac.lower() != mac.lower():
         error = MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
         _LOGGER.debug("host %s:%s: error: %r", ip_address, port, error)
         raise error

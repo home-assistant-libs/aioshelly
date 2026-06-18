@@ -75,6 +75,36 @@ async def async_start_scanner(
     await device.script_start(ble_script_id)
 
 
+async def async_get_ble_script_id(device: RpcDevice) -> int | None:
+    """Return the installed BLE integration script id, or None if absent.
+
+    Callers that toggle active mode repeatedly (e.g. the active-window
+    scheduler) should resolve the id once and cache it for the
+    lifetime of the script, since the id is stable until the script
+    is recreated.
+    """
+    script_name_to_id = await _async_get_scripts_by_name(device)
+    return script_name_to_id.get(BLE_SCRIPT_NAME)
+
+
+async def async_set_active_mode(
+    device: RpcDevice, script_id: int, active: bool
+) -> None:
+    """Flip the BLE scanner's active mode via Script.Eval.
+
+    The script body exposes a ``setActive(v)`` function (see BLE_CODE
+    in const.py) that stops and restarts BLE.Scanner with the new
+    active flag. Driving the toggle via Script.Eval keeps the script
+    body byte-identical across windows, so the device's flash is not
+    rewritten on every transition.
+
+    ``script_id`` must be the id returned by ``async_get_ble_script_id``
+    or otherwise known to the caller. This keeps each flip a single
+    Script.Eval round-trip with no Script.List overhead.
+    """
+    await device.script_eval(script_id, f"setActive({'true' if active else 'false'})")
+
+
 def create_scanner(
     source: str,
     name: str,
@@ -106,7 +136,9 @@ async def async_ensure_ble_enabled(device: RpcDevice) -> bool:
     be enabled.
     """
     ble_config = await device.ble_getconfig()
-    if ble_config["enable"]:
+    # The enable property has been removed in firmware 2.0.0.
+    # Bluetooth scanning now auto-activates when needed by scripts.
+    if ble_config.get("enable", True):
         return False
     ble_enable = await device.ble_setconfig(enable=True, enable_rpc=False)
     if not ble_enable["restart_required"]:
