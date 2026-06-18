@@ -116,16 +116,15 @@ async def test_get_info() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_info_mac_mismatch(aiohttp_json_response_ctx: Any) -> None:
+async def test_get_info_mac_mismatch() -> None:
     """Test get_info function with MAC mismatch."""
     mock_response = await load_device_fixture("shellyplus2pm", "shelly.json")
     ip_address = "10.10.10.10"
 
     session = ClientSession()
-    request_ctx = aiohttp_json_response_ctx(mock_response)
 
     with (
-        patch.object(session, "get", return_value=request_ctx),
+        mock_shelly_get(payload=mock_response),
         pytest.raises(
             MacAddressMismatchError,
             match="Input MAC: 112233445566, Shelly MAC: AABBCCDDEEFF",
@@ -137,15 +136,14 @@ async def test_get_info_mac_mismatch(aiohttp_json_response_ctx: Any) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_info_mac_mixed_case(aiohttp_json_response_ctx: Any) -> None:
+async def test_get_info_mac_mixed_case() -> None:
     """Test get_info function when MAC differs in string case only."""
     mock_response = await load_device_fixture("shellyplus2pm", "shelly.json")
     ip_address = "10.10.10.10"
 
     session = ClientSession()
-    request_ctx = aiohttp_json_response_ctx(mock_response)
 
-    with patch.object(session, "get", return_value=request_ctx):
+    with mock_shelly_get(payload=mock_response):
         result = await get_info(session, ip_address, "aabbccddeeff")
 
     await session.close()
