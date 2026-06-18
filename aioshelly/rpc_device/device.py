@@ -963,8 +963,8 @@ class RpcDevice:
 
     @property
     def model(self) -> str:
-        """Device model."""
-        return cast(str, self.shelly["model"])
+        """Device model or empty string if not provisioned."""
+        return cast(str, self.shelly.get("model", ""))
 
     @property
     def xmod_info(self) -> dict[str, Any]:
