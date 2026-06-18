@@ -930,7 +930,7 @@ async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) ->
     with (
         patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
         patch.object(
-            rpc_device._rpc, "disconnect", new_callable=AsyncMock
+            rpc_device._rpc, "disconnect", wraps=rpc_device._rpc.disconnect
         ) as disconnect_mock,
         pytest.raises(MacAddressMismatchError),
     ):
