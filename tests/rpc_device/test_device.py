@@ -928,7 +928,7 @@ async def test_connect_websocket_reraises_mac_mismatch(rpc_device: RpcDevice) ->
     rpc_device._init_calls = AsyncMock(side_effect=error)
 
     with (
-        patch.object(rpc_device._rpc, "connect", new_callable=AsyncMock),
+        patch.object(rpc_device._rpc, "connect", wraps=rpc_device._rpc.connect),
         patch.object(
             rpc_device._rpc, "disconnect", new_callable=AsyncMock
         ) as disconnect_mock,
