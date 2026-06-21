@@ -55,4 +55,3 @@ repos:
     rev: v0.0.51
     hooks:
       - id: ty
-        files: ^aioshelly/.+\.py$
