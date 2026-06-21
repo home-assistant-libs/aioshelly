@@ -15,24 +15,34 @@ Asynchronous library to control Shelly devices
 - orjson
 
 ## Install
+
 ```bash
 pip install aioshelly
 ```
 
 ## Install from Source
+
 Run the following command inside this folder
+
 ```bash
 pip install --upgrade .
 ```
 
-## Install development requirements
-Run the following command inside this folder
+## Prepare develop environment
+
+Run the following commands inside this folder
+
 ```bash
-pip install .[dev] .[lint]
+python3 -m venv .venv
+source .venv/bin/activate
+pip install uv
+uv pip install .[dev] .[lint]
+prek install
 ```
 
 ## Examples
-### Gen1 Device (Block/CoAP) example:
+
+### Gen1 Device (Block/CoAP) example
 
 ```python
 import asyncio
@@ -69,7 +79,7 @@ if __name__ == "__main__":
     asyncio.run(test_block_device())
 ```
 
-### Gen2 and Gen3 (RPC/WebSocket) device example:
+### Gen2 and Gen3 (RPC/WebSocket) device example
 
 ```python
 import asyncio
@@ -111,17 +121,19 @@ The repository includes example script to quickly try it out.
 
 ### Connect to a device and print its status whenever we receive a state change:
 
-```
+```bash
 python3 tools/example.py -ip <ip> [-u <username>] [-p <password] -i
 ```
 
 ### Connect to all the devices in `devices.json` at once and print their status:
 
-```
+```bash
 python3 tools/example.py -d -i
 ```
-### Show usage help:
-```
+
+### Show usage help
+
+```bash
 python3 tools/example.py -h
 ```
 
