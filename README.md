@@ -40,6 +40,13 @@ uv pip install .[dev] .[lint]
 prek install
 ```
 
+> [!NOTE]
+> To activate venv on Windows use this command
+>
+> ```pwsh
+> .\.venv\Scripts\Activate.ps1
+>```
+
 ## Examples
 
 ### Gen1 Device (Block/CoAP) example
