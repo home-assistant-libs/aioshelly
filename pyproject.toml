@@ -148,7 +148,7 @@ deps =
 basepython = python3
 ignore_errors = True
 commands =
-  ty check aioshelly
+  ty check
 deps =
   .[lint]
 
