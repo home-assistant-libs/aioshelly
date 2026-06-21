@@ -56,8 +56,16 @@ include = ["aioshelly*"]
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.ty.environment]
+[tool.ty]
+
+[environment]
 python-version = "3.11"
+
+[overrides]
+exclude = [
+    "tests/**",
+    "tools/**",
+]
 
 [tool.ruff]
 target-version = "py311"

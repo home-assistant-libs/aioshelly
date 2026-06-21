@@ -80,7 +80,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                 )
                 return False
             previous_mode = self.current_mode
-            self.set_current_mode(BluetoothScanningMode.ACTIVE)  # ty: ignore[unresolved-attribute]
+            self.set_current_mode(BluetoothScanningMode.ACTIVE)
             try:
                 await asyncio.sleep(duration)
             finally:
@@ -109,7 +109,7 @@ class ShellyBLEScanner(BaseHaRemoteScanner):
                     # habluetooth's reload cycle reconciles on the next
                     # scanner start, and leaving current_mode stuck at ACTIVE
                     # would mislead the manager and UI indefinitely.
-                    self.set_current_mode(previous_mode)  # ty: ignore[unresolved-attribute]
+                    self.set_current_mode(previous_mode)
         return True
 
     def async_on_event(self, event: dict[str, Any]) -> None:
