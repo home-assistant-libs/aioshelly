@@ -9,7 +9,7 @@ if [ -n "${VIRTUAL_ENV:-}" ]; then
         echo "Attempting to deactivate..."
         deactivate 2>/dev/null || true
     else
-        echo "Note: This script must be sourced to deactivate the venv: source scripts/cleanup-venv.sh"
+        echo "Note: This script must be sourced to deactivate the venv: source script/cleanup-venv.sh"
     fi
 fi
 
