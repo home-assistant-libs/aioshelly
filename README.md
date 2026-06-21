@@ -28,7 +28,7 @@ Run the following command inside this folder
 pip install --upgrade .
 ```
 
-## Prepare develop environment
+## Prepare the development environment
 
 Run the following commands inside this folder
 
