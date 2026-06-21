@@ -58,14 +58,11 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.ty]
 
-[environment]
+[tool.ty.environment]
 python-version = "3.11"
 
-[overrides]
-exclude = [
-    "tests/**",
-    "tools/**",
-]
+[tool.ty.src]
+include = ["aioshelly"]
 
 [tool.ruff]
 target-version = "py311"
