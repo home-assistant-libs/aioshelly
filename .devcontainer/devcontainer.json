@@ -13,7 +13,7 @@
         "vscode": {
             "settings": {
                 "terminal.integrated.shell.linux": "/bin/bash",
-                "python.pythonPath": "./venv/bin/python",
+                "python.pythonPath": "./.venv/bin/python",
                 "python.languageServer": "Pylance",
                 "[python]": {
                     "editor.defaultFormatter": "charliermarsh.ruff"
@@ -23,7 +23,8 @@
             "extensions": [
                 "ms-python.python",
                 "ms-python.vscode-pylance",
-                "charliermarsh.ruff"
+                "charliermarsh.ruff",
+                "astral-sh.ty"
             ]
         }
     },

@@ -15,24 +15,41 @@ Asynchronous library to control Shelly devices
 - orjson
 
 ## Install
+
 ```bash
 pip install aioshelly
 ```
 
 ## Install from Source
+
 Run the following command inside this folder
+
 ```bash
 pip install --upgrade .
 ```
 
-## Install development requirements
-Run the following command inside this folder
+## Prepare the development environment
+
+Run the following commands inside this folder
+
 ```bash
-pip install .[dev] .[lint]
+python3 -m venv .venv
+source .venv/bin/activate
+pip install uv
+uv pip install .[dev] .[lint]
+prek install
 ```
 
+> [!NOTE]
+> To activate venv on Windows use this command
+>
+> ```pwsh
+> .\.venv\Scripts\Activate.ps1
+>```
+
 ## Examples
-### Gen1 Device (Block/CoAP) example:
+
+### Gen1 Device (Block/CoAP) example
 
 ```python
 import asyncio
@@ -69,7 +86,7 @@ if __name__ == "__main__":
     asyncio.run(test_block_device())
 ```
 
-### Gen2 and Gen3 (RPC/WebSocket) device example:
+### Gen2+ (RPC/WebSocket) device example
 
 ```python
 import asyncio
@@ -83,7 +100,7 @@ from aioshelly.rpc_device import RpcDevice, WsServer
 
 
 async def test_rpc_device():
-    """Test Gen2/Gen3 RPC (WebSocket) based device."""
+    """Test Gen2+ RPC (WebSocket) based device."""
     options = ConnectionOptions("192.168.1.188", "username", "password")
     ws_context = WsServer()
     await ws_context.initialize(8123)
@@ -111,17 +128,19 @@ The repository includes example script to quickly try it out.
 
 ### Connect to a device and print its status whenever we receive a state change:
 
-```
+```bash
 python3 tools/example.py -ip <ip> [-u <username>] [-p <password] -i
 ```
 
 ### Connect to all the devices in `devices.json` at once and print their status:
 
-```
+```bash
 python3 tools/example.py -d -i
 ```
-### Show usage help:
-```
+
+### Show usage help
+
+```bash
 python3 tools/example.py -h
 ```
 
