@@ -37,7 +37,7 @@ lint = [
   "pydocstyle==6.3.0",
   "ruff==0.15.20",
   "types-requests",
-  "ty==0.0.51",
+  "ty==0.0.55",
 ]
 dev = [
   "pytest-asyncio==1.4.0",
