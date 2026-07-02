@@ -752,21 +752,35 @@ class RpcDevice:
             f"a=candidate:{candidate_value}\r\n"
         )
 
-        await self.aiohttp_session.patch(
+        async with self.aiohttp_session.patch(
             session_url,
             data=body,
             headers={"Content-Type": "application/trickle-ice-sdpfrag"},
             timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
-        )
+        ) as resp:
+            if resp.status == HTTPStatus.UNAUTHORIZED:
+                raise InvalidAuthError(resp.status)
+            if resp.status != HTTPStatus.OK:
+                raise HttpCallError(
+                    resp.status,
+                    f"Trickle ICE endpoint returned HTTP {resp.status}",
+                )
 
     async def camera_close_webrtc_session(self, session_url: str) -> None:
         """Close a WHEP session on the camera."""
         if self.aiohttp_session is None:
             raise ValueError("aiohttp_session required")
 
-        await self.aiohttp_session.delete(
+        async with self.aiohttp_session.delete(
             session_url, timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT)
-        )
+        ) as resp:
+            if resp.status == HTTPStatus.UNAUTHORIZED:
+                raise InvalidAuthError(resp.status)
+            if resp.status != HTTPStatus.OK:
+                raise HttpCallError(
+                    resp.status,
+                    f"WHEP session close endpoint returned HTTP {resp.status}",
+                )
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
