@@ -2210,16 +2210,11 @@ async def test_add_on_info(
 
 
 @pytest.mark.asyncio
-async def test_camera_get_image(rpc_device: RpcDevice) -> None:
+async def test_camera_get_image(
+    rpc_device: RpcDevice,
+    camera_mock_response: AsyncMock,  # noqa: ARG001
+) -> None:
     """Test camera_get_image returns image data."""
-    mock_resp = AsyncMock()
-    mock_resp.status = HTTPStatus.OK
-    mock_resp.read = AsyncMock(return_value=b"image_data")
-
-    mock_ctx = AsyncMock()
-    mock_ctx.__aenter__.return_value = mock_resp
-    rpc_device.aiohttp_session.get.return_value = mock_ctx
-
     result = await rpc_device.camera_get_image(0)
 
     assert result == b"image_data"
@@ -2227,28 +2222,22 @@ async def test_camera_get_image(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
-async def test_camera_get_image_unauthorized(rpc_device: RpcDevice) -> None:
+async def test_camera_get_image_unauthorized(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
     """Test camera_get_image raises InvalidAuthError on 401."""
-    mock_resp = AsyncMock()
-    mock_resp.status = HTTPStatus.UNAUTHORIZED
-
-    mock_ctx = AsyncMock()
-    mock_ctx.__aenter__.return_value = mock_resp
-    rpc_device.aiohttp_session.get.return_value = mock_ctx
+    camera_mock_response.status = HTTPStatus.UNAUTHORIZED
 
     with pytest.raises(InvalidAuthError):
         await rpc_device.camera_get_image(0)
 
 
 @pytest.mark.asyncio
-async def test_camera_get_image_error_status(rpc_device: RpcDevice) -> None:
+async def test_camera_get_image_error_status(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
     """Test camera_get_image raises HttpCallError on non-OK status."""
-    mock_resp = AsyncMock()
-    mock_resp.status = HTTPStatus.INTERNAL_SERVER_ERROR
-
-    mock_ctx = AsyncMock()
-    mock_ctx.__aenter__.return_value = mock_resp
-    rpc_device.aiohttp_session.get.return_value = mock_ctx
+    camera_mock_response.status = HTTPStatus.INTERNAL_SERVER_ERROR
 
     with pytest.raises(HttpCallError, match="HTTP 500"):
         await rpc_device.camera_get_image(0)

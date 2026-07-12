@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncGenerator, Callable
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -169,3 +170,17 @@ async def rpc_device(
     rpc_device.call_rpc_multiple = AsyncMock()
 
     yield rpc_device
+
+
+@pytest_asyncio.fixture
+async def camera_mock_response(rpc_device: RpcDevice) -> AsyncMock:
+    """Fixture for mocking camera HTTP response."""
+    mock_resp = AsyncMock()
+    mock_resp.status = HTTPStatus.OK
+    mock_resp.read = AsyncMock(return_value=b"image_data")
+
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__.return_value = mock_resp
+    rpc_device.aiohttp_session.get.return_value = mock_ctx
+
+    return mock_resp
