@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import AsyncGenerator
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -16,6 +17,7 @@ from aioshelly.common import ConnectionOptions, process_ip_or_options
 from aioshelly.const import NOTIFY_WS_CLOSED
 from aioshelly.exceptions import (
     DeviceConnectionError,
+    HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -2205,3 +2207,48 @@ async def test_add_on_info(
     )
     if call_count > 1:
         assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image(rpc_device: RpcDevice) -> None:
+    """Test camera_get_image returns image data."""
+    mock_resp = AsyncMock()
+    mock_resp.status = HTTPStatus.OK
+    mock_resp.read = AsyncMock(return_value=b"image_data")
+
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__.return_value = mock_resp
+    rpc_device.aiohttp_session.get.return_value = mock_ctx
+
+    result = await rpc_device.camera_get_image(0)
+
+    assert result == b"image_data"
+    rpc_device.aiohttp_session.get.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_unauthorized(rpc_device: RpcDevice) -> None:
+    """Test camera_get_image raises InvalidAuthError on 401."""
+    mock_resp = AsyncMock()
+    mock_resp.status = HTTPStatus.UNAUTHORIZED
+
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__.return_value = mock_resp
+    rpc_device.aiohttp_session.get.return_value = mock_ctx
+
+    with pytest.raises(InvalidAuthError):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_error_status(rpc_device: RpcDevice) -> None:
+    """Test camera_get_image raises HttpCallError on non-OK status."""
+    mock_resp = AsyncMock()
+    mock_resp.status = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__.return_value = mock_resp
+    rpc_device.aiohttp_session.get.return_value = mock_ctx
+
+    with pytest.raises(HttpCallError, match="HTTP 500"):
+        await rpc_device.camera_get_image(0)
