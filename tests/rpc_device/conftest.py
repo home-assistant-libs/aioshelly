@@ -182,5 +182,8 @@ async def camera_mock_response(rpc_device: RpcDevice) -> AsyncMock:
     mock_ctx = AsyncMock()
     mock_ctx.__aenter__.return_value = mock_resp
     rpc_device.aiohttp_session.get.return_value = mock_ctx
+    rpc_device.aiohttp_session.post.return_value = mock_ctx
+    rpc_device.aiohttp_session.patch.return_value = mock_ctx
+    rpc_device.aiohttp_session.delete.return_value = mock_ctx
 
     return mock_resp

@@ -2241,3 +2241,162 @@ async def test_camera_get_image_error_status(
 
     with pytest.raises(HttpCallError, match="HTTP 500"):
         await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_camera_start_webrtc_session(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_start_webrtc_session with location header."""
+    camera_mock_response.status = HTTPStatus.CREATED
+    camera_mock_response.text = AsyncMock(
+        return_value="v=0\r\na=ice-ufrag:abc\r\na=ice-pwd:def\r\n"
+    )
+    camera_mock_response.headers = {"Location": "/camera/0/whep/1/session123"}
+
+    answer_sdp, session_url, ice_creds = await rpc_device.camera_start_webrtc_session(
+        0, 1, "v=0\r\na=ice-ufrag:abc\r\na=ice-pwd:def\r\n"
+    )
+
+    assert answer_sdp == "v=0\r\na=ice-ufrag:abc\r\na=ice-pwd:def\r\n"
+    assert session_url == "http://10.10.10.10:80/camera/0/whep/1/session123"
+    assert ice_creds == ("abc", "def")
+    rpc_device.aiohttp_session.post.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_camera_start_webrtc_session_no_location(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_start_webrtc_session without location header."""
+    camera_mock_response.status = HTTPStatus.CREATED
+    camera_mock_response.text = AsyncMock(return_value="sdp_answer")
+    camera_mock_response.headers = {}
+
+    answer_sdp, session_url, ice_creds = await rpc_device.camera_start_webrtc_session(
+        0, 1, "v=0\r\na=ice-ufrag:abc\r\na=ice-pwd:def\r\n"
+    )
+
+    assert answer_sdp == "sdp_answer"
+    assert session_url is None
+    assert ice_creds == ("abc", "def")
+
+
+@pytest.mark.asyncio
+async def test_camera_start_webrtc_session_unauthorized(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_start_webrtc_session raises InvalidAuthError on 401."""
+    camera_mock_response.status = HTTPStatus.UNAUTHORIZED
+
+    with pytest.raises(InvalidAuthError):
+        await rpc_device.camera_start_webrtc_session(
+            0, 1, "v=0\r\na=ice-ufrag:abc\r\na=ice-pwd:def\r\n"
+        )
+
+
+@pytest.mark.asyncio
+async def test_camera_start_webrtc_session_error_status(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_start_webrtc_session raises HttpCallError on non-CREATED."""
+    camera_mock_response.status = HTTPStatus.BAD_REQUEST
+
+    with pytest.raises(HttpCallError, match="HTTP 400"):
+        await rpc_device.camera_start_webrtc_session(
+            0, 1, "v=0\r\na=ice-ufrag:abc\r\na=ice-pwd:def\r\n"
+        )
+
+
+@pytest.mark.asyncio
+async def test_camera_send_webrtc_candidate(
+    rpc_device: RpcDevice,
+    camera_mock_response: AsyncMock,  # noqa: ARG001
+) -> None:
+    """Test camera_send_webrtc_candidate."""
+    await rpc_device.camera_send_webrtc_candidate(
+        "http://session/url", ("abc", "def"), "a=candidate:123", "0"
+    )
+
+    rpc_device.aiohttp_session.patch.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_camera_send_webrtc_candidate_unauthorized(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_send_webrtc_candidate raises InvalidAuthError on 401."""
+    camera_mock_response.status = HTTPStatus.UNAUTHORIZED
+
+    with pytest.raises(InvalidAuthError):
+        await rpc_device.camera_send_webrtc_candidate(
+            "http://session/url", ("abc", "def"), "a=candidate:123", "0"
+        )
+
+
+@pytest.mark.asyncio
+async def test_camera_send_webrtc_candidate_error_status(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_send_webrtc_candidate raises HttpCallError on non-OK."""
+    camera_mock_response.status = HTTPStatus.NOT_FOUND
+
+    with pytest.raises(HttpCallError, match="HTTP 404"):
+        await rpc_device.camera_send_webrtc_candidate(
+            "http://session/url", ("abc", "def"), "a=candidate:123", "0"
+        )
+
+
+@pytest.mark.asyncio
+async def test_camera_close_webrtc_session(
+    rpc_device: RpcDevice,
+    camera_mock_response: AsyncMock,  # noqa: ARG001
+) -> None:
+    """Test camera_close_webrtc_session."""
+    await rpc_device.camera_close_webrtc_session("http://session/url")
+
+    rpc_device.aiohttp_session.delete.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_camera_close_webrtc_session_unauthorized(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_close_webrtc_session raises InvalidAuthError on 401."""
+    camera_mock_response.status = HTTPStatus.UNAUTHORIZED
+
+    with pytest.raises(InvalidAuthError):
+        await rpc_device.camera_close_webrtc_session("http://session/url")
+
+
+@pytest.mark.asyncio
+async def test_camera_close_webrtc_session_error_status(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_close_webrtc_session raises HttpCallError on non-OK."""
+    camera_mock_response.status = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    with pytest.raises(HttpCallError, match="HTTP 500"):
+        await rpc_device.camera_close_webrtc_session("http://session/url")
+
+
+@pytest.mark.asyncio
+async def test_camera_methods_without_aiohttp_session(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test camera methods raise ValueError when aiohttp_session is None."""
+    rpc_device.aiohttp_session = None
+
+    with pytest.raises(ValueError, match="aiohttp_session required"):
+        await rpc_device.camera_get_image(0)
+
+    with pytest.raises(ValueError, match="aiohttp_session required"):
+        await rpc_device.camera_start_webrtc_session(0, 1, "sdp")
+
+    with pytest.raises(ValueError, match="aiohttp_session required"):
+        await rpc_device.camera_send_webrtc_candidate(
+            "http://session/url", ("abc", "def"), "a=candidate:123"
+        )
+
+    with pytest.raises(ValueError, match="aiohttp_session required"):
+        await rpc_device.camera_close_webrtc_session("http://session/url")
