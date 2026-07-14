@@ -33,9 +33,9 @@ from aiohttp.web import (
 )
 from yarl import URL
 
+from ..common import use_ssl
 from ..const import (
     DEFAULT_HTTP_PORT,
-    DEFAULT_HTTPS_PORT,
     NOTIFY_WS_CLOSED,
     WS_API_URL,
     WS_HEARTBEAT,
@@ -244,7 +244,7 @@ class WsRPC(WsBase):
         super().__init__()
         self._ip_address = ip_address
         self._port = port
-        self._use_ssl = port == DEFAULT_HTTPS_PORT
+        self._use_ssl = use_ssl(port)
         self._verify_ssl = verify_ssl
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None

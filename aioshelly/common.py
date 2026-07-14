@@ -37,6 +37,11 @@ _LOGGER = logging.getLogger(__name__)
 DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT = ClientTimeout(total=DEVICE_IO_TIMEOUT)
 
 
+def use_ssl(port: int) -> bool:
+    """Return True if SSL should be used based on port number."""
+    return port == DEFAULT_HTTPS_PORT
+
+
 @dataclass
 class ConnectionOptions:
     """Shelly options for connection."""
@@ -54,7 +59,7 @@ class ConnectionOptions:
     @property
     def use_ssl(self) -> bool:
         """Return True if SSL should be used (port 443)."""
-        return self.port == DEFAULT_HTTPS_PORT
+        return use_ssl(self.port)
 
     def __post_init__(self) -> None:
         """Call after initialization."""
@@ -102,12 +107,11 @@ async def get_info(
     verify_ssl: bool = True,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
-    use_ssl = port == DEFAULT_HTTPS_PORT
     error: ShellyError
     try:
         async with aiohttp_session.get(
             URL.build(
-                scheme="https" if use_ssl else "http",
+                scheme="https" if use_ssl(port) else "http",
                 host=ip_address,
                 port=port,
                 path="/shelly",
