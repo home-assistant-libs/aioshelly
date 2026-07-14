@@ -26,6 +26,8 @@ def parse_sdp_ice_credentials(sdp: str) -> tuple[str, str]:
             ufrag = line[12:]
         elif line.startswith("a=ice-pwd:"):
             pwd = line[10:]
+
     if not ufrag or not pwd:
         raise ValueError("Missing ice-ufrag or ice-pwd in SDP")
+
     return ufrag, pwd

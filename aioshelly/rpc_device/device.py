@@ -699,6 +699,13 @@ class RpcDevice:
         if self.aiohttp_session is None:
             raise ValueError("aiohttp_session required")
 
+        _LOGGER.debug(
+            "Starting WHEP session for camera %s stream %s, offer SDP: %s",
+            camera_id,
+            stream_id,
+            offer_sdp,
+        )
+
         async with self.aiohttp_session.post(
             URL.build(
                 scheme="http",
@@ -720,6 +727,15 @@ class RpcDevice:
             answer_sdp = await resp.text()
             location = resp.headers.get("Location", "")
 
+            _LOGGER.debug(
+                "WHEP session created for camera %s stream %s, answer SDP: %s, "
+                "location: %s",
+                camera_id,
+                stream_id,
+                answer_sdp,
+                location,
+            )
+
         session_url = None
         if location:
             session_url = (
@@ -727,6 +743,13 @@ class RpcDevice:
                 if location.startswith("/")
                 else location
             )
+
+        _LOGGER.debug(
+            "WHEP session URL for camera %s stream %s: %s",
+            camera_id,
+            stream_id,
+            session_url,
+        )
 
         return answer_sdp, session_url, parse_sdp_ice_credentials(offer_sdp)
 
@@ -752,6 +775,10 @@ class RpcDevice:
             f"a=candidate:{candidate_value}\r\n"
         )
 
+        _LOGGER.debug(
+            "Sending trickle ICE candidate for session %s: %s", session_url, body
+        )
+
         async with self.aiohttp_session.patch(
             session_url,
             data=body,
@@ -766,10 +793,16 @@ class RpcDevice:
                     f"Trickle ICE endpoint returned HTTP {resp.status}",
                 )
 
+            _LOGGER.debug(
+                "Trickle ICE candidate sent successfully for session %s", session_url
+            )
+
     async def camera_close_webrtc_session(self, session_url: str) -> None:
         """Close a WHEP session on the camera."""
         if self.aiohttp_session is None:
             raise ValueError("aiohttp_session required")
+
+        _LOGGER.debug("Closing WHEP session: %s", session_url)
 
         async with self.aiohttp_session.delete(
             session_url, timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT)
