@@ -211,16 +211,3 @@ def test_use_ssl_function() -> None:
     assert use_ssl(DEFAULT_HTTPS_PORT) is True
     assert use_ssl(DEFAULT_HTTP_PORT) is False
     assert use_ssl(8443) is False
-
-
-def test_connection_options_use_ssl() -> None:
-    """Test ConnectionOptions.use_ssl property."""
-    assert (
-        ConnectionOptions(ip_address="10.10.10.10", port=DEFAULT_HTTPS_PORT).use_ssl
-        is True
-    )
-    assert (
-        ConnectionOptions(ip_address="10.10.10.10", port=DEFAULT_HTTP_PORT).use_ssl
-        is False
-    )
-    assert ConnectionOptions(ip_address="10.10.10.10", port=8443).use_ssl is False

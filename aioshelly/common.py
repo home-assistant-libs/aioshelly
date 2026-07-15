@@ -56,11 +56,6 @@ class ConnectionOptions:
     ble_device: BLEDevice | None = None
     verify_ssl: bool = True
 
-    @property
-    def use_ssl(self) -> bool:
-        """Return True if SSL should be used (port 443)."""
-        return use_ssl(self.port)
-
     def __post_init__(self) -> None:
         """Call after initialization."""
         if self.ip_address is None and self.ble_device is None:
