@@ -323,6 +323,12 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument(
         "--mac", "-m", type=str, help="Optional device MAC to subscribe for updates"
     )
+    parser.add_argument(
+        "--no_verify_ssl",
+        "-nvs",
+        action="store_true",
+        help="Disable SSL certificate verification (useful for self-signed certs)",
+    )
 
     arguments = parser.parse_args()
 
@@ -354,7 +360,11 @@ async def main() -> None:
         if args.username and args.password is None:
             parser.error("--username and --password must be used together")
         options = ConnectionOptions(
-            args.ip_address, args.username, args.password, device_mac=args.mac
+            args.ip_address,
+            args.username,
+            args.password,
+            device_mac=args.mac,
+            verify_ssl=not args.no_verify_ssl,
         )
         await connect_and_save(options, args.init, args.gen)
     else:
