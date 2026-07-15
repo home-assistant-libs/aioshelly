@@ -238,7 +238,7 @@ class WsRPC(WsBase):
         ip_address: str,
         on_notification: Callable[[RPCSource, str, dict | None], None],
         port: int = DEFAULT_HTTP_PORT,
-        verify_ssl: bool = True,
+        verify_ssl: bool = False,
     ) -> None:
         """Initialize WsRPC class."""
         super().__init__()

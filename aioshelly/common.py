@@ -54,7 +54,7 @@ class ConnectionOptions:
     device_mac: str | None = None
     port: int = DEFAULT_HTTP_PORT
     ble_device: BLEDevice | None = None
-    verify_ssl: bool = True
+    verify_ssl: bool = False
 
     def __post_init__(self) -> None:
         """Call after initialization."""
@@ -99,7 +99,7 @@ async def get_info(
     ip_address: str,
     device_mac: str | None = None,
     port: int = DEFAULT_HTTP_PORT,
-    verify_ssl: bool = True,
+    verify_ssl: bool = False,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
     error: ShellyError

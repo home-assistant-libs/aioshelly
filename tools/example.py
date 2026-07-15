@@ -194,10 +194,10 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     )
 
     parser.add_argument(
-        "--no_verify_ssl",
-        "-nvs",
+        "--verify_ssl",
+        "-vs",
         action="store_true",
-        help="Disable SSL certificate verification (useful for self-signed certs)",
+        help="Enable SSL certificate verification",
     )
 
     arguments = parser.parse_args()
@@ -234,7 +234,7 @@ async def main() -> None:
             args.password,
             device_mac=args.mac,
             port=args.device_port,
-            verify_ssl=not args.no_verify_ssl,
+            verify_ssl=args.verify_ssl,
         )
         if args.update_ws:
             await update_outbound_ws(options, args.init, args.update_ws)
