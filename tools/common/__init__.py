@@ -45,7 +45,10 @@ async def create_device(
     """Create a device."""
     if gen is None:
         if info := await get_info(
-            aiohttp_session, options.ip_address, port=options.port
+            aiohttp_session,
+            options.ip_address,
+            port=options.port,
+            verify_ssl=options.verify_ssl,
         ):
             gen = info.get("gen", 1)
         else:

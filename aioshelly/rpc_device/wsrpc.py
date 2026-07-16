@@ -33,6 +33,7 @@ from aiohttp.web import (
 )
 from yarl import URL
 
+from ..common import use_ssl
 from ..const import (
     DEFAULT_HTTP_PORT,
     NOTIFY_WS_CLOSED,
@@ -237,11 +238,14 @@ class WsRPC(WsBase):
         ip_address: str,
         on_notification: Callable[[RPCSource, str, dict | None], None],
         port: int = DEFAULT_HTTP_PORT,
+        verify_ssl: bool = False,
     ) -> None:
         """Initialize WsRPC class."""
         super().__init__()
         self._ip_address = ip_address
         self._port = port
+        self._use_ssl = use_ssl(port)
+        self._verify_ssl = verify_ssl
         self._on_notification = on_notification
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse[Literal[False]] | None = None
@@ -264,10 +268,14 @@ class WsRPC(WsBase):
         try:
             self._client = await aiohttp_session.ws_connect(
                 URL.build(
-                    scheme="http", host=self._ip_address, port=self._port, path="/rpc"
+                    scheme="https" if self._use_ssl else "http",
+                    host=self._ip_address,
+                    port=self._port,
+                    path="/rpc",
                 ),
                 heartbeat=WS_HEARTBEAT,
                 decode_text=False,
+                ssl=self._verify_ssl,
             )
         except (
             client_exceptions.WSServerHandshakeError,

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 from .const import (
     CONNECT_ERRORS,
     DEFAULT_HTTP_PORT,
+    DEFAULT_HTTPS_PORT,
     DEVICE_IO_TIMEOUT,
     DEVICES,
     FIRMWARE_PATTERN,
@@ -36,6 +37,11 @@ _LOGGER = logging.getLogger(__name__)
 DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT = ClientTimeout(total=DEVICE_IO_TIMEOUT)
 
 
+def use_ssl(port: int) -> bool:
+    """Return True if SSL should be used based on port number."""
+    return port == DEFAULT_HTTPS_PORT
+
+
 @dataclass
 class ConnectionOptions:
     """Shelly options for connection."""
@@ -48,6 +54,7 @@ class ConnectionOptions:
     device_mac: str | None = None
     port: int = DEFAULT_HTTP_PORT
     ble_device: BLEDevice | None = None
+    verify_ssl: bool = False
 
     def __post_init__(self) -> None:
         """Call after initialization."""
@@ -92,14 +99,21 @@ async def get_info(
     ip_address: str,
     device_mac: str | None = None,
     port: int = DEFAULT_HTTP_PORT,
+    verify_ssl: bool = False,
 ) -> dict[str, Any]:
     """Get info from device through REST call."""
     error: ShellyError
     try:
         async with aiohttp_session.get(
-            URL.build(scheme="http", host=ip_address, port=port, path="/shelly"),
+            URL.build(
+                scheme="https" if use_ssl(port) else "http",
+                host=ip_address,
+                port=port,
+                path="/shelly",
+            ),
             raise_for_status=True,
             timeout=DEVICE_IO_TIMEOUT_CLIENT_TIMEOUT,
+            ssl=verify_ssl,
         ) as resp:
             result: dict[str, Any] = await resp.json()
     except TimeoutError as err:

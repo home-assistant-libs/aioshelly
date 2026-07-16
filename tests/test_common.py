@@ -15,7 +15,9 @@ from aioshelly.common import (
     get_info,
     is_firmware_supported,
     process_ip_or_options,
+    use_ssl,
 )
+from aioshelly.const import DEFAULT_HTTP_PORT, DEFAULT_HTTPS_PORT
 from aioshelly.exceptions import (
     DeviceConnectionError,
     DeviceConnectionTimeoutError,
@@ -202,3 +204,10 @@ def test_connection_options_both_provided() -> None:
         ValueError, match="Cannot provide both ip_address and ble_device"
     ):
         ConnectionOptions(ip_address="192.168.1.1", ble_device=ble_device)
+
+
+def test_use_ssl_function() -> None:
+    """Test use_ssl standalone function."""
+    assert use_ssl(DEFAULT_HTTPS_PORT) is True
+    assert use_ssl(DEFAULT_HTTP_PORT) is False
+    assert use_ssl(8443) is False

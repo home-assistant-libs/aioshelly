@@ -118,7 +118,10 @@ class RpcDevice:
         elif options.ip_address is not None:
             # WebSocket transport
             self._rpc = WsRPC(
-                options.ip_address, self._on_notification, port=options.port
+                options.ip_address,
+                self._on_notification,
+                port=options.port,
+                verify_ssl=options.verify_ssl,
             )
         else:
             # BLE transport (guaranteed non-None by ConnectionOptions)
