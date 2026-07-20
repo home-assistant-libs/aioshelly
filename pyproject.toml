@@ -111,6 +111,8 @@ legacy_tox_ini = """
 [tox]
 envlist = py311, py312, py313, py314, lint, prek, ty, tests
 skip_missing_interpreters = True
+setenv =
+    UV_PROJECT_ENVIRONMENT = {envdir}
 
 [gh-actions]
 python =
