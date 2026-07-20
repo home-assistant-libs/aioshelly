@@ -31,7 +31,7 @@ dependencies = [
   "zeroconf>=0.148.0"
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 lint = [
   "prek==0.4.10",
   "pydocstyle==6.3.0",
@@ -119,20 +119,22 @@ python =
   3.14: py314, tests
 
 [testenv:lint]
-basepython = python3
+skip_install = true
+allowlist_externals = uv
 ignore_errors = True
 commands =
-  ruff format --check ./
-  ruff check ./
-  pydocstyle aioshelly
-deps =
-  .[lint]
+  uv sync --all-groups
+  uv run ruff format --check ./
+  uv run ruff check ./
+  uv run pydocstyle aioshelly
 
 [testenv:prek]
-basepython = python3
+skip_install = true
+allowlist_externals = uv
 ignore_errors = True
 commands =
-  prek run \
+  uv sync --all-groups
+  uv run prek run \
     check-executables-have-shebangs \
     trailing-whitespace \
     end-of-file-fixer \
@@ -141,22 +143,20 @@ commands =
     check-toml \
     mixed-line-ending \
     --all-files
-deps =
-  .[lint]
 
 [testenv:ty]
-basepython = python3
+skip_install = true
+allowlist_externals = uv
 ignore_errors = True
 commands =
-  ty check
-deps =
-  .[lint]
+  uv sync --all-groups
+  uv run ty check
 
 [testenv:tests]
-basepython = python3
+skip_install = true
+allowlist_externals = uv
 ignore_errors = True
 commands =
-  python -m pytest --cov=aioshelly --cov-report=xml --cov-report=term-missing
-deps =
-  .[dev]
+  uv sync --all-groups
+  uv run python -m pytest --cov=aioshelly --cov-report=xml --cov-report=term-missing
 """
