@@ -159,6 +159,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "requests" },
     { name = "tox" },
+    { name = "tox-gh-actions" },
 ]
 lint = [
     { name = "prek" },
@@ -186,6 +187,7 @@ dev = [
     { name = "pytest-cov", specifier = "==7.1.0" },
     { name = "requests" },
     { name = "tox", specifier = "==4.57.0" },
+    { name = "tox-gh-actions" },
 ]
 lint = [
     { name = "prek", specifier = "==0.4.10" },
@@ -1571,6 +1573,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/27/21c5edac636f3897c8aef1d000f77dded5c5f55302025419dbb5500e3a35/tox-4.57.0.tar.gz", hash = "sha256:b2f758011dfbad7be4b4cc39d2cae21deeb3c3c186e6d7a92d7630eade4218cf", size = 287613, upload-time = "2026-07-17T21:13:07.713Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4f/51/60df3181baa4ae491eb1d3998b0a7d221eb93ad8a6d43463a6fee648a02b/tox-4.57.0-py3-none-any.whl", hash = "sha256:ede907fa911b55cbf1e7dc823a5b455a164755a172124675b811210676ba31c2", size = 217717, upload-time = "2026-07-17T21:13:06.327Z" },
+]
+
+[[package]]
+name = "tox-gh-actions"
+version = "3.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tox" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9c/11/6c3f818887c37a144a4b48bfc440150f006bdac7a68d92de1046680f578f/tox_gh_actions-3.5.0.tar.gz", hash = "sha256:cc8e148c4513042e5019973e5672594c3df241b035e7fb550f6f778588110051", size = 18815, upload-time = "2025-10-22T14:12:24.846Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/9e/8d50f3b3fc4af8c73154f64d4a2293bfa2d517a19000e70ef2d614254084/tox_gh_actions-3.5.0-py3-none-any.whl", hash = "sha256:070790114c92f4c94337047515ca5e077ceb269a5cb9366e0a0b3440a024eca1", size = 9910, upload-time = "2025-10-22T14:12:23.405Z" },
 ]
 
 [[package]]
