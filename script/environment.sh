@@ -4,5 +4,4 @@
 export UV_LINK_MODE=copy
 
 uv sync --all-groups
-source .venv/bin/activate
-prek install
+uv run prek install
