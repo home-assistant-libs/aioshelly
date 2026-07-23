@@ -33,8 +33,10 @@ pip install --upgrade .
 Run the following commands inside this folder
 
 ```bash
-uv sync --all-groups
+python3 -m venv .venv
 source .venv/bin/activate
+pip install uv
+uv sync --all-groups
 prek install
 ```
 
