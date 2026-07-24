@@ -36,7 +36,7 @@ Run the following commands inside this folder
 python3 -m venv .venv
 source .venv/bin/activate
 pip install uv
-uv pip install .[dev] .[lint]
+uv sync --all-groups
 prek install
 ```
 
