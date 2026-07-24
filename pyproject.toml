@@ -96,6 +96,7 @@ lint.ignore = [
     "T201",      # `print` found
 ]
 "tests/**/*" = [
+    "PLR0917",   # Too many positional arguments
     "D100",
     "PLR0913",
     "PLR2004",
