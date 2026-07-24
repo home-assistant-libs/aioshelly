@@ -44,7 +44,7 @@ dev = [
   "pytest-cov==7.1.0",
   "pytest==9.1.1",
   "requests",
-  "tox==4.57.0",
+  "tox==4.58.0",
   "tox-gh-actions",
 ]
 
