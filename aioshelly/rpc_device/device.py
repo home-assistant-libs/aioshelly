@@ -19,6 +19,7 @@ from ..common import (
     IpOrOptionsType,
     is_firmware_supported,
     process_ip_or_options,
+    use_ssl,
 )
 from ..const import (
     BLU_TRV_IDENTIFIER,
@@ -676,7 +677,7 @@ class RpcDevice:
 
         async with self.aiohttp_session.get(
             URL.build(
-                scheme="http",
+                scheme="https" if use_ssl(self.port) else "http",
                 host=self.ip_address,
                 port=self.port,
                 path=f"/camera/{camera_id}/snapshot",
@@ -708,7 +709,7 @@ class RpcDevice:
 
         async with self.aiohttp_session.post(
             URL.build(
-                scheme="http",
+                scheme="https" if use_ssl(self.port) else "http",
                 host=self.ip_address,
                 port=self.port,
                 path=f"/camera/{camera_id}/whep/{stream_id}",
