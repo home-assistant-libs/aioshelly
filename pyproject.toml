@@ -35,7 +35,7 @@ dependencies = [
 lint = [
   "prek==0.4.10",
   "pydocstyle==6.3.0",
-  "ruff==0.15.22",
+  "ruff==0.16.0",
   "types-requests",
   "ty==0.0.63",
 ]
@@ -72,6 +72,7 @@ lint.ignore = [
     "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed
     "ASYNC109", # Async function definition with a `timeout` parameter
     "COM812",   # Trailing comma missing (conflicts with formatter)
+    "CPY001",   # Missing copyright notice at top of file
     "D203",     # 1 blank line required before class docstring (conflicts with `no-blank-line-before-class` (D211))
     "D213",     # Multi-line docstring summary should start at the second line (conflicts with multi-line-summary-first-line` (D212))
     "EM101",    # Exception must not use a string literal, assign to variable first
@@ -95,6 +96,7 @@ lint.ignore = [
     "T201",      # `print` found
 ]
 "tests/**/*" = [
+    "PLR0917",   # Too many positional arguments
     "D100",
     "PLR0913",
     "PLR2004",
