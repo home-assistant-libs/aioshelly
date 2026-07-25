@@ -84,6 +84,10 @@ MODEL_PRO_1 = "SPSW-001XE16EU"
 MODEL_PRO_1_V2 = "SPSW-101XE16EU"
 MODEL_PRO_1_V3 = "SPSW-201XE16EU"
 MODEL_PRO_1_V3_UL = "SPSW-201XE15UL"
+MODEL_PRO_1CB = "SPCB-01VENEU"
+MODEL_PRO_2CB = "SPCB-02VENEU"
+MODEL_PRO_3CB = "SPCB-03VENEU"
+MODEL_PRO_4CB = "SPCB-04VENEU"
 MODEL_PRO_1PM = "SPSW-001PE16EU"
 MODEL_PRO_1PM_V2 = "SPSW-101PE16EU"
 MODEL_PRO_1PM_V3 = "SPSW-201PE16EU"
@@ -749,6 +753,38 @@ DEVICES = {
         gen=GEN2,
         supported=True,
         model_id=None,  # Uses same model ID as MODEL_PRO_1
+    ),
+    MODEL_PRO_1CB: ShellyDevice(
+        model=MODEL_PRO_1CB,
+        name="Shelly Pro 1CB",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=0x2013,
+    ),
+    MODEL_PRO_2CB: ShellyDevice(
+        model=MODEL_PRO_2CB,
+        name="Shelly Pro 2CB",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=0x2014,
+    ),
+    MODEL_PRO_3CB: ShellyDevice(
+        model=MODEL_PRO_3CB,
+        name="Shelly Pro 3CB",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=0x2015,
+    ),
+    MODEL_PRO_4CB: ShellyDevice(
+        model=MODEL_PRO_4CB,
+        name="Shelly Pro 4CB",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=0x2016,
     ),
     MODEL_PRO_1PM: ShellyDevice(
         model=MODEL_PRO_1PM,
