@@ -94,7 +94,7 @@ MODEL_PRO_2_V3 = "SPSW-202XE16EU"
 MODEL_PRO_2_V3_UL = "SPSW-202XE12UL"
 MODEL_PRO_2PM = "SPSW-002PE16EU"
 MODEL_PRO_2PM_V2 = "SPSW-102PE16EU"
-MODEL_PRO_2PM_V2 = "SPSW-202PE16EU"
+MODEL_PRO_2PM_V3 = "SPSW-202PE16EU"
 MODEL_PRO_3 = "SPSW-003XE16EU"
 MODEL_PRO_4PM = "SPSW-004PE16EU"
 MODEL_PRO_4PM_V2 = "SPSW-104PE16EU"
@@ -824,6 +824,14 @@ DEVICES = {
     ),
     MODEL_PRO_2PM_V2: ShellyDevice(
         model=MODEL_PRO_2PM_V2,
+        name="Shelly Pro 2PM",
+        min_fw_date=GEN2_MIN_FIRMWARE_DATE,
+        gen=GEN2,
+        supported=True,
+        model_id=None,  # Uses same model ID as MODEL_PRO_2PM
+    ),
+    MODEL_PRO_2PM_V3: ShellyDevice(
+        model=MODEL_PRO_2PM_V3,
         name="Shelly Pro 2PM",
         min_fw_date=GEN2_MIN_FIRMWARE_DATE,
         gen=GEN2,
