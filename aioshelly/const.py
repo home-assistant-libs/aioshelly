@@ -209,6 +209,8 @@ MIN_FIRMWARE_DATES = {
     GEN4: GEN4_MIN_FIRMWARE_DATE,
 }
 
+GEN3_CAMERA_MIN_FIRMWARE_DATE = 20260724
+
 
 @dataclass(frozen=True, slots=True)
 class ShellyDevice:
@@ -536,7 +538,7 @@ DEVICES = {
     MODEL_CAMERA: ShellyDevice(
         model=MODEL_CAMERA,
         name="Shelly Camera",
-        min_fw_date=20260724,
+        min_fw_date=GEN3_CAMERA_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
         model_id=0x5000,
