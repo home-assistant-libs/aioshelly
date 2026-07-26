@@ -33,7 +33,7 @@ dependencies = [
 
 [dependency-groups]
 lint = [
-  "prek==0.4.10",
+  "prek==0.4.11",
   "pydocstyle==6.3.0",
   "ruff==0.16.0",
   "types-requests",
