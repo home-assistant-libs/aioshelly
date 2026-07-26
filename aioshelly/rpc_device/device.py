@@ -57,7 +57,6 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .utils import parse_sdp_ice_credentials
 from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
@@ -693,129 +692,6 @@ class RpcDevice:
                 )
 
             return await resp.read()
-
-    async def camera_start_webrtc_session(
-        self, camera_id: int, stream_id: int, offer_sdp: str
-    ) -> tuple[str, str | None, tuple[str, str]]:
-        """Create a WHEP session for a camera stream."""
-        if self.aiohttp_session is None:
-            raise ValueError("aiohttp_session required")
-
-        _LOGGER.debug(
-            "Starting WHEP session for camera %s stream %s, offer SDP: %s",
-            camera_id,
-            stream_id,
-            offer_sdp,
-        )
-
-        async with self.aiohttp_session.post(
-            URL.build(
-                scheme="https" if use_ssl(self.port) else "http",
-                host=self.ip_address,
-                port=self.port,
-                path=f"/camera/{camera_id}/whep/{stream_id}",
-            ),
-            data=offer_sdp,
-            headers={"Content-Type": "application/sdp"},
-            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
-        ) as resp:
-            if resp.status == HTTPStatus.UNAUTHORIZED:
-                raise InvalidAuthError(resp.status)
-            if resp.status != HTTPStatus.CREATED:
-                raise HttpCallError(
-                    resp.status, f"WHEP endpoint returned HTTP {resp.status}"
-                )
-
-            answer_sdp = await resp.text()
-            location = resp.headers.get("Location", "")
-
-            _LOGGER.debug(
-                "WHEP session created for camera %s stream %s, answer SDP: %s, "
-                "location: %s",
-                camera_id,
-                stream_id,
-                answer_sdp,
-                location,
-            )
-
-        session_url = None
-        if location:
-            session_url = (
-                f"http://{self.ip_address}:{self.port}{location}"
-                if location.startswith("/")
-                else location
-            )
-
-        _LOGGER.debug(
-            "WHEP session URL for camera %s stream %s: %s",
-            camera_id,
-            stream_id,
-            session_url,
-        )
-
-        return answer_sdp, session_url, parse_sdp_ice_credentials(offer_sdp)
-
-    async def camera_send_webrtc_candidate(
-        self,
-        session_url: str,
-        offer_ice_credentials: tuple[str, str],
-        candidate: str,
-        sdp_mid: str | None = None,
-    ) -> None:
-        """Forward a trickle ICE candidate to a WHEP session."""
-        if self.aiohttp_session is None:
-            raise ValueError("aiohttp_session required")
-
-        ufrag, pwd = offer_ice_credentials
-        mid = sdp_mid or "0"
-        candidate_value = candidate.removeprefix("a=")
-        body = (
-            f"a=ice-ufrag:{ufrag}\r\n"
-            f"a=ice-pwd:{pwd}\r\n"
-            f"m=video 9 RTP/AVP 0\r\n"
-            f"a=mid:{mid}\r\n"
-            f"a=candidate:{candidate_value}\r\n"
-        )
-
-        _LOGGER.debug(
-            "Sending trickle ICE candidate for session %s: %s", session_url, body
-        )
-
-        async with self.aiohttp_session.patch(
-            session_url,
-            data=body,
-            headers={"Content-Type": "application/trickle-ice-sdpfrag"},
-            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
-        ) as resp:
-            if resp.status == HTTPStatus.UNAUTHORIZED:
-                raise InvalidAuthError(resp.status)
-            if resp.status != HTTPStatus.OK:
-                raise HttpCallError(
-                    resp.status,
-                    f"Trickle ICE endpoint returned HTTP {resp.status}",
-                )
-
-            _LOGGER.debug(
-                "Trickle ICE candidate sent successfully for session %s", session_url
-            )
-
-    async def camera_close_webrtc_session(self, session_url: str) -> None:
-        """Close a WHEP session on the camera."""
-        if self.aiohttp_session is None:
-            raise ValueError("aiohttp_session required")
-
-        _LOGGER.debug("Closing WHEP session: %s", session_url)
-
-        async with self.aiohttp_session.delete(
-            session_url, timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT)
-        ) as resp:
-            if resp.status == HTTPStatus.UNAUTHORIZED:
-                raise InvalidAuthError(resp.status)
-            if resp.status != HTTPStatus.OK:
-                raise HttpCallError(
-                    resp.status,
-                    f"WHEP session close endpoint returned HTTP {resp.status}",
-                )
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
