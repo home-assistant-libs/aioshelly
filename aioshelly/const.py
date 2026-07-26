@@ -536,7 +536,7 @@ DEVICES = {
     MODEL_CAMERA: ShellyDevice(
         model=MODEL_CAMERA,
         name="Shelly Camera",
-        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        min_fw_date=20260724,
         gen=GEN3,
         supported=True,
         model_id=0x5000,
