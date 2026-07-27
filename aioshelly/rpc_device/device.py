@@ -332,7 +332,8 @@ class RpcDevice:
     async def trigger_add_on_ota_update(self, timeout: int = 600) -> None:
         """Trigger an add-on ota update."""
         params = {"timeout": timeout}
-        await self.call_rpc("AddOn.Update", params)
+        # Device replies al least after 20s
+        await self.call_rpc("AddOn.Update", params, timeout=25)
 
     async def trigger_reboot(self, delay_ms: int = 1000) -> None:
         """Trigger a device reboot."""
