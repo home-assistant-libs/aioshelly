@@ -1673,6 +1673,20 @@ async def test_switch_set(
 
 
 @pytest.mark.asyncio
+async def test_cb_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice cb_set() method."""
+    await rpc_device.cb_set(0, False)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "CB.Set"
+    assert call_args_list[0][0][0][0][1] == {"id": 0, "output": False}
+
+
+@pytest.mark.asyncio
 async def test_smoke_mute_alarm(
     rpc_device: RpcDevice,
 ) -> None:

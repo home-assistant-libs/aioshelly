@@ -3,16 +3,16 @@ repos:
     rev: v3.21.2
     hooks:
       - id: pyupgrade
-        args: ["--py310-plus"]
+        args: ["--py311-plus"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
+    rev: v0.16.0
     hooks:
       - id: ruff
         args:
           - --fix
       - id: ruff-format
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         args:
@@ -52,6 +52,6 @@ repos:
       - id: prettier
         stages: [manual]
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.58
+    rev: v0.0.63
     hooks:
       - id: ty
