@@ -227,14 +227,6 @@ async def test_parse_dynamic_components_not_initialized(rpc_device: RpcDevice) -
 
 
 @pytest.mark.asyncio
-async def test_retrieve_blutrv_components_wrong_device(rpc_device: RpcDevice) -> None:
-    """Test _retrieve_blutrv_components method with wrong device."""
-    rpc_device._shelly = {"model": "Some Shelly device"}
-
-    await rpc_device._retrieve_blutrv_components({"lorem": "ipsum"})
-
-
-@pytest.mark.asyncio
 async def test_retrieve_blutrv_components_not_initialized(
     rpc_device: RpcDevice,
 ) -> None:

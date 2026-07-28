@@ -28,7 +28,6 @@ from ..const import (
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     GEN4,
-    MODEL_BLU_GATEWAY_G3,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
@@ -1078,9 +1077,6 @@ class RpcDevice:
 
     async def _retrieve_blutrv_components(self, components: dict[str, Any]) -> None:
         """Retrieve BLU TRV components."""
-        if self.model != MODEL_BLU_GATEWAY_G3:
-            return
-
         if not self._config or not self._status:
             raise NotInitialized
 
