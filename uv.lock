@@ -300,14 +300,14 @@ wheels = [
 
 [[package]]
 name = "bluetooth-data-tools"
-version = "1.29.18"
+version = "1.29.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/a1/5bf655e600d7d482107a26bb5862d5d33ad93407d476d35f8817b7a0a83d/bluetooth_data_tools-1.29.18.tar.gz", hash = "sha256:87f678cc7b4963cb3ba73064dd72155f915bec4b21f22acd997848ddc0b1c67b", size = 20277, upload-time = "2026-05-22T16:37:46.343Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/12/659fd6ac0e517d61e62113874dd2388698140c11ee3f5d439f3c556ad072/bluetooth_data_tools-1.29.21.tar.gz", hash = "sha256:2ccf1e90212092cb6af825fd93f3f2f392c543fe2a3a894e7831cbc6f6851c15", size = 21153, upload-time = "2026-07-26T21:36:03.297Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fa/6a/6ed739bb678dc06d339f66588ee9102fc586f63fa5841215fa882eb3b360/bluetooth_data_tools-1.29.18-cp314-cp314-manylinux_2_41_x86_64.whl", hash = "sha256:fd5408d54eac9f5ecf34193a40e1badb905ae8b3a1801b92252e365064888c11", size = 151002, upload-time = "2026-05-22T16:37:44.419Z" },
+    { url = "https://files.pythonhosted.org/packages/41/8b/3b6107869f23f9c543402eb4dabd72bb3af0b69d2e7136388d559b9c4da0/bluetooth_data_tools-1.29.21-cp314-cp314-manylinux_2_41_x86_64.whl", hash = "sha256:3a1de157f93da8e2d60ea5d92ada7e40e518f9bafce8a463ae882b92ec387155", size = 171688, upload-time = "2026-07-26T21:36:01.838Z" },
 ]
 
 [[package]]
