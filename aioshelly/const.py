@@ -202,7 +202,7 @@ GEN3_GATEWAY_MIN_FIRMWARE_DATE = 20250109
 # Firmware 1.4.x release date
 GEN4_MIN_FIRMWARE_DATE = 20240902
 
-# Firmware with RTSP support
+# `arm` and `privacy` in status
 GEN3_CAMERA_MIN_FIRMWARE_DATE = 20260817
 
 # Fallback for unknown devices
