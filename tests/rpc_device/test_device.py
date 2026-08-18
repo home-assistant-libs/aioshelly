@@ -2205,3 +2205,51 @@ async def test_add_on_info(
     )
     if call_count > 1:
         assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "AddOn.GetInfo"
+
+
+@pytest.mark.asyncio
+async def test_set_camera_privacy(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice set_camera_privacy() method."""
+    await rpc_device.set_camera_privacy(12, True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Camera.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "privacy": True,
+    }
+
+
+@pytest.mark.asyncio
+async def test_arm_camera(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice arm_camera() method."""
+    await rpc_device.arm_camera(12)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Camera.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "arm": True,
+    }
+
+
+@pytest.mark.asyncio
+async def test_disarm_camera(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice disarm_camera() method."""
+    await rpc_device.disarm_camera(12)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Camera.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 12,
+        "arm": False,
+    }

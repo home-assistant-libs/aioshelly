@@ -665,6 +665,19 @@ class RpcDevice:
         result = await self.call_rpc("Media.Radio.ListFavourites")
         return result["list"]
 
+    async def arm_camera(self, id_: int) -> None:
+        """Arm camera."""
+        await self.call_rpc("Camera.Set", {"id": id_, "arm": True})
+
+    async def disarm_camera(self, id_: int) -> None:
+        """Disarm camera."""
+        await self.call_rpc("Camera.Set", {"id": id_, "arm": False})
+
+    async def set_camera_privacy(self, id_: int, value: bool) -> None:
+        """Set camera privacy."""
+        params = {"id": id_, "privacy": value}
+        await self.call_rpc("Camera.Set", params)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
