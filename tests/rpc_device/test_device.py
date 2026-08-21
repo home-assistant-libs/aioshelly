@@ -2267,5 +2267,5 @@ async def test_set_camera_rtsp(
     assert call_args_list[0][0][0][0][0] == "Camera.SetConfig"
     assert call_args_list[0][0][0][0][1] == {
         "id": 2,
-        "rtsp": {"enable": True},
+        "config": {"rtsp": {"enable": True}},
     }
