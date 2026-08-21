@@ -678,6 +678,11 @@ class RpcDevice:
         params = {"id": id_, "privacy": value}
         await self.call_rpc("Camera.Set", params)
 
+    async def set_camera_rtsp(self, id_: int, value: bool) -> None:
+        """Enable or disable RTSP streams."""
+        params = {"id": id_, "rtsp": value}
+        await self.call_rpc("Camera.Set", params)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
