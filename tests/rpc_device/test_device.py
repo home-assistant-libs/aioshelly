@@ -2264,8 +2264,8 @@ async def test_set_camera_rtsp(
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
-    assert call_args_list[0][0][0][0][0] == "Camera.Set"
+    assert call_args_list[0][0][0][0][0] == "Camera.SetConfig"
     assert call_args_list[0][0][0][0][1] == {
         "id": 2,
-        "rtsp": True,
+        "rtsp": {"enable": True},
     }

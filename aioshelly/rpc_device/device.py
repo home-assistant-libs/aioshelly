@@ -680,8 +680,8 @@ class RpcDevice:
 
     async def set_camera_rtsp(self, id_: int, value: bool) -> None:
         """Enable or disable RTSP streams."""
-        params = {"id": id_, "rtsp": value}
-        await self.call_rpc("Camera.Set", params)
+        params = {"id": id_, "rtsp": {"enable": value}}
+        await self.call_rpc("Camera.SetConfig", params)
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
