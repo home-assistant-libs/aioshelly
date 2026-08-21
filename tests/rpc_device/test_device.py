@@ -2253,3 +2253,19 @@ async def test_disarm_camera(
         "id": 12,
         "arm": False,
     }
+
+
+@pytest.mark.asyncio
+async def test_set_camera_rtsp(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice set_camera_rtsp() method."""
+    await rpc_device.set_camera_rtsp(2, True)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Camera.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 2,
+        "rtsp": True,
+    }
