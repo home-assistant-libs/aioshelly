@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from socket import gethostbyname
 from typing import TYPE_CHECKING, Any
 
-from aiohttp import BasicAuth, ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout, encode_basic_auth
 from yarl import URL
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ class ConnectionOptions:
     username: str | None = None
     password: str | None = None
     temperature_unit: str = "C"
-    auth: BasicAuth | None = None
+    auth_header: str | None = None
     device_mac: str | None = None
     port: int = DEFAULT_HTTP_PORT
     ble_device: BLEDevice | None = None
@@ -68,7 +68,9 @@ class ConnectionOptions:
             if self.password is None:
                 raise ValueError("Supply both username and password")
 
-            object.__setattr__(self, "auth", BasicAuth(self.username, self.password))
+            object.__setattr__(
+                self, "auth_header", encode_basic_auth(self.username, self.password)
+            )
 
 
 IpOrOptionsType = str | ConnectionOptions
