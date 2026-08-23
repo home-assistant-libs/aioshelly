@@ -7,7 +7,7 @@ from typing import Any, Self
 from unittest.mock import MagicMock, patch
 
 import pytest
-from aiohttp import BasicAuth, ClientError, ClientSession
+from aiohttp import ClientError, ClientSession, encode_basic_auth
 from bleak.backends.device import BLEDevice
 
 from aioshelly.common import (
@@ -94,7 +94,7 @@ async def test_process_ip_or_options() -> None:
     # Test ConnectionOptions
     options = ConnectionOptions(ip, "user", "pass")
     assert await process_ip_or_options(options) == options
-    assert options.auth == BasicAuth("user", "pass")
+    assert options.auth_header == encode_basic_auth("user", "pass")
 
     # Test missing password
     with pytest.raises(ValueError, match="Supply both username and password"):

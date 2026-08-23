@@ -162,7 +162,7 @@ class BlockDevice:
                 self.aiohttp_session, self.ip_address, self.options.device_mac
             )
 
-            if self.requires_auth and not self.options.auth:
+            if self.requires_auth and not self.options.auth_header:
                 raise InvalidAuthError("auth missing and required")
 
             async with asyncio.timeout(DEVICE_IO_TIMEOUT):
@@ -352,17 +352,20 @@ class BlockDevice:
         self, method: str, path: str, params: Any | None = None, retry: bool = True
     ) -> dict[str, Any]:
         """Device HTTP request."""
-        if self.options.auth is None and self.requires_auth:
+        if self.options.auth_header is None and self.requires_auth:
             raise InvalidAuthError("auth missing and required")
 
         host = self.ip_address
         _LOGGER.debug("host %s: http request: /%s (params=%s)", host, path, params)
+        headers = None
+        if auth_header := self.options.auth_header:
+            headers = {"Authorization": auth_header}
         try:
             resp: ClientResponse = await self.aiohttp_session.request(
                 method,
                 URL.build(scheme="http", host=host, path=f"/{path}"),
                 params=params,
-                auth=self.options.auth,
+                headers=headers,
                 raise_for_status=True,
                 timeout=HTTP_CALL_TIMEOUT_CLIENT_TIMEOUT,
             )
