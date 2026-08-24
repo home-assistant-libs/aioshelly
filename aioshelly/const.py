@@ -157,6 +157,9 @@ MODEL_2L_G4 = "S4SW-0A2X4EUL"
 MODEL_2PM_G4 = "S4SW-002P16EU"
 MODEL_CURY_G4 = "S4PB-00CU000002"
 MODEL_DIMMER_G4 = "S4DM-0A101WWL"
+MODEL_DIMMER_G4_US = "S4DM-0A102US"
+MODEL_DIMMER_10V_G4 = "S4DM-0010WW"
+MODEL_EM_G4 = "S4EM-002CXCEU"
 MODEL_EM_MINI_G4 = "S4EM-001PXCEU16"
 MODEL_EM_63_G4 = "S4EM-001CXCEU63"
 MODEL_FLOOD_G4 = "S4SN-0071A"
@@ -1133,6 +1136,14 @@ DEVICES = {
         supported=True,
         model_id=0x1072,
     ),
+    MODEL_DIMMER_10V_G4: ShellyDevice(
+        model=MODEL_DIMMER_10V_G4,
+        name="Shelly Dimmer 0/1-10V PM Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1074,
+    ),
     MODEL_DIMMER_G3: ShellyDevice(
         model=MODEL_DIMMER_G3,
         name="Shelly Dimmer Gen3",
@@ -1156,6 +1167,14 @@ DEVICES = {
         gen=GEN3,
         supported=True,
         model_id=0x1027,
+    ),
+    MODEL_EM_G4: ShellyDevice(
+        model=MODEL_EM_G4,
+        name="Shelly EM Gen4",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1036,
     ),
     MODEL_HT_G3: ShellyDevice(
         model=MODEL_HT_G3,
@@ -1316,6 +1335,14 @@ DEVICES = {
         gen=GEN4,
         supported=True,
         model_id=0x1075,
+    ),
+    MODEL_DIMMER_G4_US: ShellyDevice(
+        model=MODEL_DIMMER_G4_US,
+        name="Shelly Dimmer Gen4 US",
+        min_fw_date=GEN4_MIN_FIRMWARE_DATE,
+        gen=GEN4,
+        supported=True,
+        model_id=0x1076,
     ),
     MODEL_EM_MINI_G4: ShellyDevice(
         model=MODEL_EM_MINI_G4,
