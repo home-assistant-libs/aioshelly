@@ -683,7 +683,9 @@ class RpcDevice:
         params = {"id": id_, "config": {"rtsp": {"enable": value}}}
         await self.call_rpc("Camera.SetConfig", params)
 
-    async def ir_emit_raw(self, timings: list[int], freq: int, repeats: int) -> None:
+    async def ir_emit_raw(
+        self, timings: list[int], freq: int = 38000, repeats: int = 0
+    ) -> None:
         """Emit raw IR data."""
         params = {"timings": timings, "freq": freq, "repeats": repeats}
         await self.call_rpc("IR.EmitRaw", params)
