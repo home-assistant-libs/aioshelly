@@ -683,6 +683,11 @@ class RpcDevice:
         params = {"id": id_, "config": {"rtsp": {"enable": value}}}
         await self.call_rpc("Camera.SetConfig", params)
 
+    async def ir_emit_raw(self, timings: list[int], freq: int, repeats: int) -> None:
+        """Emit raw IR data."""
+        params = {"timings": timings, "freq": freq, "repeats": repeats}
+        await self.call_rpc("IR.EmitRaw", params)
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
