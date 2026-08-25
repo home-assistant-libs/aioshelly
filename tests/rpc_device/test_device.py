@@ -2269,3 +2269,22 @@ async def test_set_camera_rtsp(
         "id": 2,
         "config": {"rtsp": {"enable": True}},
     }
+
+
+@pytest.mark.asyncio
+async def test_ir_emit_raw(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice ir_emit_raw() method."""
+    await rpc_device.ir_emit_raw(
+        [4500, -4500, 560, -1690, 560, -560, 560, -40000], 38000, 3
+    )
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "IR.EmitRaw"
+    assert call_args_list[0][0][0][0][1] == {
+        "timings": [4500, -4500, 560, -1690, 560, -560, 560, -40000],
+        "freq": 38000,
+        "repeats": 3,
+    }
