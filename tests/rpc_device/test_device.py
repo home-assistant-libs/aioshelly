@@ -2291,11 +2291,11 @@ async def test_ir_emit_raw(
 
 
 @pytest.mark.asyncio
-async def test_ir_emit(
+async def test_ircode_emit(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice ir_emit() method."""
-    await rpc_device.ir_emit(1, repeats=3, after=1)
+    """Test RpcDevice ircode_emit() method."""
+    await rpc_device.ircode_emit(1, repeats=3, after=1)
 
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
