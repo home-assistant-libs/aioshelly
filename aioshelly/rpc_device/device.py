@@ -690,6 +690,12 @@ class RpcDevice:
         params = {"timings": timings, "freq": freq, "repeats": repeats}
         await self.call_rpc("IR.EmitRaw", params)
 
+    async def ircode_emit(self, _id: int, repeats: int = 1, after: int = 0) -> None:
+        """Emit IR code by ID."""
+        await self.call_rpc(
+            "IRCode.Emit", {"id": _id, "repeats": repeats, "after": after}
+        )
+
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
