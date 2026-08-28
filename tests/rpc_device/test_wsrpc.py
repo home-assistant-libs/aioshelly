@@ -108,6 +108,7 @@ async def test_device_wscall_auth_retry(ws_rpc_with_auth: WsRPCMocker) -> None:
     results = await ws_rpc_with_auth.calls_with_mocked_responses(calls, responses)
     assert results[0] == cover_close_success["result"]
 
+
 @pytest.mark.asyncio
 async def test_device_wscall_throttled_drops_stale_nonce(
     ws_rpc_with_auth: WsRPCMocker,
