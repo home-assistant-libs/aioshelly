@@ -12,6 +12,7 @@ from aioshelly.exceptions import (
     DeviceConnectionTimeoutError,
     InvalidAuthError,
     InvalidMessage,
+    RpcCallError,
 )
 from aioshelly.rpc_device.wsrpc import AuthData, _receive_json_or_raise
 
@@ -107,7 +108,32 @@ async def test_device_wscall_auth_retry(ws_rpc_with_auth: WsRPCMocker) -> None:
     results = await ws_rpc_with_auth.calls_with_mocked_responses(calls, responses)
     assert results[0] == cover_close_success["result"]
 
+@pytest.mark.asyncio
+async def test_device_wscall_throttled_drops_stale_nonce(
+    ws_rpc_with_auth: WsRPCMocker,
+) -> None:
+    """Test that a 429 response drops the cached nonce.
 
+    A throttled device answers 429 instead of a 401 challenge, so the nonce
+    cannot be refreshed through the usual path. Keeping it would make every
+    subsequent call fail as well.
+    """
+    ws_rpc_with_auth.set_auth_data("auth_domain", "username", "password")
+    auth_data = ws_rpc_with_auth._session.auth_data
+    assert auth_data is not None
+    auth_data.update_challenge({"nonce": "stale_nonce", "algorithm": "SHA-256"})
+
+    throttled = {
+        "error": {"code": 429, "message": "Too many failed authentication attempts"}
+    }
+
+    with pytest.raises(RpcCallError):
+        await ws_rpc_with_auth.calls_with_mocked_responses(
+            [("Cover.Close", {"id": 0})], [throttled]
+        )
+
+    assert auth_data.nonce == ""
+    
 def test_auth_update_challenge_unsupported_algorithm() -> None:
     """Test challenge update raises when algorithm is unsupported."""
     auth_data = AuthData("auth_domain", "username", "password")
