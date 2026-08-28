@@ -133,7 +133,8 @@ async def test_device_wscall_throttled_drops_stale_nonce(
         )
 
     assert auth_data.nonce == ""
-    
+
+
 def test_auth_update_challenge_unsupported_algorithm() -> None:
     """Test challenge update raises when algorithm is unsupported."""
     auth_data = AuthData("auth_domain", "username", "password")
