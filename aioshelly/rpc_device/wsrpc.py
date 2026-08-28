@@ -461,7 +461,7 @@ class WsRPC(WsBase):
         except KeyError as err:
             raise RpcCallError(0, f"bad response: {resp}") from err
 
-                if code != HTTPStatus.UNAUTHORIZED.value:
+        if code != HTTPStatus.UNAUTHORIZED.value:
             if (
                 code == HTTPStatus.TOO_MANY_REQUESTS.value
                 and (auth_data := self._session.auth_data) is not None
