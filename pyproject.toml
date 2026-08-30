@@ -35,7 +35,7 @@ dependencies = [
 lint = [
   "prek==0.4.14",
   "pydocstyle==6.3.0",
-  "ruff==0.16.3",
+  "ruff==0.16.4",
   "types-requests",
   "ty==0.0.75",
 ]
