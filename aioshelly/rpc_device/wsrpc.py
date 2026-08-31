@@ -462,6 +462,16 @@ class WsRPC(WsBase):
             raise RpcCallError(0, f"bad response: {resp}") from err
 
         if code != HTTPStatus.UNAUTHORIZED.value:
+            if (
+                code == HTTPStatus.TOO_MANY_REQUESTS.value
+                and (auth_data := self._session.auth_data) is not None
+            ):
+                # A device that throttles repeated failed authentications answers
+                # 429 instead of issuing a new 401 challenge, so the cached nonce
+                # can no longer be refreshed through the usual path. Replaying it
+                # makes every following call fail as well, so drop it and let the
+                # next call solicit a fresh challenge.
+                auth_data.nonce = ""
             raise RpcCallError(code, msg)
 
         if allow_auth_retry and self._session.auth_data is not None:
