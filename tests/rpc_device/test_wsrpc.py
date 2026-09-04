@@ -1,7 +1,6 @@
 """Tests for rpc_device.wsrpc module."""
 
 import asyncio
-import json
 import logging
 from typing import Any
 from unittest.mock import AsyncMock, patch
@@ -15,6 +14,7 @@ from aioshelly.exceptions import (
     InvalidAuthError,
     InvalidMessage,
 )
+from aioshelly.json import json_dumps
 from aioshelly.rpc_device.wsrpc import AuthData, _receive_json_or_raise
 
 from . import load_device_fixture
@@ -33,12 +33,11 @@ def make_401_response(
         "nc": nc,
         "realm": "shellyplus2pm-aabbccddeeff",
         "algorithm": "SHA-256",
+        "stale": stale,
     }
-    if stale is not None:
-        challenge["stale"] = stale
     return {
         "src": "shellyplus2pm-aabbccddeeff",
-        "error": {"code": 401, "message": json.dumps(challenge)},
+        "error": {"code": 401, "message": json_dumps(challenge)},
     }
 
 
