@@ -475,6 +475,7 @@ class WsRPC(WsBase):
         params: dict[str, Any] | None = None,
         timeout: float = 10.0,
         allow_auth_retry: bool = True,
+        stale_retry: bool = False,
     ) -> dict[str, Any]:
         """Websocket RPC call with authentication retry."""
         if self._client is None:
@@ -496,16 +497,38 @@ class WsRPC(WsBase):
                 # Wait response
                 response = await call.resolve
                 if "result" not in response:
-                    self._raise_for_unrecoverable_errors(response, allow_auth_retry)
-                    auth_challenge = json_loads(response["error"]["message"])
+                    error = response["error"]
+                    auth_challenge = json_loads(error["message"])
+
                     if TYPE_CHECKING:
                         assert self._session.auth_data
+
+                    # Parse challenge first to detect stale nonces (firmware >=2.0.0)
+                    is_stale = (
+                        error.get("code") == HTTPStatus.UNAUTHORIZED.value
+                        and auth_challenge.get("stale") is True
+                    )
+                    if is_stale:
+                        if stale_retry:
+                            raise InvalidAuthError(error["message"])
+
+                        self._session.auth_data.update_challenge(auth_challenge)
+                        return await self._rpc_call_with_auth_retry(
+                            method,
+                            params,
+                            timeout,
+                            allow_auth_retry=False,
+                            stale_retry=True,
+                        )
+
+                    self._raise_for_unrecoverable_errors(response, allow_auth_retry)
                     self._session.auth_data.update_challenge(auth_challenge)
                     return await self._rpc_call_with_auth_retry(
                         method,
                         params,
                         timeout,
                         allow_auth_retry=False,
+                        stale_retry=stale_retry,
                     )
                 call.result = response["result"]
         except TimeoutError as exc:
