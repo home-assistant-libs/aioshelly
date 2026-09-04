@@ -468,7 +468,7 @@ class WsRPC(WsBase):
         self, resp: dict[str, Any], allow_auth_retry: bool
     ) -> None:
         """Raise for unrecoverable errors."""
-        _error, code, msg = self._parse_rpc_error(resp)
+        _, code, msg = self._parse_rpc_error(resp)
 
         if code != HTTPStatus.UNAUTHORIZED.value:
             raise RpcCallError(code, msg)
@@ -509,9 +509,8 @@ class WsRPC(WsBase):
                     error, code, msg = self._parse_rpc_error(response)
                     try:
                         auth_challenge = json_loads(error["message"])
-                    except (ValueError, TypeError):
-                        self._raise_for_unrecoverable_errors(response, allow_auth_retry)
-                        raise
+                    except ValueError as err:
+                        raise InvalidAuthError(msg) from err
 
                     if TYPE_CHECKING:
                         assert self._session.auth_data

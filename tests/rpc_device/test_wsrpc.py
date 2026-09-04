@@ -291,3 +291,20 @@ async def test_double_stale_raises_invalid_auth(ws_rpc: WsRPCMocker) -> None:
         await ws_rpc.calls_with_mocked_responses(
             [("Cover.Close", {"id": 0})], [first, second]
         )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_invalid_json_401(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test 401 with invalid JSON raises InvalidAuthError."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    bad_401 = {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 401, "message": "lorem-ipsum"},
+    }
+
+    with pytest.raises(InvalidAuthError, match="lorem-ipsum"):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [bad_401]
+        )
