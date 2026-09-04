@@ -503,7 +503,7 @@ class WsRPC(WsBase):
                     if TYPE_CHECKING:
                         assert self._session.auth_data
 
-                    # Parse challenge first to detect stale nonces (firmware >=2.0.0)
+                    # Check if the error is due to a stale nonce (firmware >=2.0.0)
                     is_stale = (
                         error.get("code") == HTTPStatus.UNAUTHORIZED.value
                         and auth_challenge.get("stale") is True
