@@ -452,16 +452,14 @@ class WsRPC(WsBase):
 
     @staticmethod
     def _parse_rpc_error(resp: dict[str, Any]) -> tuple[dict[str, Any], int, str]:
-        """Extract error dict, code, and message from an RPC error response.
-
-        Raises RpcCallError if the response structure is invalid.
-        """
+        """Extract error dict, code, and message from an RPC error response."""
         try:
             error = resp["error"]
             code = error["code"]
             msg = error["message"]
         except KeyError as err:
             raise RpcCallError(0, f"bad response: {resp}") from err
+
         return error, code, msg
 
     def _raise_for_unrecoverable_errors(
