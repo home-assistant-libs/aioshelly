@@ -450,16 +450,25 @@ class WsRPC(WsBase):
         """Websocket RPC call."""
         return (await self.calls([(method, params)], timeout))[0]
 
-    def _raise_for_unrecoverable_errors(
-        self, resp: dict[str, Any], allow_auth_retry: bool
-    ) -> None:
-        """Raise for unrecoverable errors."""
+    @staticmethod
+    def _parse_rpc_error(resp: dict[str, Any]) -> tuple[dict[str, Any], int, str]:
+        """Extract error dict, code, and message from an RPC error response.
+
+        Raises RpcCallError if the response structure is invalid.
+        """
         try:
             error = resp["error"]
             code = error["code"]
             msg = error["message"]
         except KeyError as err:
             raise RpcCallError(0, f"bad response: {resp}") from err
+        return error, code, msg
+
+    def _raise_for_unrecoverable_errors(
+        self, resp: dict[str, Any], allow_auth_retry: bool
+    ) -> None:
+        """Raise for unrecoverable errors."""
+        _error, code, msg = self._parse_rpc_error(resp)
 
         if code != HTTPStatus.UNAUTHORIZED.value:
             raise RpcCallError(code, msg)
@@ -497,10 +506,10 @@ class WsRPC(WsBase):
                 # Wait response
                 response = await call.resolve
                 if "result" not in response:
+                    error, code, msg = self._parse_rpc_error(response)
                     try:
-                        error = response["error"]
                         auth_challenge = json_loads(error["message"])
-                    except (ValueError, KeyError, TypeError):
+                    except (ValueError, TypeError):
                         self._raise_for_unrecoverable_errors(response, allow_auth_retry)
                         raise
 
@@ -509,12 +518,12 @@ class WsRPC(WsBase):
 
                     # Check if the error is due to a stale nonce (firmware >=2.0.0)
                     is_stale = (
-                        error.get("code") == HTTPStatus.UNAUTHORIZED.value
+                        code == HTTPStatus.UNAUTHORIZED.value
                         and auth_challenge.get("stale") is True
                     )
                     if is_stale:
                         if stale_retry:
-                            raise InvalidAuthError(error["message"])
+                            raise InvalidAuthError(msg)
 
                         self._session.auth_data.update_challenge(auth_challenge)
                         return await self._rpc_call_with_auth_retry(
