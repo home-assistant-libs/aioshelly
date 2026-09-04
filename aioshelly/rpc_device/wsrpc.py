@@ -497,8 +497,12 @@ class WsRPC(WsBase):
                 # Wait response
                 response = await call.resolve
                 if "result" not in response:
-                    error = response["error"]
-                    auth_challenge = json_loads(error["message"])
+                    try:
+                        error = response["error"]
+                        auth_challenge = json_loads(error["message"])
+                    except (ValueError, KeyError, TypeError):
+                        self._raise_for_unrecoverable_errors(response, allow_auth_retry)
+                        raise
 
                     if TYPE_CHECKING:
                         assert self._session.auth_data
