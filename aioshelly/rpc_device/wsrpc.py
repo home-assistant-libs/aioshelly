@@ -505,6 +505,8 @@ class WsRPC(WsBase):
                 response = await call.resolve
                 if "result" not in response:
                     error, code, msg = self._parse_rpc_error(response)
+                    if code != HTTPStatus.UNAUTHORIZED.value:
+                        raise RpcCallError(code, msg)
                     try:
                         auth_challenge = json_loads(error["message"])
                     except ValueError as err:
