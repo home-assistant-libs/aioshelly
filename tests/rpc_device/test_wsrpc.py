@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -12,11 +13,38 @@ from aioshelly.exceptions import (
     DeviceConnectionTimeoutError,
     InvalidAuthError,
     InvalidMessage,
+    RpcCallError,
 )
+from aioshelly.json import json_dumps
 from aioshelly.rpc_device.wsrpc import AuthData, _receive_json_or_raise
 
 from . import load_device_fixture
 from .conftest import WsRPCMocker
+
+
+def make_401_response(
+    nonce: str,
+    stale: bool = False,
+    nc: int = 1,
+) -> dict[str, Any]:
+    """Build a 401 error response with JSON-encoded digest challenge."""
+    challenge: dict[str, Any] = {
+        "auth_type": "digest",
+        "nonce": nonce,
+        "nc": nc,
+        "realm": "shellyplus2pm-aabbccddeeff",
+        "algorithm": "SHA-256",
+        "stale": stale,
+    }
+    return {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 401, "message": json_dumps(challenge)},
+    }
+
+
+def make_success_response(result: dict[str, Any]) -> dict[str, Any]:
+    """Build a successful result response."""
+    return {"src": "shellyplus2pm-aabbccddeeff", "result": result}
 
 
 def test_receive_json_or_raise_text_returns_decoded_json() -> None:
@@ -233,3 +261,83 @@ async def test_wscall_debug_logs_result_with_auth(
     assert (
         f"result(127.0.0.1:80): Shelly.GetConfig(None) -> {config_response['result']}"
     ) in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_stale_true_triggers_retry_and_succeeds(ws_rpc: WsRPCMocker) -> None:
+    """Test stale=true triggers retry with new nonce and succeeds."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    stale_challenge = make_401_response("nonce_value", True, 1)
+    success = make_success_response({"ok": True})
+
+    results = await ws_rpc.calls_with_mocked_responses(
+        [("Cover.Close", {"id": 0})], [stale_challenge, success]
+    )
+
+    assert results[0] == {"ok": True}
+    # Verify nonce and nc were updated (nc incremented after get_auth)
+    assert ws_rpc._session.auth_data is not None
+    assert ws_rpc._session.auth_data.nonce == "nonce_value"
+    assert ws_rpc._session.auth_data.nc == 2
+
+
+@pytest.mark.asyncio
+async def test_double_stale_raises_invalid_auth(ws_rpc: WsRPCMocker) -> None:
+    """Test double stale true raises InvalidAuthError (guard)."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    first = make_401_response("nonce_value", True, 1)
+    second = make_401_response("nonce_value", True, 1)
+
+    with pytest.raises(InvalidAuthError):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Cover.Close", {"id": 0})], [first, second]
+        )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_non401_error_raises_rpc_call_error(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test non-401 error response raises RpcCallError."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    bad_response = {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 404, "message": "Not Found"},
+    }
+
+    with pytest.raises(RpcCallError, match="Not Found"):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [bad_response]
+        )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_double_nonstale_401_raises_invalid_auth(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test two consecutive non-stale 401 responses raise InvalidAuthError."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    first = make_401_response("nonce1", stale=False, nc=1)
+    second = make_401_response("nonce2", stale=False, nc=1)
+
+    with pytest.raises(InvalidAuthError):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [first, second]
+        )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_invalid_json_401(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test 401 with invalid JSON raises InvalidAuthError."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    bad_401 = {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 401, "message": "lorem-ipsum"},
+    }
+
+    with pytest.raises(InvalidAuthError, match="lorem-ipsum"):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [bad_401]
+        )
