@@ -463,11 +463,9 @@ class WsRPC(WsBase):
         return error, code, msg
 
     def _raise_for_unrecoverable_errors(
-        self, resp: dict[str, Any], allow_auth_retry: bool
+        self, code: int, msg: str, allow_auth_retry: bool
     ) -> None:
         """Raise for unrecoverable errors."""
-        _, code, msg = self._parse_rpc_error(resp)
-
         if code != HTTPStatus.UNAUTHORIZED.value:
             raise RpcCallError(code, msg)
 
@@ -505,8 +503,7 @@ class WsRPC(WsBase):
                 response = await call.resolve
                 if "result" not in response:
                     error, code, msg = self._parse_rpc_error(response)
-                    if code != HTTPStatus.UNAUTHORIZED.value:
-                        raise RpcCallError(code, msg)
+                    self._raise_for_unrecoverable_errors(code, msg, allow_auth_retry)
                     try:
                         auth_challenge = json_loads(error["message"])
                     except ValueError as err:
@@ -533,7 +530,6 @@ class WsRPC(WsBase):
                             stale_retry=True,
                         )
 
-                    self._raise_for_unrecoverable_errors(response, allow_auth_retry)
                     self._session.auth_data.update_challenge(auth_challenge)
                     return await self._rpc_call_with_auth_retry(
                         method,
@@ -618,8 +614,9 @@ class WsRPC(WsBase):
                 for call in sent_calls:
                     response = await call.resolve
                     if "result" not in response:
+                        _, code, msg = self._parse_rpc_error(response)
                         self._raise_for_unrecoverable_errors(
-                            response, allow_auth_retry=False
+                            code, msg, allow_auth_retry=False
                         )
                     else:
                         call.result = response["result"]
