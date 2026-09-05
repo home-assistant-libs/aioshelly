@@ -503,7 +503,11 @@ class WsRPC(WsBase):
                 response = await call.resolve
                 if "result" not in response:
                     error, code, msg = self._parse_rpc_error(response)
-                    self._raise_for_unrecoverable_errors(code, msg, allow_auth_retry)
+
+                    # Non-401 errors are always unrecoverable
+                    if code != HTTPStatus.UNAUTHORIZED.value:
+                        raise RpcCallError(code, msg)
+
                     try:
                         auth_challenge = json_loads(error["message"])
                     except ValueError as err:
@@ -513,10 +517,7 @@ class WsRPC(WsBase):
                         assert self._session.auth_data
 
                     # Check if the error is due to a stale nonce (firmware >=2.0.0)
-                    is_stale = (
-                        code == HTTPStatus.UNAUTHORIZED.value
-                        and auth_challenge.get("stale") is True
-                    )
+                    is_stale = auth_challenge.get("stale") is True
                     if is_stale:
                         if stale_retry:
                             raise InvalidAuthError(msg)
@@ -529,6 +530,10 @@ class WsRPC(WsBase):
                             allow_auth_retry=False,
                             stale_retry=True,
                         )
+
+                    # Non-stale 401: check if auth retry is allowed
+                    if not allow_auth_retry or self._session.auth_data is None:
+                        raise InvalidAuthError(msg)
 
                     self._session.auth_data.update_challenge(auth_challenge)
                     return await self._rpc_call_with_auth_retry(

@@ -294,6 +294,19 @@ async def test_double_stale_raises_invalid_auth(ws_rpc: WsRPCMocker) -> None:
 
 
 @pytest.mark.asyncio
+async def test_stale_retry_guard_raises_invalid_auth(ws_rpc: WsRPCMocker) -> None:
+    """Test stale_retry guard raises InvalidAuthError on second stale 401."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    first_stale = make_401_response("nonce1", True, 1)
+    second_stale = make_401_response("nonce2", True, 1)
+
+    with pytest.raises(InvalidAuthError):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [first_stale, second_stale]
+        )
+
+
+@pytest.mark.asyncio
 async def test_rpc_call_invalid_json_401(
     ws_rpc: WsRPCMocker,
 ) -> None:
