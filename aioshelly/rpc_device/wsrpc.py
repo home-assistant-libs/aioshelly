@@ -252,6 +252,7 @@ class WsRPC(WsBase):
         self._calls: dict[int, RPCCall] = {}
         self._call_id = 0
         self._session = SessionData(f"aios-{id(self)}", None, None)
+        self._auth_lock = asyncio.Lock()
         self._loop = asyncio.get_running_loop()
 
     @property
@@ -575,14 +576,18 @@ class WsRPC(WsBase):
         if self._session.auth_data is not None:
             # sequential: each call uses fresh nc from prior challenge,
             # first call seeds the nonce via 401 challenge
-            results = []
-            deadline = self._loop.time() + timeout
-            for method, params in calls:
-                remaining = deadline - self._loop.time()
-                results.append(
-                    await self._rpc_call_with_auth_retry(method, params, remaining)
-                )
-            return results
+            # Lock prevents concurrent callers from receiving the same
+            # stale challenge and mutating shared AuthData, which would
+            # cause duplicate nonce/count pairs and spurious 401s.
+            async with self._auth_lock:
+                results = []
+                deadline = self._loop.time() + timeout
+                for method, params in calls:
+                    remaining = deadline - self._loop.time()
+                    results.append(
+                        await self._rpc_call_with_auth_retry(method, params, remaining)
+                    )
+                return results
 
         results = await self._rpc_calls(calls, timeout)
         return [call.result for call in results]
