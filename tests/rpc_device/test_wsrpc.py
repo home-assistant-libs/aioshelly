@@ -13,6 +13,7 @@ from aioshelly.exceptions import (
     DeviceConnectionTimeoutError,
     InvalidAuthError,
     InvalidMessage,
+    RpcCallError,
 )
 from aioshelly.json import json_dumps
 from aioshelly.rpc_device.wsrpc import AuthData, _receive_json_or_raise
@@ -294,15 +295,34 @@ async def test_double_stale_raises_invalid_auth(ws_rpc: WsRPCMocker) -> None:
 
 
 @pytest.mark.asyncio
-async def test_stale_retry_guard_raises_invalid_auth(ws_rpc: WsRPCMocker) -> None:
-    """Test stale_retry guard raises InvalidAuthError on second stale 401."""
+async def test_rpc_call_non401_error_raises_rpc_call_error(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test non-401 error response raises RpcCallError."""
     ws_rpc.set_auth_data("auth_domain", "username", "password")
-    first_stale = make_401_response("nonce1", True, 1)
-    second_stale = make_401_response("nonce2", True, 1)
+    bad_response = {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 404, "message": "Not Found"},
+    }
+
+    with pytest.raises(RpcCallError, match="Not Found"):
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [bad_response]
+        )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_double_nonstale_401_raises_invalid_auth(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test two consecutive non-stale 401 responses raise InvalidAuthError."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+    first = make_401_response("nonce1", stale=False, nc=1)
+    second = make_401_response("nonce2", stale=False, nc=1)
 
     with pytest.raises(InvalidAuthError):
         await ws_rpc.calls_with_mocked_responses(
-            [("Shelly.GetConfig", None)], [first_stale, second_stale]
+            [("Shelly.GetConfig", None)], [first, second]
         )
 
 
