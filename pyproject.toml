@@ -33,18 +33,18 @@ dependencies = [
 
 [dependency-groups]
 lint = [
-  "prek==0.4.14",
+  "prek==0.5.2",
   "pydocstyle==6.3.0",
-  "ruff==0.16.4",
+  "ruff==0.16.5",
   "types-requests",
-  "ty==0.0.75",
+  "ty==0.0.78",
 ]
 dev = [
   "pytest-asyncio==1.4.0",
   "pytest-cov==7.1.0",
   "pytest==9.1.1",
   "requests",
-  "tox==4.60.1",
+  "tox==4.61.2",
   "tox-gh-actions",
 ]
 
