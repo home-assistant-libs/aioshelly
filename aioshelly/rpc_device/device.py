@@ -672,8 +672,8 @@ class RpcDevice:
 
     async def camera_get_image(self, camera_id: int) -> bytes:
         """Return a still image from the camera's HTTP snapshot endpoint."""
-        if self.aiohttp_session is None:
-            raise ValueError("aiohttp_session required")
+        if TYPE_CHECKING:
+            assert self.aiohttp_session
 
         middlewares = None
         if self.options.username and self.options.password:

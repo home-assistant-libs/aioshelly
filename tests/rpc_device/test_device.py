@@ -14,7 +14,7 @@ from aiohttp.client_exceptions import ServerDisconnectedError
 from bleak.backends.device import BLEDevice
 
 from aioshelly.common import ConnectionOptions, process_ip_or_options
-from aioshelly.const import NOTIFY_WS_CLOSED
+from aioshelly.const import HTTP_CALL_TIMEOUT, NOTIFY_WS_CLOSED
 from aioshelly.exceptions import (
     DeviceConnectionError,
     HttpCallError,
@@ -2314,33 +2314,30 @@ async def test_camera_get_image(
     rpc_device: RpcDevice,
     camera_mock_response: AsyncMock,  # noqa: ARG001
 ) -> None:
-    """Test camera_get_image returns image data."""
+    """Test camera_get_image returns image data with digest auth."""
     result = await rpc_device.camera_get_image(0)
 
     assert result == b"image_data"
     rpc_device.aiohttp_session.get.assert_called_once()
 
-    middlewares = rpc_device.aiohttp_session.get.call_args.kwargs["middlewares"]
+    call_args = rpc_device.aiohttp_session.get.call_args
+    url = call_args.args[0]
+    assert url.scheme == "http"
+    assert url.host == "10.10.10.10"
+    assert url.path == "/camera/0/snapshot"
+    assert call_args.kwargs["timeout"].total == HTTP_CALL_TIMEOUT
+
+    middlewares = call_args.kwargs["middlewares"]
     assert middlewares is not None
     assert len(middlewares) == 1
     assert isinstance(middlewares[0], DigestAuthMiddleware)
 
-
-@pytest.mark.asyncio
-async def test_camera_get_image_sends_digest_auth(
-    rpc_device: RpcDevice,
-    camera_mock_response: AsyncMock,  # noqa: ARG001
-) -> None:
-    """Test camera_get_image passes digest auth with device credentials."""
+    rpc_device.options.username = None
+    rpc_device.options.password = None
+    rpc_device.aiohttp_session.get.reset_mock()
     await rpc_device.camera_get_image(0)
 
-    middlewares = rpc_device.aiohttp_session.get.call_args.kwargs["middlewares"]
-    assert middlewares is not None
-    assert len(middlewares) == 1
-    digest = middlewares[0]
-    assert isinstance(digest, DigestAuthMiddleware)
-    assert digest._login_str == "username"
-    assert digest._password_bytes == b"password"
+    assert rpc_device.aiohttp_session.get.call_args.kwargs["middlewares"] is None
 
 
 @pytest.mark.asyncio
@@ -2362,4 +2359,34 @@ async def test_camera_get_image_error_status(
     camera_mock_response.status = HTTPStatus.INTERNAL_SERVER_ERROR
 
     with pytest.raises(HttpCallError, match="HTTP 500"):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error",
+    [
+        ClientError("connection failed"),
+        OSError("network down"),
+        TimeoutError("timeout"),
+    ],
+)
+async def test_camera_get_image_connection_error(
+    rpc_device: RpcDevice, error: Exception
+) -> None:
+    """Test camera_get_image raises DeviceConnectionError on transport errors."""
+    rpc_device.aiohttp_session.get.side_effect = error
+
+    with pytest.raises(DeviceConnectionError):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_read_error(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_get_image raises DeviceConnectionError when read fails."""
+    camera_mock_response.read.side_effect = ClientError("read failed")
+
+    with pytest.raises(DeviceConnectionError):
         await rpc_device.camera_get_image(0)
