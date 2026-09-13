@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import AsyncGenerator
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -16,6 +17,7 @@ from aioshelly.common import ConnectionOptions, process_ip_or_options
 from aioshelly.const import NOTIFY_WS_CLOSED
 from aioshelly.exceptions import (
     DeviceConnectionError,
+    HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -2305,3 +2307,37 @@ async def test_ircode_emit(
         "repeats": 3,
         "after": 1,
     }
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image(
+    rpc_device: RpcDevice,
+    camera_mock_response: AsyncMock,  # noqa: ARG001
+) -> None:
+    """Test camera_get_image returns image data."""
+    result = await rpc_device.camera_get_image(0)
+
+    assert result == b"image_data"
+    rpc_device.aiohttp_session.get.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_unauthorized(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_get_image raises InvalidAuthError on 401."""
+    camera_mock_response.status = HTTPStatus.UNAUTHORIZED
+
+    with pytest.raises(InvalidAuthError):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_error_status(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_get_image raises HttpCallError on non-OK status."""
+    camera_mock_response.status = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    with pytest.raises(HttpCallError, match="HTTP 500"):
+        await rpc_device.camera_get_image(0)

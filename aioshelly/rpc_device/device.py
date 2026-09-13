@@ -8,15 +8,18 @@ from collections.abc import Callable, Iterable
 from contextlib import suppress
 from enum import Enum, auto
 from functools import partial
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
+from yarl import URL
 
 from ..common import (
     ConnectionOptions,
     IpOrOptionsType,
     is_firmware_supported,
     process_ip_or_options,
+    use_ssl,
 )
 from ..const import (
     BLU_TRV_IDENTIFIER,
@@ -28,12 +31,14 @@ from ..const import (
     DEVICE_POLL_TIMEOUT,
     FIRMWARE_PATTERN,
     GEN4,
+    HTTP_CALL_TIMEOUT,
     MODEL_BLU_GATEWAY_G3,
     NOTIFY_WS_CLOSED,
     VIRTUAL_COMPONENTS_MIN_FIRMWARE,
 )
 from ..exceptions import (
     DeviceConnectionError,
+    HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -664,6 +669,29 @@ class RpcDevice:
         """List favourite radio stations."""
         result = await self.call_rpc("Media.Radio.ListFavourites")
         return result["list"]
+
+    async def camera_get_image(self, camera_id: int) -> bytes:
+        """Return a still image from the camera's HTTP snapshot endpoint."""
+        if self.aiohttp_session is None:
+            raise ValueError("aiohttp_session required")
+
+        async with self.aiohttp_session.get(
+            URL.build(
+                scheme="https" if use_ssl(self.port) else "http",
+                host=self.ip_address,
+                port=self.port,
+                path=f"/camera/{camera_id}/snapshot",
+            ),
+            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
+        ) as resp:
+            if resp.status == HTTPStatus.UNAUTHORIZED:
+                raise InvalidAuthError(resp.status)
+            if resp.status != HTTPStatus.OK:
+                raise HttpCallError(
+                    resp.status, f"Snapshot endpoint returned HTTP {resp.status}"
+                )
+
+            return await resp.read()
 
     async def arm_camera(self, id_: int) -> None:
         """Arm camera."""
