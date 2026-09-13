@@ -11,7 +11,7 @@ from functools import partial
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout, DigestAuthMiddleware
 from yarl import URL
 
 from ..common import (
@@ -675,6 +675,14 @@ class RpcDevice:
         if self.aiohttp_session is None:
             raise ValueError("aiohttp_session required")
 
+        middlewares = None
+        if self.options.username and self.options.password:
+            # Snapshot endpoint uses HTTP digest auth, handled automatically
+            # by aiohttp (401 challenge -> retry with Authorization header).
+            middlewares = (
+                DigestAuthMiddleware(self.options.username, self.options.password),
+            )
+
         async with self.aiohttp_session.get(
             URL.build(
                 scheme="https" if use_ssl(self.port) else "http",
@@ -683,6 +691,7 @@ class RpcDevice:
                 path=f"/camera/{camera_id}/snapshot",
             ),
             timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
+            middlewares=middlewares,
         ) as resp:
             if resp.status == HTTPStatus.UNAUTHORIZED:
                 raise InvalidAuthError(resp.status)

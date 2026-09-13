@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
-from aiohttp import ClientError
+from aiohttp import ClientError, DigestAuthMiddleware
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ServerDisconnectedError
 from bleak.backends.device import BLEDevice
@@ -2319,6 +2319,28 @@ async def test_camera_get_image(
 
     assert result == b"image_data"
     rpc_device.aiohttp_session.get.assert_called_once()
+
+    middlewares = rpc_device.aiohttp_session.get.call_args.kwargs["middlewares"]
+    assert middlewares is not None
+    assert len(middlewares) == 1
+    assert isinstance(middlewares[0], DigestAuthMiddleware)
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_sends_digest_auth(
+    rpc_device: RpcDevice,
+    camera_mock_response: AsyncMock,  # noqa: ARG001
+) -> None:
+    """Test camera_get_image passes digest auth with device credentials."""
+    await rpc_device.camera_get_image(0)
+
+    middlewares = rpc_device.aiohttp_session.get.call_args.kwargs["middlewares"]
+    assert middlewares is not None
+    assert len(middlewares) == 1
+    digest = middlewares[0]
+    assert isinstance(digest, DigestAuthMiddleware)
+    assert digest._login_str == "username"
+    assert digest._password_bytes == b"password"
 
 
 @pytest.mark.asyncio
