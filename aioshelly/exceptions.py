@@ -63,16 +63,6 @@ class CustomPortNotSupported(ShellyError):
     """Raise if GEN1 devices are access with custom port."""
 
 
-class HttpCallError(ShellyError):
-    """Raised to indicate HTTP call errors."""
-
-    def __init__(self, code: int, message: str = "") -> None:
-        """Initialize."""
-        self.code = code
-        self.message = message
-        super().__init__(code, message)
-
-
 class RpcCallError(ShellyError):
     """Raised to indicate errors in RPC call."""
 
@@ -81,3 +71,7 @@ class RpcCallError(ShellyError):
         self.code = code
         self.message = message
         super().__init__(code, message)
+
+
+class HttpCallError(RpcCallError):
+    """Raised to indicate HTTP call errors."""

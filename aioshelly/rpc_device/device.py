@@ -677,30 +677,30 @@ class RpcDevice:
 
         middlewares = None
         if self.options.username and self.options.password:
-            # Snapshot endpoint uses HTTP digest auth, handled automatically
-            # by aiohttp (401 challenge -> retry with Authorization header).
             middlewares = (
                 DigestAuthMiddleware(self.options.username, self.options.password),
             )
 
-        async with self.aiohttp_session.get(
-            URL.build(
-                scheme="https" if use_ssl(self.port) else "http",
-                host=self.ip_address,
-                port=self.port,
-                path=f"/camera/{camera_id}/snapshot",
-            ),
-            timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
-            middlewares=middlewares,
-        ) as resp:
-            if resp.status == HTTPStatus.UNAUTHORIZED:
-                raise InvalidAuthError(resp.status)
-            if resp.status != HTTPStatus.OK:
-                raise HttpCallError(
-                    resp.status, f"Snapshot endpoint returned HTTP {resp.status}"
-                )
-
-            return await resp.read()
+        try:
+            async with self.aiohttp_session.get(
+                URL.build(
+                    scheme="https" if use_ssl(self.port) else "http",
+                    host=self.ip_address,
+                    port=self.port,
+                    path=f"/camera/{camera_id}/snapshot",
+                ),
+                timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
+                middlewares=middlewares,
+            ) as resp:
+                if resp.status == HTTPStatus.UNAUTHORIZED:
+                    raise InvalidAuthError(resp.status)
+                if resp.status != HTTPStatus.OK:
+                    raise HttpCallError(
+                        resp.status, f"Snapshot endpoint returned HTTP {resp.status}"
+                    )
+                return await resp.read()
+        except CONNECT_ERRORS as err:
+            raise DeviceConnectionError(err) from err
 
     async def arm_camera(self, id_: int) -> None:
         """Arm camera."""
