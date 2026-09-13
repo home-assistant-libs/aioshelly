@@ -691,6 +691,7 @@ class RpcDevice:
                 ),
                 timeout=ClientTimeout(total=HTTP_CALL_TIMEOUT),
                 middlewares=middlewares,
+                ssl=self.options.verify_ssl,
             ) as resp:
                 if resp.status == HTTPStatus.UNAUTHORIZED:
                     raise InvalidAuthError(resp.status)
