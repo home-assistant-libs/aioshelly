@@ -17,6 +17,7 @@ from aioshelly.common import ConnectionOptions, process_ip_or_options
 from aioshelly.const import HTTP_CALL_TIMEOUT, NOTIFY_WS_CLOSED
 from aioshelly.exceptions import (
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
     HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
@@ -2364,20 +2365,20 @@ async def test_camera_get_image_error_status(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "error",
+    ("error", "expected"),
     [
-        ClientError("connection failed"),
-        OSError("network down"),
-        TimeoutError("timeout"),
+        (ClientError("connection failed"), DeviceConnectionError),
+        (OSError("network down"), DeviceConnectionError),
+        (TimeoutError("timeout"), DeviceConnectionTimeoutError),
     ],
 )
 async def test_camera_get_image_connection_error(
-    rpc_device: RpcDevice, error: Exception
+    rpc_device: RpcDevice, error: Exception, expected: type[Exception]
 ) -> None:
-    """Test camera_get_image raises DeviceConnectionError on transport errors."""
+    """Test camera_get_image maps transport errors to connection errors."""
     rpc_device.aiohttp_session.get.side_effect = error
 
-    with pytest.raises(DeviceConnectionError):
+    with pytest.raises(expected):
         await rpc_device.camera_get_image(0)
 
 

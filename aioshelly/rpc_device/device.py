@@ -38,6 +38,7 @@ from ..const import (
 )
 from ..exceptions import (
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
     HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
@@ -700,6 +701,8 @@ class RpcDevice:
                         resp.status, f"Snapshot endpoint returned HTTP {resp.status}"
                     )
                 return await resp.read()
+        except TimeoutError as err:
+            raise DeviceConnectionTimeoutError(err) from err
         except CONNECT_ERRORS as err:
             raise DeviceConnectionError(err) from err
 
