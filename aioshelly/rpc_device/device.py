@@ -675,7 +675,7 @@ class RpcDevice:
         if TYPE_CHECKING:
             assert self.aiohttp_session
 
-        middlewares = None
+        middlewares: tuple[DigestAuthMiddleware] | None = None
         if self.options.username and self.options.password:
             middlewares = (
                 DigestAuthMiddleware(self.options.username, self.options.password),
