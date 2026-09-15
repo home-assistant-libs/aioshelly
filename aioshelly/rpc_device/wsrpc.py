@@ -252,6 +252,7 @@ class WsRPC(WsBase):
         self._calls: dict[int, RPCCall] = {}
         self._call_id = 0
         self._session = SessionData(f"aios-{id(self)}", None, None)
+        self._auth_lock = asyncio.Lock()
         self._loop = asyncio.get_running_loop()
 
     @property
@@ -450,10 +451,9 @@ class WsRPC(WsBase):
         """Websocket RPC call."""
         return (await self.calls([(method, params)], timeout))[0]
 
-    def _raise_for_unrecoverable_errors(
-        self, resp: dict[str, Any], allow_auth_retry: bool
-    ) -> None:
-        """Raise for unrecoverable errors."""
+    @staticmethod
+    def _parse_rpc_error(resp: dict[str, Any]) -> tuple[dict[str, Any], int, str]:
+        """Extract error dict, code, and message from an RPC error response."""
         try:
             error = resp["error"]
             code = error["code"]
@@ -461,6 +461,12 @@ class WsRPC(WsBase):
         except KeyError as err:
             raise RpcCallError(0, f"bad response: {resp}") from err
 
+        return error, code, msg
+
+    def _raise_for_unrecoverable_errors(
+        self, code: int, msg: str, allow_auth_retry: bool
+    ) -> None:
+        """Raise for unrecoverable errors."""
         if code != HTTPStatus.UNAUTHORIZED.value:
             raise RpcCallError(code, msg)
 
@@ -475,6 +481,7 @@ class WsRPC(WsBase):
         params: dict[str, Any] | None = None,
         timeout: float = 10.0,
         allow_auth_retry: bool = True,
+        stale_retry: bool = False,
     ) -> dict[str, Any]:
         """Websocket RPC call with authentication retry."""
         if self._client is None:
@@ -496,16 +503,46 @@ class WsRPC(WsBase):
                 # Wait response
                 response = await call.resolve
                 if "result" not in response:
-                    self._raise_for_unrecoverable_errors(response, allow_auth_retry)
-                    auth_challenge = json_loads(response["error"]["message"])
+                    error, code, msg = self._parse_rpc_error(response)
+
+                    # Non-401 errors are always unrecoverable
+                    if code != HTTPStatus.UNAUTHORIZED.value:
+                        raise RpcCallError(code, msg)
+
+                    try:
+                        auth_challenge = json_loads(error["message"])
+                    except ValueError as err:
+                        raise InvalidAuthError(msg) from err
+
                     if TYPE_CHECKING:
                         assert self._session.auth_data
+
+                    # Check if the error is due to a stale nonce (firmware >=2.0.0)
+                    is_stale = auth_challenge.get("stale") is True
+                    if is_stale:
+                        if stale_retry:
+                            raise InvalidAuthError(msg)
+
+                        self._session.auth_data.update_challenge(auth_challenge)
+                        return await self._rpc_call_with_auth_retry(
+                            method,
+                            params,
+                            timeout,
+                            allow_auth_retry=False,
+                            stale_retry=True,
+                        )
+
+                    # Non-stale 401: check if auth retry is allowed
+                    if not allow_auth_retry or self._session.auth_data is None:
+                        raise InvalidAuthError(msg)
+
                     self._session.auth_data.update_challenge(auth_challenge)
                     return await self._rpc_call_with_auth_retry(
                         method,
                         params,
                         timeout,
                         allow_auth_retry=False,
+                        stale_retry=stale_retry,
                     )
                 call.result = response["result"]
         except TimeoutError as exc:
@@ -539,14 +576,18 @@ class WsRPC(WsBase):
         if self._session.auth_data is not None:
             # sequential: each call uses fresh nc from prior challenge,
             # first call seeds the nonce via 401 challenge
-            results = []
-            deadline = self._loop.time() + timeout
-            for method, params in calls:
-                remaining = deadline - self._loop.time()
-                results.append(
-                    await self._rpc_call_with_auth_retry(method, params, remaining)
-                )
-            return results
+            # Lock prevents concurrent callers from receiving the same
+            # stale challenge and mutating shared AuthData, which would
+            # cause duplicate nonce/count pairs and spurious 401s.
+            async with self._auth_lock:
+                results = []
+                deadline = self._loop.time() + timeout
+                for method, params in calls:
+                    remaining = deadline - self._loop.time()
+                    results.append(
+                        await self._rpc_call_with_auth_retry(method, params, remaining)
+                    )
+                return results
 
         results = await self._rpc_calls(calls, timeout)
         return [call.result for call in results]
@@ -583,8 +624,9 @@ class WsRPC(WsBase):
                 for call in sent_calls:
                     response = await call.resolve
                     if "result" not in response:
+                        _, code, msg = self._parse_rpc_error(response)
                         self._raise_for_unrecoverable_errors(
-                            response, allow_auth_retry=False
+                            code, msg, allow_auth_retry=False
                         )
                     else:
                         call.result = response["result"]
