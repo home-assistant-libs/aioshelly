@@ -2,20 +2,23 @@
 
 import re
 from collections.abc import AsyncGenerator
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 import pytest_asyncio
-from aiohttp import ClientError
+from aiohttp import ClientError, DigestAuthMiddleware
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ServerDisconnectedError
 from bleak.backends.device import BLEDevice
 
 from aioshelly.common import ConnectionOptions, process_ip_or_options
-from aioshelly.const import NOTIFY_WS_CLOSED
+from aioshelly.const import HTTP_CALL_TIMEOUT, NOTIFY_WS_CLOSED
 from aioshelly.exceptions import (
     DeviceConnectionError,
+    DeviceConnectionTimeoutError,
+    HttpCallError,
     InvalidAuthError,
     MacAddressMismatchError,
     NotInitialized,
@@ -2305,3 +2308,86 @@ async def test_ircode_emit(
         "repeats": 3,
         "after": 1,
     }
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image(
+    rpc_device: RpcDevice,
+    camera_mock_response: AsyncMock,  # noqa: ARG001
+) -> None:
+    """Test camera_get_image returns image data with digest auth."""
+    result = await rpc_device.camera_get_image(0)
+
+    assert result == b"image_data"
+    rpc_device.aiohttp_session.get.assert_called_once()
+
+    call_args = rpc_device.aiohttp_session.get.call_args
+    url = call_args.args[0]
+    assert url.scheme == "http"
+    assert url.host == "10.10.10.10"
+    assert url.path == "/camera/0/snapshot"
+    assert call_args.kwargs["timeout"].total == HTTP_CALL_TIMEOUT
+
+    middlewares = call_args.kwargs["middlewares"]
+    assert middlewares is not None
+    assert len(middlewares) == 1
+    assert isinstance(middlewares[0], DigestAuthMiddleware)
+
+    rpc_device.options.username = None
+    rpc_device.options.password = None
+    rpc_device.aiohttp_session.get.reset_mock()
+    await rpc_device.camera_get_image(0)
+
+    assert rpc_device.aiohttp_session.get.call_args.kwargs["middlewares"] is None
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_unauthorized(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_get_image raises InvalidAuthError on 401."""
+    camera_mock_response.status = HTTPStatus.UNAUTHORIZED
+
+    with pytest.raises(InvalidAuthError):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_error_status(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_get_image raises HttpCallError on non-OK status."""
+    camera_mock_response.status = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    with pytest.raises(HttpCallError, match="HTTP 500"):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        (ClientError("connection failed"), DeviceConnectionError),
+        (OSError("network down"), DeviceConnectionError),
+        (TimeoutError("timeout"), DeviceConnectionTimeoutError),
+    ],
+)
+async def test_camera_get_image_connection_error(
+    rpc_device: RpcDevice, error: Exception, expected: type[Exception]
+) -> None:
+    """Test camera_get_image maps transport errors to connection errors."""
+    rpc_device.aiohttp_session.get.side_effect = error
+
+    with pytest.raises(expected):
+        await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_camera_get_image_read_error(
+    rpc_device: RpcDevice, camera_mock_response: AsyncMock
+) -> None:
+    """Test camera_get_image raises DeviceConnectionError when read fails."""
+    camera_mock_response.read.side_effect = ClientError("read failed")
+
+    with pytest.raises(DeviceConnectionError):
+        await rpc_device.camera_get_image(0)

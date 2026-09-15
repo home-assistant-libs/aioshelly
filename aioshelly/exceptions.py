@@ -71,3 +71,7 @@ class RpcCallError(ShellyError):
         self.code = code
         self.message = message
         super().__init__(code, message)
+
+
+class HttpCallError(RpcCallError):
+    """Raised to indicate HTTP call errors."""
