@@ -1305,6 +1305,34 @@ async def test_blu_trv_clear_boost(
 
 
 @pytest.mark.asyncio
+async def test_blu_trv_update_firmware(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_update_firmware() method."""
+    await rpc_device.blu_trv_update_firmware(200)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTrv.UpdateFirmware"
+    assert call_args_list[0][0][0][0][1] == {"id": 200}
+
+
+@pytest.mark.asyncio
+async def test_blu_trv_check_for_updates(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice blu_trv_check_for_updates() method."""
+    rpc_device.call_rpc_multiple.return_value = [{"fw_id": "v1.2.10"}]
+
+    assert await rpc_device.blu_trv_check_for_updates() == "v1.2.10"
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "BluTrv.CheckForUpdates"
+    assert call_args_list[0][0][0][0][1] is None
+
+
+@pytest.mark.asyncio
 async def test_number_set(
     rpc_device: RpcDevice,
 ) -> None:
