@@ -404,6 +404,16 @@ class RpcDevice:
         }
         await self.call_rpc("BluTRV.Call", params=params, timeout=BLU_TRV_TIMEOUT)
 
+    async def blu_trv_update_firmware(self, trv_id: int) -> None:
+        """Update firmware for BLU TRV."""
+        await self.call_rpc("BluTrv.UpdateFirmware", params={"id": trv_id})
+
+    async def blu_trv_check_for_updates(self) -> str:
+        """Check for BLU TRV firmware updates."""
+        result = await self.call_rpc("BluTrv.CheckForUpdates")
+
+        return cast(str, result["fw_id"])
+
     async def boolean_set(self, id_: int, value: bool) -> None:
         """Set the value for the boolean component."""
         params = {
