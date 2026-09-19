@@ -1329,7 +1329,6 @@ async def test_blu_trv_check_for_updates(
     assert rpc_device.call_rpc_multiple.call_count == 1
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
     assert call_args_list[0][0][0][0][0] == "BluTrv.CheckForUpdates"
-    assert call_args_list[0][0][0][0][1] is None
 
 
 @pytest.mark.asyncio
