@@ -25,7 +25,12 @@ from aioshelly.exceptions import (
     RpcCallError,
 )
 from aioshelly.rpc_device.blerpc import BleRPC
-from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
+from aioshelly.rpc_device.device import (
+    MAX_STORAGE_ITERATIONS,
+    RpcDevice,
+    RpcUpdateType,
+    mergedicts,
+)
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
@@ -40,6 +45,34 @@ VIRT_COMP_CONFIG = {
 }
 VIRT_COMP_ATTRS = {"role": "current_humidity"}
 WEBSOCKET_URL = "ws://10.10.10.10:8123/api/shelly/ws"
+STORAGE_VIDEO_ITEM = {
+    "media_id": "video-1",
+    "type": "video",
+    "ts": 1789907507.382,
+    "duration": 20,
+    "size": 5287042,
+    "trigger": {
+        "component": "camerazone:200",
+        "event": "motion_detected",
+        "ts": 1789907507,
+    },
+    "url": "/storage/video-1/4db27786/MOV_20260920_123147381.mp4",
+    "thumbnail_url": "/storage/video-1/71cec2ae/IMG_20260920_123147381.jpg",
+}
+STORAGE_IMAGE_ITEM = {
+    "media_id": "image-1",
+    "type": "image",
+    "ts": 1789907362.923,
+    "size": 812345,
+    "url": "/storage/image-1/1c18d873/IMG_20260920_122922923.jpg",
+}
+
+
+def _storage_page(
+    items: list[dict[str, Any]], total: int, offset: int = 0, rev: int = 1
+) -> dict[str, Any]:
+    """Build a 'Storage.List' response page."""
+    return {"total": total, "offset": offset, "rev": rev, "items": items}
 
 
 @pytest_asyncio.fixture
@@ -2147,6 +2180,95 @@ async def test_media_list_radio_stations(
 
     assert isinstance(result, list)
     assert len(result) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("pages", "expected_offsets", "expected_media_ids"),
+    [
+        # single page with all items
+        (
+            [_storage_page([STORAGE_VIDEO_ITEM, STORAGE_IMAGE_ITEM], 2)],
+            [0],
+            ["video-1", "image-1"],
+        ),
+        # empty storage
+        ([_storage_page([], 0)], [0], []),
+        # two pages
+        (
+            [
+                _storage_page([STORAGE_VIDEO_ITEM], 2),
+                _storage_page([STORAGE_IMAGE_ITEM], 2, offset=1),
+            ],
+            [0, 1],
+            ["video-1", "image-1"],
+        ),
+        # the device stops returning items before `total` is reached
+        (
+            [
+                _storage_page([STORAGE_VIDEO_ITEM], 5),
+                _storage_page([], 5, offset=1),
+            ],
+            [0, 1],
+            ["video-1"],
+        ),
+    ],
+)
+async def test_get_storage_list(
+    rpc_device: RpcDevice,
+    pages: list[dict[str, Any]],
+    expected_offsets: list[int],
+    expected_media_ids: list[str],
+) -> None:
+    """Test RpcDevice get_storage_list() method."""
+    rpc_device.call_rpc_multiple.side_effect = [[page] for page in pages]
+
+    result = await rpc_device.get_storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == len(expected_offsets)
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    for index, offset in enumerate(expected_offsets):
+        assert call_args_list[index][0][0][0][0] == "Storage.List"
+        assert call_args_list[index][0][0][0][1] == {"id": 0, "offset": offset}
+
+    assert [item["media_id"] for item in result] == expected_media_ids
+
+
+@pytest.mark.asyncio
+async def test_get_storage_list_contents_changed(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test get_storage_list() restarts when the storage changes while paginating."""
+    new_item = {**STORAGE_VIDEO_ITEM, "media_id": "video-2"}
+    rpc_device.call_rpc_multiple.side_effect = [
+        [_storage_page([STORAGE_VIDEO_ITEM], 2)],
+        # a new recording appeared, shifting all offsets by one
+        [_storage_page([STORAGE_VIDEO_ITEM], 3, offset=1, rev=2)],
+        [_storage_page([new_item, STORAGE_VIDEO_ITEM, STORAGE_IMAGE_ITEM], 3, rev=2)],
+    ]
+
+    result = await rpc_device.get_storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 3
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert [args[0][0][0][1]["offset"] for args in call_args_list] == [0, 1, 0]
+
+    assert [item["media_id"] for item in result] == ["video-2", "video-1", "image-1"]
+
+
+@pytest.mark.asyncio
+async def test_get_storage_list_max_iterations(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test get_storage_list() gives up when `total` is never reached."""
+    rpc_device.call_rpc_multiple.return_value = [
+        _storage_page([STORAGE_VIDEO_ITEM], 1000)
+    ]
+
+    result = await rpc_device.get_storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == MAX_STORAGE_ITERATIONS
+    assert len(result) == MAX_STORAGE_ITERATIONS
 
 
 @pytest.mark.asyncio
