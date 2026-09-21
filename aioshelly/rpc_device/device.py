@@ -25,6 +25,7 @@ from ..const import (
     BLU_TRV_IDENTIFIER,
     BLU_TRV_MODEL_ID,
     BLU_TRV_TIMEOUT,
+    BLU_TRV_UPDATE_FIRMWARE_TIMEOUT,
     CONNECT_ERRORS,
     DEVICE_INIT_TIMEOUT,
     DEVICE_IO_TIMEOUT,
@@ -406,7 +407,11 @@ class RpcDevice:
 
     async def blu_trv_update_firmware(self, trv_id: int) -> None:
         """Update firmware for BLU TRV."""
-        await self.call_rpc("BluTrv.UpdateFirmware", params={"id": trv_id})
+        await self.call_rpc(
+            "BluTrv.UpdateFirmware",
+            params={"id": trv_id},
+            timeout=BLU_TRV_UPDATE_FIRMWARE_TIMEOUT,
+        )
 
     async def blu_trv_check_for_updates(self) -> str:
         """Check for BLU TRV firmware updates."""
