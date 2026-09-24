@@ -71,30 +71,30 @@ function bleCallback(event, res) {
 // (and thus avoid a flash write) on every transition.
 //
 // Two device quirks shape this dance:
-//   1. BLE.Scanner.Stop() is asynchronous - a Start() issued in the
+//   1. BLE.Scanner.stop() is asynchronous - a start() issued in the
 //      same JS frame races with the still-in-progress stop and
-//      silently fails. Defer Start onto a Timer so the underlying BLE
+//      silently fails. Defer start onto a Timer so the underlying BLE
 //      stack has time to settle.
-//   2. BLE.Scanner.Subscribe() does NOT survive a Stop/Start cycle -
-//      the subscription is dropped on Stop and must be re-attached
-//      after each Start, or no scan results will be delivered.
+//   2. BLE.Scanner.subscribe() does NOT survive a stop/start cycle -
+//      the subscription is dropped on stop and must be re-attached
+//      after each start, or no scan results will be delivered.
 let pendingActive = null;
 function applyPendingActive() {
   if (pendingActive === null) {
     return;
   }
-  BLE.Scanner.Start({
+  BLE.Scanner.start({
     duration_ms: -1,
     active: pendingActive,
   });
-  BLE.Scanner.Subscribe(bleCallback);
+  BLE.Scanner.subscribe(bleCallback);
   pendingActive = null;
 }
 
 function setActive(v) {
   pendingActive = v;
   if (BLE.Scanner.isRunning()) {
-    BLE.Scanner.Stop();
+    BLE.Scanner.stop();
     Timer.set(250, false, applyPendingActive);
   } else {
     applyPendingActive();
