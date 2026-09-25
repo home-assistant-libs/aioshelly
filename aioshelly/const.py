@@ -1492,6 +1492,8 @@ VIRTUAL_COMPONENTS_MIN_FIRMWARE = 20240213
 
 # value confirmed by Shelly team
 BLU_TRV_TIMEOUT = 60
+# BluTrv.UpdateFirmware resolves only when the OTA is finished
+BLU_TRV_UPDATE_FIRMWARE_TIMEOUT = 300
 
 # BLE manufacturer data model ID to ShellyDevice mapping
 # Built from DEVICES dict at module load time
