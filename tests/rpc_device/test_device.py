@@ -1695,6 +1695,58 @@ async def test_switch_set(
 
 
 @pytest.mark.asyncio
+async def test_switch_set_config(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice switch_set_config() method."""
+    rpc_device.call_rpc_multiple.return_value = [{"restart_required": False}]
+
+    result = await rpc_device.switch_set_config(2, {"in_locked": True})
+
+    assert result == {"restart_required": False}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Switch.SetConfig"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 2,
+        "config": {"in_locked": True},
+    }
+
+
+@pytest.mark.asyncio
+async def test_cover_set_config(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice cover_set_config() method."""
+    rpc_device.call_rpc_multiple.return_value = [{"restart_required": False}]
+
+    result = await rpc_device.cover_set_config(1, {"in_locked": True})
+
+    assert result == {"restart_required": False}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Cover.SetConfig"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 1,
+        "config": {"in_locked": True},
+    }
+
+
+@pytest.mark.asyncio
+async def test_switch_set_config_restart_required(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice switch_set_config() method when a restart is required."""
+    rpc_device.call_rpc_multiple.return_value = [{"restart_required": True}]
+
+    result = await rpc_device.switch_set_config(0, {"reverse": True})
+
+    assert result == {"restart_required": True}
+
+
+@pytest.mark.asyncio
 async def test_cb_set(
     rpc_device: RpcDevice,
 ) -> None:

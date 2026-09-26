@@ -51,8 +51,12 @@ from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
     ShellyBLESetConfig,
+    ShellyCoverConfig,
+    ShellyCoverSetConfig,
     ShellyScript,
     ShellyScriptCode,
+    ShellySwitchConfig,
+    ShellySwitchSetConfig,
     ShellyWiFiNetwork,
     ShellyWiFiSetConfig,
     ShellyWsConfig,
@@ -478,6 +482,19 @@ class RpcDevice:
         """Stop cover."""
         await self.call_rpc("Cover.Stop", {"id": id_})
 
+    async def cover_set_config(
+        self, id_: int, config: ShellyCoverConfig
+    ) -> ShellyCoverSetConfig:
+        """Set the configuration for the cover component."""
+        params = {
+            "id": id_,
+            "config": config,
+        }
+        return cast(
+            ShellyCoverSetConfig,
+            await self.call_rpc("Cover.SetConfig", params=params),
+        )
+
     async def cover_set_position(
         self,
         id_: int,
@@ -583,6 +600,19 @@ class RpcDevice:
             "on": value,
         }
         await self.call_rpc("Switch.Set", params=params)
+
+    async def switch_set_config(
+        self, id_: int, config: ShellySwitchConfig
+    ) -> ShellySwitchSetConfig:
+        """Set the configuration for the switch component."""
+        params = {
+            "id": id_,
+            "config": config,
+        }
+        return cast(
+            ShellySwitchSetConfig,
+            await self.call_rpc("Switch.SetConfig", params=params),
+        )
 
     async def cb_set(self, id_: int, output: bool) -> None:
         """Set the output for the CB (circuit breaker) component."""
