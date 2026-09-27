@@ -52,6 +52,6 @@ repos:
       - id: prettier
         stages: [manual]
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.81
+    rev: v0.0.83
     hooks:
       - id: ty
