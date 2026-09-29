@@ -1,15 +1,18 @@
 """Tests for rpc_device.wsrpc module."""
 
 import asyncio
+import gc
 import logging
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aiohttp import ClientConnectionResetError
 from aiohttp.http_websocket import WSMessage, WSMsgType
 
 from aioshelly.exceptions import (
     ConnectionClosed,
+    DeviceConnectionError,
     DeviceConnectionTimeoutError,
     InvalidAuthError,
     InvalidMessage,
@@ -19,7 +22,7 @@ from aioshelly.json import json_dumps
 from aioshelly.rpc_device.wsrpc import AuthData, _receive_json_or_raise
 
 from . import load_device_fixture
-from .conftest import WsRPCMocker
+from .conftest import ResponseMocker, WsRPCMocker
 
 
 def make_401_response(
@@ -341,3 +344,114 @@ async def test_rpc_call_invalid_json_401(
         await ws_rpc.calls_with_mocked_responses(
             [("Shelly.GetConfig", None)], [bad_401]
         )
+
+
+AUTH_DATA = AuthData("auth_domain", "username", "password")
+POLL_CALLS: list[tuple[str, dict[str, Any] | None]] = [
+    ("Shelly.GetStatus", None),
+    ("Shelly.GetComponents", {"dynamic_only": True}),
+]
+
+
+def _mock_send_until_pending(
+    ws_rpc: WsRPCMocker, count: int
+) -> tuple[AsyncMock, asyncio.Event]:
+    """Mock away responses and signal once the given number of calls are pending."""
+    pending = asyncio.Event()
+
+    async def send_next_response() -> None:
+        if len(ws_rpc._calls) >= count:
+            pending.set()
+
+    return AsyncMock(side_effect=send_next_response), pending
+
+
+@pytest.mark.asyncio
+async def test_wscall_connection_closed_no_unretrieved_exceptions(
+    ws_rpc: WsRPCMocker, rpc_websocket_responses: ResponseMocker
+) -> None:
+    """Test connection closed during batched calls leaves no unretrieved futures."""
+    loop = asyncio.get_running_loop()
+    exception_handler = MagicMock()
+    loop.set_exception_handler(exception_handler)
+
+    send_next_response, pending = _mock_send_until_pending(ws_rpc, len(POLL_CALLS))
+    with patch.object(ws_rpc, "_send_next_response", new=send_next_response):
+        task = asyncio.create_task(ws_rpc.calls(POLL_CALLS))
+        await pending.wait()
+        await rpc_websocket_responses.mock_ws_message(
+            WSMessage(WSMsgType.CLOSE, None, None)
+        )
+        with pytest.raises(DeviceConnectionError) as exc_info:
+            await task
+
+    assert ws_rpc._calls == {}
+
+    # Release every reference to the abandoned futures so they get collected
+    del task, exc_info
+    await asyncio.sleep(0)
+    gc.collect()
+    loop.set_exception_handler(None)
+    exception_handler.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("auth_data", "calls", "send_frame_side_effect"),
+    [
+        pytest.param(
+            None,
+            POLL_CALLS,
+            [None, ClientConnectionResetError("Cannot write to closing transport")],
+            id="without_auth",
+        ),
+        pytest.param(
+            AUTH_DATA,
+            POLL_CALLS[:1],
+            [ClientConnectionResetError("Cannot write to closing transport")],
+            id="with_auth",
+        ),
+    ],
+)
+async def test_wscall_send_failure_drops_pending_calls(
+    ws_rpc: WsRPCMocker,
+    auth_data: AuthData | None,
+    calls: list[tuple[str, dict[str, Any] | None]],
+    send_frame_side_effect: list[Exception | None],
+) -> None:
+    """Test a failed send does not leave calls waiting for a response."""
+    ws_rpc._session.auth_data = auth_data
+    ws_rpc._client.send_frame.side_effect = send_frame_side_effect
+
+    with (
+        patch.object(ws_rpc, "_send_next_response", new=AsyncMock()),
+        pytest.raises(ClientConnectionResetError),
+    ):
+        await ws_rpc.calls(calls)
+
+    assert ws_rpc._calls == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("auth_data", "pending_calls"),
+    [
+        pytest.param(None, len(POLL_CALLS), id="without_auth"),
+        pytest.param(AUTH_DATA, 1, id="with_auth"),
+    ],
+)
+async def test_wscall_cancelled_drops_pending_calls(
+    ws_rpc: WsRPCMocker, auth_data: AuthData | None, pending_calls: int
+) -> None:
+    """Test cancelling the caller does not leave calls waiting for a response."""
+    ws_rpc._session.auth_data = auth_data
+
+    send_next_response, pending = _mock_send_until_pending(ws_rpc, pending_calls)
+    with patch.object(ws_rpc, "_send_next_response", new=send_next_response):
+        task = asyncio.create_task(ws_rpc.calls(POLL_CALLS))
+        await pending.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    assert ws_rpc._calls == {}
