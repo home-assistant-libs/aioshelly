@@ -562,9 +562,6 @@ class WsRPC(WsBase):
             except asyncio.CancelledError:
                 if _current_task_cancelled():
                     raise
-            # Ensure the call is removed from the calls dict
-            # on failure
-            self._calls.pop(call.call_id, None)
             raise DeviceConnectionTimeoutError(call) from exc
         finally:
             self._abandon_calls((call,))
@@ -650,9 +647,6 @@ class WsRPC(WsBase):
                 except asyncio.CancelledError:
                     if _current_task_cancelled():
                         raise
-                # Ensure the call is removed from the calls dict
-                # on failure
-                self._calls.pop(call.call_id, None)
             raise DeviceConnectionTimeoutError(sent_calls) from exc
         finally:
             self._abandon_calls(sent_calls)
