@@ -260,6 +260,16 @@ class WsRPC(WsBase):
         self._call_id += 1
         return self._call_id
 
+    def _abandon_calls(self, calls: Iterable[RPCCall]) -> None:
+        """Drop calls whose futures will not be awaited anymore."""
+        for call in calls:
+            self._calls.pop(call.call_id, None)
+            if not call.resolve.done():
+                call.resolve.cancel()
+            elif not call.resolve.cancelled():
+                # Mark as retrieved to avoid "Future exception was never retrieved"
+                call.resolve.exception()
+
     async def connect(self, aiohttp_session: ClientSession) -> None:
         """Connect to device."""
         if self.connected:
@@ -487,17 +497,17 @@ class WsRPC(WsBase):
         if self._client is None:
             raise RuntimeError("Not connected")
 
+        call_id = self._next_id
+        call = RPCCall(
+            call_id,
+            method,
+            params,
+            self._session,
+            self._loop.create_future(),
+        )
+        self._calls[call_id] = call
         try:
             async with asyncio.timeout(timeout):
-                call_id = self._next_id
-                call = RPCCall(
-                    call_id,
-                    method,
-                    params,
-                    self._session,
-                    self._loop.create_future(),
-                )
-                self._calls[call_id] = call
                 await self._send_json(call.build_request_frame())
 
                 # Wait response
@@ -552,10 +562,9 @@ class WsRPC(WsBase):
             except asyncio.CancelledError:
                 if _current_task_cancelled():
                     raise
-            # Ensure the call is removed from the calls dict
-            # on failure
-            self._calls.pop(call.call_id, None)
             raise DeviceConnectionTimeoutError(call) from exc
+        finally:
+            self._abandon_calls((call,))
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(
@@ -638,10 +647,9 @@ class WsRPC(WsBase):
                 except asyncio.CancelledError:
                     if _current_task_cancelled():
                         raise
-                # Ensure the call is removed from the calls dict
-                # on failure
-                self._calls.pop(call.call_id, None)
             raise DeviceConnectionTimeoutError(sent_calls) from exc
+        finally:
+            self._abandon_calls(sent_calls)
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             for call in sent_calls:
