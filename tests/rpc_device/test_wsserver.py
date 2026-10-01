@@ -8,6 +8,7 @@ import pytest
 from aiohttp import WSMsgType
 from aiohttp.web import WebSocketResponse
 
+from aioshelly.common import ConnectionOptions
 from aioshelly.exceptions import (
     DeviceConnectionError,
     DeviceConnectionTimeoutError,
@@ -15,6 +16,7 @@ from aioshelly.exceptions import (
     RpcCallError,
 )
 from aioshelly.json import json_dumps, json_loads
+from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType
 from aioshelly.rpc_device.wsrpc import WsServer, WsServerConnection
 
 
@@ -263,3 +265,59 @@ async def test_server_connection_auth_retry() -> None:
     )
 
     assert await call_task == {"switch:0": {"output": True}}
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_initializes_over_remote_connection() -> None:
+    """Test RpcDevice initialization without an IP address."""
+    websocket = make_websocket()
+    connection = WsServerConnection(
+        "AABBCCDDEEFF",
+        "shellypro1pm-aabbccddeeff",
+        websocket,
+    )
+    server = WsServer()
+    server.connections["AABBCCDDEEFF"] = connection
+
+    device_info = {
+        "id": "shellypro1pm-aabbccddeeff",
+        "mac": "AABBCCDDEEFF",
+        "model": "SPSW-201PE16EU",
+        "gen": 2,
+        "fw_id": "20230101-000000/1.0.0",
+        "ver": "1.0.0",
+        "auth_en": False,
+    }
+    config = {"sys": {"device": {"name": "Remote Shelly"}}}
+    status = {"sys": {"wakeup_period": 0}, "switch:0": {"output": False}}
+    connection.calls = AsyncMock(
+        side_effect=[
+            [device_info],
+            [config, status],
+        ]
+    )
+
+    device = RpcDevice(
+        server,
+        None,
+        ConnectionOptions(remote_device_id="aabbccddeeff"),
+    )
+    await device.initialize()
+
+    assert device.initialized
+    assert device.connected
+    assert device.hostname == "shellypro1pm-aabbccddeeff"
+    assert device.status["switch:0"]["output"] is False
+
+    listener = MagicMock()
+    device.subscribe_updates(listener)
+    server.subscriptions["AABBCCDDEEFF"](
+        {
+            "src": "shellypro1pm-aabbccddeeff",
+            "method": "NotifyStatus",
+            "params": {"switch:0": {"output": True}},
+        }
+    )
+
+    assert device.status["switch:0"]["output"] is True
+    listener.assert_called_once_with(device, RpcUpdateType.STATUS)
