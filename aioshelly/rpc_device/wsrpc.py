@@ -72,6 +72,8 @@ def _receive_json_or_raise(msg: WSMessage | WSMessageTextBytes) -> dict[str, Any
             if isinstance(payload, bytes):
                 payload = payload.decode("utf-8", errors="replace")
             raise InvalidMessage(f"Received invalid JSON: {payload}") from err
+        if not isinstance(data, dict):
+            raise InvalidMessage("Received non-object JSON")
         return data
 
     if msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.CLOSING):
@@ -91,6 +93,23 @@ def hex_hash(message: str) -> str:
 def _current_task_cancelled() -> bool:
     """Return whether the currently running task has been cancelled."""
     return bool((current_task := asyncio.current_task()) and current_task.cancelled())
+
+
+def _parse_rpc_error(
+    resp: dict[str, Any],
+) -> tuple[dict[str, Any], int, str]:
+    """Extract error dict, code, and message from an RPC error response."""
+    try:
+        error = resp["error"]
+        code = error["code"]
+        msg = error["message"]
+    except (KeyError, TypeError) as err:
+        raise RpcCallError(0, "bad response") from err
+
+    if not isinstance(error, dict) or type(code) is not int or not isinstance(msg, str):
+        raise RpcCallError(0, "bad response")
+
+    return error, code, msg
 
 
 HA2 = hex_hash("dummy_method:dummy_uri")
@@ -461,18 +480,6 @@ class WsRPC(WsBase):
         """Websocket RPC call."""
         return (await self.calls([(method, params)], timeout))[0]
 
-    @staticmethod
-    def _parse_rpc_error(resp: dict[str, Any]) -> tuple[dict[str, Any], int, str]:
-        """Extract error dict, code, and message from an RPC error response."""
-        try:
-            error = resp["error"]
-            code = error["code"]
-            msg = error["message"]
-        except KeyError as err:
-            raise RpcCallError(0, f"bad response: {resp}") from err
-
-        return error, code, msg
-
     def _raise_for_unrecoverable_errors(
         self, code: int, msg: str, allow_auth_retry: bool
     ) -> None:
@@ -513,7 +520,7 @@ class WsRPC(WsBase):
                 # Wait response
                 response = await call.resolve
                 if "result" not in response:
-                    error, code, msg = self._parse_rpc_error(response)
+                    error, code, msg = _parse_rpc_error(response)
 
                     # Non-401 errors are always unrecoverable
                     if code != HTTPStatus.UNAUTHORIZED.value:
@@ -633,7 +640,7 @@ class WsRPC(WsBase):
                 for call in sent_calls:
                     response = await call.resolve
                     if "result" not in response:
-                        _, code, msg = self._parse_rpc_error(response)
+                        _, code, msg = _parse_rpc_error(response)
                         self._raise_for_unrecoverable_errors(
                             code, msg, allow_auth_retry=False
                         )
@@ -674,6 +681,245 @@ class WsRPC(WsBase):
         await self._client.send_frame(json_bytes(data), WSMsgType.TEXT)
 
 
+class WsServerConnection:
+    """RPC transport over a device-initiated WebSocket connection."""
+
+    def __init__(
+        self,
+        device_id: str,
+        peer_src: str | None = None,
+        websocket: WebSocketResponse | None = None,
+    ) -> None:
+        """Initialize an inbound WebSocket RPC connection."""
+        self.device_id = device_id
+        self._websocket: WebSocketResponse | None = websocket
+        self._calls: dict[int, RPCCall] = {}
+        self._call_id = 0
+        self._session = SessionData(f"aios-{id(self)}", peer_src, None)
+        self._auth_lock = asyncio.Lock()
+        self._loop = asyncio.get_running_loop()
+
+    @property
+    def _next_id(self) -> int:
+        """Return the next RPC request id."""
+        self._call_id += 1
+        return self._call_id
+
+    @property
+    def connected(self) -> bool:
+        """Return whether the inbound WebSocket is connected."""
+        return self._websocket is not None and not self._websocket.closed
+
+    @property
+    def peer_src(self) -> str | None:
+        """Return the RPC source advertised by the remote device."""
+        return self._session.dst
+
+    def uses_websocket(self, websocket: WebSocketResponse) -> bool:
+        """Return whether this connection owns the provided WebSocket."""
+        return self._websocket is websocket
+
+    def attach(self, peer_src: str, websocket: WebSocketResponse) -> None:
+        """Attach a newly established device WebSocket to this transport."""
+        if self._websocket is not None and self._websocket is not websocket:
+            self.mark_disconnected()
+        self._websocket = websocket
+        self.update_peer_src(peer_src)
+        if auth_data := self._session.auth_data:
+            auth_data.nonce = ""
+            auth_data.nc = 0
+
+    def update_peer_src(self, peer_src: str) -> None:
+        """Update the peer RPC source."""
+        if self._session.dst is not None and peer_src != self._session.dst:
+            _LOGGER.warning(
+                "Remote WebSocket src changed for %s: %s -> %s",
+                self.device_id,
+                self._session.dst,
+                peer_src,
+            )
+        self._session.dst = peer_src
+
+    def handle_frame(self, frame: dict[str, Any]) -> bool:
+        """Handle a frame and return True when it completes a pending RPC call."""
+        if (peer_src := frame.get("src")) is not None and peer_src != self.peer_src:
+            raise InvalidMessage("Remote WebSocket source does not match its peer")
+
+        if frame.get("method") is not None:
+            return False
+
+        frame_id = frame.get("id")
+        if type(frame_id) is not int:
+            return False
+
+        call = self._calls.pop(frame_id, None)
+        if call is None:
+            return False
+
+        if not call.resolve.done():
+            call.resolve.set_result(frame)
+        return True
+
+    def mark_disconnected(self) -> None:
+        """Mark the connection disconnected and fail all pending RPC calls."""
+        for call in self._calls.values():
+            if not call.resolve.done():
+                call.resolve.set_exception(
+                    DeviceConnectionError("Remote WebSocket disconnected")
+                )
+        self._calls.clear()
+        self._websocket = None
+
+    async def disconnect(self) -> None:
+        """Close the inbound WebSocket connection."""
+        websocket = self._websocket
+        self.mark_disconnected()
+        if websocket is not None and not websocket.closed:
+            await websocket.close()
+
+    def set_auth_data(self, realm: str, username: str, password: str) -> None:
+        """Set authentication data for RPC calls."""
+        self._session.auth_data = AuthData(realm, username, password)
+
+    async def call(
+        self,
+        method: str,
+        params: dict[str, Any] | None = None,
+        timeout: float = 10.0,
+    ) -> dict[str, Any]:
+        """Call an RPC method over the device-initiated WebSocket."""
+        return (await self.calls(((method, params),), timeout))[0]
+
+    async def _rpc_call_with_auth_retry(
+        self,
+        method: str,
+        params: dict[str, Any] | None,
+        timeout: float,
+        allow_auth_retry: bool,
+        stale_retry: bool = False,
+    ) -> dict[str, Any]:
+        """Call an RPC method and retry once after an authentication challenge."""
+        if not self.connected:
+            raise DeviceConnectionError("Remote WebSocket is not connected")
+
+        call_id = self._next_id
+        call = RPCCall(
+            call_id,
+            method,
+            params,
+            self._session,
+            self._loop.create_future(),
+        )
+        self._calls[call_id] = call
+
+        try:
+            async with asyncio.timeout(timeout):
+                await self._send_json(call.build_request_frame())
+                response = await call.resolve
+
+            if "result" in response:
+                if not isinstance(response["result"], dict):
+                    raise RpcCallError(0, "bad response")
+                call.result = response["result"]
+                return call.result
+
+            error, code, msg = _parse_rpc_error(response)
+            if code != HTTPStatus.UNAUTHORIZED.value:
+                raise RpcCallError(code, msg)
+
+            auth_data = self._session.auth_data
+            if auth_data is None:
+                raise InvalidAuthError(msg)
+
+            try:
+                auth_challenge = json_loads(error["message"])
+                if (
+                    not isinstance(auth_challenge, dict)
+                    or auth_challenge.get("realm") != auth_data.realm
+                    or not auth_challenge.get("nonce")
+                ):
+                    raise InvalidAuthError("Invalid authentication challenge")
+                auth_data.update_challenge(auth_challenge)
+            except (ValueError, KeyError, TypeError) as err:
+                raise InvalidAuthError(msg) from err
+
+            if auth_challenge.get("stale") is True:
+                if stale_retry:
+                    raise InvalidAuthError(msg)
+                return await self._rpc_call_with_auth_retry(
+                    method,
+                    params,
+                    timeout,
+                    allow_auth_retry=False,
+                    stale_retry=True,
+                )
+
+            if not allow_auth_retry:
+                raise InvalidAuthError(msg)
+
+            return await self._rpc_call_with_auth_retry(
+                method,
+                params,
+                timeout,
+                allow_auth_retry=False,
+                stale_retry=stale_retry,
+            )
+        except TimeoutError as exc:
+            if not call.resolve.done():
+                call.resolve.cancel()
+            raise DeviceConnectionTimeoutError("Remote RPC timeout") from exc
+        except (OSError, client_exceptions.ClientError) as exc:
+            raise DeviceConnectionError("Remote WebSocket send failed") from exc
+        finally:
+            self._calls.pop(call.call_id, None)
+            if not call.resolve.done():
+                call.resolve.cancel()
+            elif not call.resolve.cancelled():
+                call.resolve.exception()
+
+    async def calls(
+        self,
+        calls: Iterable[tuple[str, dict[str, Any] | None]],
+        timeout: float = 10.0,
+    ) -> list[dict[str, Any]]:
+        """Call RPC methods sequentially over the inbound WebSocket."""
+
+        async def execute() -> list[dict[str, Any]]:
+            deadline = self._loop.time() + timeout
+            results: list[dict[str, Any]] = []
+            for method, params in calls:
+                remaining = deadline - self._loop.time()
+                if remaining <= 0:
+                    raise DeviceConnectionTimeoutError("Remote RPC timeout")
+                results.append(
+                    await self._rpc_call_with_auth_retry(
+                        method,
+                        params,
+                        remaining,
+                        allow_auth_retry=self._session.auth_data is not None,
+                    )
+                )
+            return results
+
+        try:
+            async with asyncio.timeout(timeout):
+                if self._session.auth_data is None:
+                    return await execute()
+                async with self._auth_lock:
+                    return await execute()
+        except TimeoutError as exc:
+            raise DeviceConnectionTimeoutError("Remote RPC timeout") from exc
+
+    async def _send_json(self, data: dict[str, Any]) -> None:
+        """Send an RPC frame to the remote device."""
+        websocket = self._websocket
+        if websocket is None or websocket.closed:
+            raise DeviceConnectionError("Remote WebSocket is not connected")
+
+        _LOGGER.debug("send(remote %s): %s", self.device_id, data["method"])
+        await websocket.send_frame(json_bytes(data), WSMsgType.TEXT)
+
+
 class WsServer(WsBase):
     """WsServer class."""
 
@@ -682,6 +928,9 @@ class WsServer(WsBase):
         super().__init__()
         self._runner: AppRunner | None = None
         self.subscriptions: dict[str, Callable] = {}
+        self.remote_subscriptions: dict[str, Callable] = {}
+        self.connections: dict[str, WsServerConnection] = {}
+        self.connection_subscriptions: set[Callable[[str, bool], None]] = set()
 
     async def initialize(self, port: int, api_url: str = WS_API_URL) -> None:
         """Initialize the websocket server, used only in standalone mode."""
@@ -694,11 +943,14 @@ class WsServer(WsBase):
 
     def close(self) -> None:
         """Stop the websocket server."""
+        for connection in tuple(self.connections.values()):
+            self._create_and_track_task(connection.disconnect())
+        self.connections.clear()
         if self._runner is not None:
             self._create_and_track_task(self._runner.cleanup())
 
     async def websocket_handler(self, request: BaseRequest) -> WebSocketResponse:
-        """Handle connections from sleeping devices."""
+        """Handle connections initiated by Shelly devices."""
         ip = request.remote
         _LOGGER.debug("Websocket server connection from %s starting", ip)
         ws_res = WebSocketResponse(protocols=["json-rpc"])
@@ -715,8 +967,9 @@ class WsServer(WsBase):
                 _LOGGER.debug("Invalid Message from host %s: %s", ip, err)
             else:
                 try:
-                    device_id = frame["src"].split("-")[1].upper()
-                except (KeyError, IndexError) as err:
+                    peer_src = frame["src"]
+                    device_id = peer_src.split("-")[1].upper()
+                except (KeyError, IndexError, AttributeError, TypeError) as err:
                     _LOGGER.debug("Invalid device id from host %s: %s", ip, err)
                     continue
 
@@ -733,6 +986,102 @@ class WsServer(WsBase):
 
         _LOGGER.debug("Websocket server connection from %s closed", ip)
         return ws_res
+
+    async def handle_connection(
+        self, websocket: WebSocketResponse, device_id: str, peer_src: str
+    ) -> None:
+        """Run a prepared, authorized remote WebSocket.
+
+        The caller must authenticate the connection and verify the device identity
+        before calling this method. The legacy handler never attaches remote sockets.
+        """
+        connection = self.get_or_create_connection(device_id)
+        if connection.connected:
+            await connection.disconnect()
+        connection.attach(peer_src, websocket)
+        self._notify_connection_update(connection.device_id, True)
+        try:
+            async for msg in websocket:
+                frame = _receive_json_or_raise(msg)
+                if not connection.uses_websocket(websocket):
+                    break
+                if connection.handle_frame(frame):
+                    continue
+                if frame.get("method") is None:
+                    continue
+                if not isinstance(frame.get("method"), str) or not isinstance(
+                    frame.get("params"), dict
+                ):
+                    await websocket.close()
+                    break
+                if listener := self.remote_subscriptions.get(connection.device_id):
+                    listener(frame)
+        except (ConnectionClosed, InvalidMessage):
+            await websocket.close()
+        finally:
+            if connection.uses_websocket(websocket):
+                connection.mark_disconnected()
+                self._notify_connection_update(connection.device_id, False)
+
+    def subscribe_remote_updates(
+        self, device_id: str, message_received: Callable
+    ) -> Callable:
+        """Subscribe to notifications on authorized remote connections only."""
+        device_id = device_id.upper()
+        self.remote_subscriptions[device_id] = message_received
+
+        def unsubscribe() -> None:
+            if self.remote_subscriptions.get(device_id) is message_received:
+                self.remote_subscriptions.pop(device_id)
+
+        return unsubscribe
+
+    def get_connection(self, device_id: str) -> WsServerConnection | None:
+        """Return the inbound RPC transport for a device, if known."""
+        return self.connections.get(device_id.upper())
+
+    def get_or_create_connection(self, device_id: str) -> WsServerConnection:
+        """Return the persistent inbound RPC transport for a device."""
+        device_id = device_id.upper()
+        if connection := self.connections.get(device_id):
+            return connection
+
+        connection = WsServerConnection(device_id)
+        self.connections[device_id] = connection
+        return connection
+
+    async def call(
+        self,
+        device_id: str,
+        method: str,
+        params: dict[str, Any] | None = None,
+        timeout: float = 10.0,
+    ) -> dict[str, Any]:
+        """Call a device over its active inbound WebSocket connection."""
+        connection = self.get_connection(device_id)
+        if connection is None or not connection.connected:
+            raise DeviceConnectionError(
+                f"No active inbound WebSocket for device {device_id}"
+            )
+        return await connection.call(method, params, timeout)
+
+    def _notify_connection_update(self, device_id: str, connected: bool) -> None:
+        """Notify listeners when a device inbound WebSocket changes state."""
+        for listener in tuple(self.connection_subscriptions):
+            try:
+                listener(device_id, connected)
+            except Exception:
+                _LOGGER.exception(
+                    "Error handling connection update for device %s",
+                    device_id,
+                )
+
+    def subscribe_connection_updates(
+        self, listener: Callable[[str, bool], None]
+    ) -> Callable:
+        """Subscribe to inbound WebSocket connection state changes."""
+        self.connection_subscriptions.add(listener)
+        return lambda: self.connection_subscriptions.discard(listener)
 
     def subscribe_updates(self, ip: str, message_received: Callable) -> Callable:
         """Subscribe to received updates."""
