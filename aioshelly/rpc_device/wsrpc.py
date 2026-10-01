@@ -681,8 +681,8 @@ class WsServerConnection:
     def __init__(
         self,
         device_id: str,
-        peer_src: str,
-        websocket: WebSocketResponse,
+        peer_src: str | None = None,
+        websocket: WebSocketResponse | None = None,
     ) -> None:
         """Initialize an inbound WebSocket RPC connection."""
         self.device_id = device_id
@@ -712,6 +712,13 @@ class WsServerConnection:
     def uses_websocket(self, websocket: WebSocketResponse) -> bool:
         """Return whether this connection owns the provided WebSocket."""
         return self._websocket is websocket
+
+    def attach(self, peer_src: str, websocket: WebSocketResponse) -> None:
+        """Attach a newly established device WebSocket to this transport."""
+        if self._websocket is not None and self._websocket is not websocket:
+            self.mark_disconnected()
+        self._websocket = websocket
+        self.update_peer_src(peer_src)
 
     def update_peer_src(self, peer_src: str) -> None:
         """Update the peer RPC source."""
@@ -944,14 +951,11 @@ class WsServer(WsBase):
                     continue
 
                 device_ids.add(device_id)
-                connection = self.connections.get(device_id)
-                if connection is None or not connection.uses_websocket(ws_res):
-                    if connection is not None:
-                        connection.mark_disconnected()
-                    connection = WsServerConnection(device_id, peer_src, ws_res)
-                    self.connections[device_id] = connection
+                connection = self.get_or_create_connection(device_id)
+                if not connection.uses_websocket(ws_res):
+                    connection.attach(peer_src, ws_res)
                     _LOGGER.debug(
-                        "Registered inbound RPC transport for device id %s",
+                        "Attached inbound RPC transport for device id %s",
                         device_id,
                     )
 
@@ -973,14 +977,23 @@ class WsServer(WsBase):
             connection = self.connections.get(device_id)
             if connection is not None and connection.uses_websocket(ws_res):
                 connection.mark_disconnected()
-                self.connections.pop(device_id, None)
 
         _LOGGER.debug("Websocket server connection from %s closed", ip)
         return ws_res
 
     def get_connection(self, device_id: str) -> WsServerConnection | None:
-        """Return the active inbound RPC connection for a device."""
+        """Return the inbound RPC transport for a device, if known."""
         return self.connections.get(device_id.upper())
+
+    def get_or_create_connection(self, device_id: str) -> WsServerConnection:
+        """Return the persistent inbound RPC transport for a device."""
+        device_id = device_id.upper()
+        if connection := self.connections.get(device_id):
+            return connection
+
+        connection = WsServerConnection(device_id)
+        self.connections[device_id] = connection
+        return connection
 
     async def call(
         self,
