@@ -321,3 +321,68 @@ async def test_rpc_device_initializes_over_remote_connection() -> None:
 
     assert device.status["switch:0"]["output"] is True
     listener.assert_called_once_with(device, RpcUpdateType.STATUS)
+
+
+def test_ws_server_reuses_connection_object_after_reconnect() -> None:
+    """Test the per-device transport survives WebSocket reconnects."""
+    server = WsServer()
+    connection = server.get_or_create_connection("aabbccddeeff")
+    first_websocket = make_websocket()
+    second_websocket = make_websocket()
+
+    assert not connection.connected
+
+    connection.attach("shellypro1pm-aabbccddeeff", first_websocket)
+    assert connection.connected
+    assert server.get_or_create_connection("AABBCCDDEEFF") is connection
+
+    connection.mark_disconnected()
+    assert not connection.connected
+
+    connection.attach("shellypro1pm-aabbccddeeff", second_websocket)
+    assert connection.connected
+    assert server.get_or_create_connection("AABBCCDDEEFF") is connection
+
+
+@pytest.mark.asyncio
+async def test_rpc_device_remote_connection_updates() -> None:
+    """Test remote connect and disconnect events reach RpcDevice listeners."""
+    websocket = make_websocket()
+    server = WsServer()
+    connection = server.get_or_create_connection("AABBCCDDEEFF")
+    connection.attach("shellypro1pm-aabbccddeeff", websocket)
+
+    device_info = {
+        "id": "shellypro1pm-aabbccddeeff",
+        "mac": "AABBCCDDEEFF",
+        "model": "SPSW-201PE16EU",
+        "gen": 2,
+        "fw_id": "20230101-000000/1.0.0",
+        "ver": "1.0.0",
+        "auth_en": False,
+    }
+    config = {"sys": {"device": {"name": "Remote Shelly"}}}
+    status = {"sys": {"wakeup_period": 0}}
+    connection.calls = AsyncMock(
+        side_effect=[
+            [device_info],
+            [config, status],
+        ]
+    )
+
+    device = RpcDevice(
+        server,
+        None,
+        ConnectionOptions(remote_device_id="AABBCCDDEEFF"),
+    )
+    await device.initialize()
+
+    listener = MagicMock()
+    device.subscribe_updates(listener)
+
+    server._notify_connection_update("AABBCCDDEEFF", False)
+    listener.assert_called_once_with(device, RpcUpdateType.DISCONNECTED)
+
+    listener.reset_mock()
+    server._notify_connection_update("AABBCCDDEEFF", True)
+    listener.assert_called_once_with(device, RpcUpdateType.ONLINE)
