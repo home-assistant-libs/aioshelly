@@ -797,7 +797,9 @@ class WsServerConnection:
             raise DeviceConnectionTimeoutError(call) from exc
         finally:
             self._calls.pop(call.call_id, None)
-            if call.resolve.done() and not call.resolve.cancelled():
+            if not call.resolve.done():
+                call.resolve.cancel()
+            elif not call.resolve.cancelled():
                 call.resolve.exception()
 
     async def calls(
