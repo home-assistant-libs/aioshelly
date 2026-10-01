@@ -55,14 +55,22 @@ class ConnectionOptions:
     port: int = DEFAULT_HTTP_PORT
     ble_device: BLEDevice | None = None
     verify_ssl: bool = False
+    remote_device_id: str | None = None
 
     def __post_init__(self) -> None:
         """Call after initialization."""
-        if self.ip_address is None and self.ble_device is None:
-            raise ValueError("Must provide either ip_address or ble_device")
+        if self.remote_device_id is None:
+            if self.ip_address is None and self.ble_device is None:
+                raise ValueError("Must provide either ip_address or ble_device")
 
-        if self.ip_address is not None and self.ble_device is not None:
-            raise ValueError("Cannot provide both ip_address and ble_device")
+            if self.ip_address is not None and self.ble_device is not None:
+                raise ValueError("Cannot provide both ip_address and ble_device")
+        else:
+            if self.ip_address is not None or self.ble_device is not None:
+                raise ValueError(
+                    "Cannot combine remote_device_id with ip_address or ble_device"
+                )
+            self.remote_device_id = self.remote_device_id.upper()
 
         if self.username is not None:
             if self.password is None:
