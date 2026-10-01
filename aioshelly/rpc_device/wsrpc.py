@@ -93,6 +93,20 @@ def _current_task_cancelled() -> bool:
     return bool((current_task := asyncio.current_task()) and current_task.cancelled())
 
 
+def _parse_rpc_error(
+    resp: dict[str, Any],
+) -> tuple[dict[str, Any], int, str]:
+    """Extract error dict, code, and message from an RPC error response."""
+    try:
+        error = resp["error"]
+        code = error["code"]
+        msg = error["message"]
+    except KeyError as err:
+        raise RpcCallError(0, f"bad response: {resp}") from err
+
+    return error, code, msg
+
+
 HA2 = hex_hash("dummy_method:dummy_uri")
 
 
@@ -461,18 +475,6 @@ class WsRPC(WsBase):
         """Websocket RPC call."""
         return (await self.calls([(method, params)], timeout))[0]
 
-    @staticmethod
-    def _parse_rpc_error(resp: dict[str, Any]) -> tuple[dict[str, Any], int, str]:
-        """Extract error dict, code, and message from an RPC error response."""
-        try:
-            error = resp["error"]
-            code = error["code"]
-            msg = error["message"]
-        except KeyError as err:
-            raise RpcCallError(0, f"bad response: {resp}") from err
-
-        return error, code, msg
-
     def _raise_for_unrecoverable_errors(
         self, code: int, msg: str, allow_auth_retry: bool
     ) -> None:
@@ -513,7 +515,7 @@ class WsRPC(WsBase):
                 # Wait response
                 response = await call.resolve
                 if "result" not in response:
-                    error, code, msg = self._parse_rpc_error(response)
+                    error, code, msg = _parse_rpc_error(response)
 
                     # Non-401 errors are always unrecoverable
                     if code != HTTPStatus.UNAUTHORIZED.value:
@@ -633,7 +635,7 @@ class WsRPC(WsBase):
                 for call in sent_calls:
                     response = await call.resolve
                     if "result" not in response:
-                        _, code, msg = self._parse_rpc_error(response)
+                        _, code, msg = _parse_rpc_error(response)
                         self._raise_for_unrecoverable_errors(
                             code, msg, allow_auth_retry=False
                         )
@@ -809,7 +811,7 @@ class WsServerConnection:
                 call.result = response["result"]
                 return call.result
 
-            error, code, msg = WsRPC._parse_rpc_error(response)
+            error, code, msg = _parse_rpc_error(response)
             if code != HTTPStatus.UNAUTHORIZED.value:
                 raise RpcCallError(code, msg)
 
