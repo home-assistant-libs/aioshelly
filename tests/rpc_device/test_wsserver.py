@@ -313,7 +313,7 @@ async def test_rpc_device_initializes_over_remote_connection() -> None:
 
     listener = MagicMock()
     device.subscribe_updates(listener)
-    server.subscriptions["AABBCCDDEEFF"](
+    server.remote_subscriptions["AABBCCDDEEFF"](
         {
             "src": "shellypro1pm-aabbccddeeff",
             "method": "NotifyStatus",
@@ -325,7 +325,8 @@ async def test_rpc_device_initializes_over_remote_connection() -> None:
     listener.assert_called_once_with(device, RpcUpdateType.STATUS)
 
 
-def test_ws_server_reuses_connection_object_after_reconnect() -> None:
+@pytest.mark.asyncio
+async def test_ws_server_reuses_connection_object_after_reconnect() -> None:
     """Test the per-device transport survives WebSocket reconnects."""
     server = WsServer()
     connection = server.get_or_create_connection("aabbccddeeff")
@@ -388,3 +389,289 @@ async def test_rpc_device_remote_connection_updates() -> None:
     listener.reset_mock()
     server._notify_connection_update("AABBCCDDEEFF", True)
     listener.assert_called_once_with(device, RpcUpdateType.ONLINE)
+
+
+@pytest.mark.asyncio
+async def test_concurrent_calls_correlate_out_of_order() -> None:
+    """Match concurrent responses by ID, independently of their arrival order."""
+    websocket = make_websocket()
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", websocket)
+    first = asyncio.create_task(connection.call("Switch.Set", {"id": 0, "on": True}))
+    second = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    requests = [
+        json_loads(call.args[0]) for call in websocket.send_frame.await_args_list
+    ]
+    assert requests[0]["id"] != requests[1]["id"]
+    assert not connection.handle_frame({"method": "NotifyStatus", "params": {}})
+    assert not connection.handle_frame({"id": 987, "result": {}})
+    connection.handle_frame({"id": requests[1]["id"], "result": {"output": True}})
+    connection.handle_frame({"id": requests[0]["id"], "result": {"was_on": False}})
+    assert await second == {"output": True}
+    assert await first == {"was_on": False}
+    assert connection._calls == {}
+
+
+@pytest.mark.parametrize(
+    "response",
+    [{}, {"result": []}, {"error": []}, {"error": {"code": "401", "message": 0}}],
+)
+@pytest.mark.asyncio
+async def test_invalid_rpc_responses(response: dict) -> None:
+    """Malformed replies become RPC errors rather than uncaught type errors."""
+    websocket = make_websocket()
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", websocket)
+    task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    connection.handle_frame({"id": 1, **response})
+    with pytest.raises(RpcCallError, match="bad response"):
+        await task
+    assert connection._calls == {}
+
+
+@pytest.mark.parametrize("frame_id", [[], {}, "1", True, None])
+@pytest.mark.asyncio
+async def test_invalid_response_ids(frame_id: object) -> None:
+    """Invalid IDs cannot crash dispatch or match a pending integer ID."""
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", make_websocket())
+    assert not connection.handle_frame({"id": frame_id, "result": {}})
+
+
+@pytest.mark.parametrize(
+    "challenge",
+    [
+        "not-json",
+        "[]",
+        "{}",
+        '{"realm":"wrong","nonce":"nonce","algorithm":"SHA-256"}',
+        '{"realm":"peer","nonce":"nonce","algorithm":"MD5"}',
+    ],
+)
+@pytest.mark.asyncio
+async def test_invalid_auth_challenges(challenge: str) -> None:
+    """Reject malformed or mismatched authentication challenges."""
+    websocket = make_websocket()
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", websocket)
+    connection.set_auth_data("peer", "admin", "secret")
+    task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    connection.handle_frame({"id": 1, "error": {"code": 401, "message": challenge}})
+    with pytest.raises(InvalidAuthError):
+        await task
+    assert connection._calls == {}
+
+
+@pytest.mark.asyncio
+async def test_stale_auth_retry_is_bounded() -> None:
+    """Retry an expired nonce once, then reject repeated stale challenges."""
+    websocket = make_websocket()
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", websocket)
+    connection.set_auth_data("peer", "admin", "secret")
+    challenge = {
+        "realm": "peer",
+        "nonce": "fresh",
+        "algorithm": "SHA-256",
+        "stale": True,
+    }
+    task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    connection.handle_frame(
+        {"id": 1, "error": {"code": 401, "message": json_dumps(challenge)}}
+    )
+    await asyncio.sleep(0)
+    retry = json_loads(websocket.send_frame.await_args_list[1].args[0])
+    assert retry["auth"]["nonce"] == "fresh"
+    connection.handle_frame(
+        {"id": retry["id"], "error": {"code": 401, "message": json_dumps(challenge)}}
+    )
+    with pytest.raises(InvalidAuthError):
+        await task
+    assert websocket.send_frame.await_count == 2
+    assert connection._calls == {}
+
+
+@pytest.mark.asyncio
+async def test_stale_auth_retry_success() -> None:
+    """A fresh nonce restores operation after a stale challenge."""
+    websocket = make_websocket()
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", websocket)
+    connection.set_auth_data("peer", "admin", "secret")
+    task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    challenge = {
+        "realm": "peer",
+        "nonce": "fresh",
+        "algorithm": "SHA-256",
+        "stale": True,
+    }
+    connection.handle_frame(
+        {"id": 1, "error": {"code": 401, "message": json_dumps(challenge)}}
+    )
+    await asyncio.sleep(0)
+    connection.handle_frame({"id": 2, "result": {"sys": {}}})
+    assert await task == {"sys": {}}
+
+
+@pytest.mark.asyncio
+async def test_cancellation_and_send_error_clean_pending_calls() -> None:
+    """Cancellation and send failures leave no pending futures behind."""
+    websocket = make_websocket()
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", websocket)
+    task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert connection._calls == {}
+    websocket.send_frame.side_effect = ConnectionResetError
+    with pytest.raises(DeviceConnectionError, match="send failed"):
+        await connection.call("Shelly.GetStatus")
+    assert connection._calls == {}
+
+
+@pytest.mark.asyncio
+async def test_auth_lock_is_included_in_timeout() -> None:
+    """A blocked authentication queue respects the caller's timeout."""
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", make_websocket())
+    connection.set_auth_data("peer", "admin", "secret")
+    async with connection._auth_lock:
+        with pytest.raises(DeviceConnectionTimeoutError):
+            await connection.call("Shelly.GetStatus", timeout=0.001)
+    assert connection._calls == {}
+
+
+@pytest.mark.asyncio
+async def test_reconnect_resets_auth_and_fails_old_calls() -> None:
+    """A new socket cannot complete calls sent on the previous socket."""
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", make_websocket())
+    connection.set_auth_data("peer", "admin", "secret")
+    connection._session.auth_data.nonce = "old"
+    task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    connection.attach("peer", make_websocket())
+    with pytest.raises(DeviceConnectionError):
+        await task
+    assert connection._session.auth_data.nonce == ""
+    assert not connection.handle_frame({"id": 1, "result": {}})
+    assert connection.connected
+
+
+@pytest.mark.asyncio
+async def test_remote_device_identity_mismatch() -> None:
+    """Remote initialization verifies the requested identity without device_mac."""
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", make_websocket())
+    connection.calls = AsyncMock(
+        return_value=[{"mac": "112233445566", "auth_en": False}]
+    )
+    device = RpcDevice(
+        None, None, ConnectionOptions(remote_device_id="AABBCCDDEEFF"), connection
+    )
+    from aioshelly.exceptions import MacAddressMismatchError  # noqa: PLC0415
+
+    with pytest.raises(MacAddressMismatchError):
+        await device.initialize()
+    assert not device.connected
+
+
+def make_streaming_websocket() -> tuple[MagicMock, asyncio.Queue]:
+    """Create a WebSocket with a controlled inbound stream."""
+    from aiohttp import WSMessage  # noqa: PLC0415
+
+    queue: asyncio.Queue = asyncio.Queue()
+    websocket = make_websocket()
+
+    async def frames():  # noqa: ANN202
+        while (frame := await queue.get()) is not None:
+            yield WSMessage(WSMsgType.TEXT, json_dumps(frame), "")
+
+    async def close() -> None:
+        websocket.closed = True
+        await queue.put(None)
+
+    websocket.__aiter__.side_effect = frames
+    websocket.close.side_effect = close
+    return websocket, queue
+
+
+@pytest.mark.asyncio
+async def test_server_multiple_devices_and_reconnect() -> None:
+    """Dispatch independent devices and reuse their transports on reconnect."""
+    server = WsServer()
+    first_socket, first_queue = make_streaming_websocket()
+    second_socket, second_queue = make_streaming_websocket()
+    updates = MagicMock()
+    unsubscribe = server.subscribe_connection_updates(updates)
+    notifications = MagicMock()
+    server.subscribe_remote_updates("AABBCCDDEEFF", notifications)
+    first_handler = asyncio.create_task(
+        server.handle_connection(first_socket, "AABBCCDDEEFF", "peer-a")
+    )
+    second_handler = asyncio.create_task(
+        server.handle_connection(second_socket, "112233445566", "peer-b")
+    )
+    await asyncio.sleep(0)
+    connection = server.get_connection("AABBCCDDEEFF")
+    first_call = asyncio.create_task(
+        server.call("AABBCCDDEEFF", "Switch.Set", {"id": 0, "on": True})
+    )
+    second_call = asyncio.create_task(server.call("112233445566", "Shelly.GetStatus"))
+    await asyncio.sleep(0)
+    await first_queue.put({"method": "NotifyEvent", "params": {"events": []}})
+    await first_queue.put({"id": 1, "result": {"was_on": False}})
+    await second_queue.put({"id": 1, "result": {"sys": {}}})
+    assert await first_call == {"was_on": False}
+    assert await second_call == {"sys": {}}
+    notifications.assert_called_once_with(
+        {"method": "NotifyEvent", "params": {"events": []}}
+    )
+    replacement, replacement_queue = make_streaming_websocket()
+    replacement_handler = asyncio.create_task(
+        server.handle_connection(replacement, "AABBCCDDEEFF", "peer-a")
+    )
+    await asyncio.sleep(0)
+    await first_handler
+    assert server.get_connection("AABBCCDDEEFF") is connection
+    assert connection.connected
+    new_call = asyncio.create_task(server.call("AABBCCDDEEFF", "Shelly.GetConfig"))
+    await asyncio.sleep(0)
+    await replacement_queue.put({"id": 2, "result": {"sys": {}}})
+    assert await new_call == {"sys": {}}
+    await replacement.close()
+    await second_socket.close()
+    await asyncio.gather(replacement_handler, second_handler)
+    assert not connection.connected
+    assert updates.call_args_list[-2].args == ("AABBCCDDEEFF", False)
+    unsubscribe()
+
+
+@pytest.mark.asyncio
+async def test_legacy_endpoint_cannot_attach_remote_transport() -> None:
+    """The unauthenticated battery endpoint cannot change remote connections."""
+    from unittest.mock import patch  # noqa: PLC0415
+
+    server = WsServer()
+    connection = server.get_or_create_connection("AABBCCDDEEFF")
+    remote_listener = MagicMock()
+    local_listener = MagicMock()
+    server.subscribe_remote_updates("AABBCCDDEEFF", remote_listener)
+    server.subscribe_updates("192.0.2.10", local_listener)
+    websocket = make_websocket()
+    from aiohttp import WSMessage  # noqa: PLC0415
+
+    websocket.__aiter__.return_value = [
+        WSMessage(
+            WSMsgType.TEXT,
+            json_dumps(
+                {"src": "shelly-aabbccddeeff", "method": "NotifyStatus", "params": {}}
+            ),
+            "",
+        )
+    ]
+    websocket.prepare = AsyncMock()
+    request = MagicMock()
+    request.remote = "192.0.2.10"
+    with patch("aioshelly.rpc_device.wsrpc.WebSocketResponse", return_value=websocket):
+        await server.websocket_handler(request)
+    assert not connection.connected
+    remote_listener.assert_not_called()
+    local_listener.assert_called_once()

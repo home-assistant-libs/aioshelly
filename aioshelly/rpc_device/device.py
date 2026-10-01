@@ -153,7 +153,7 @@ class RpcDevice:
                 sub_id, partial(self._rpc.handle_frame, RPCSource.SERVER)
             )
         elif isinstance(self._rpc, WsServerConnection) and ws_context is not None:
-            self._unsub_ws = ws_context.subscribe_updates(
+            self._unsub_ws = ws_context.subscribe_remote_updates(
                 self._rpc.device_id, self._handle_remote_frame
             )
             self._unsub_connection = ws_context.subscribe_connection_updates(
@@ -269,7 +269,9 @@ class RpcDevice:
     def ip_address(self) -> str:
         """Device ip address."""
         if self.options.ip_address is None:
-            raise AttributeError("IP address not available for this transport")
+            if self.options.remote_device_id is not None:
+                raise AttributeError("IP address not available for remote devices")
+            raise AttributeError("IP address not available for BLE devices")
         return self.options.ip_address
 
     @property
@@ -733,6 +735,8 @@ class RpcDevice:
 
     async def camera_get_image(self, camera_id: int) -> bytes:
         """Return a still image from the camera's HTTP snapshot endpoint."""
+        if self.options.remote_device_id is not None:
+            raise RpcCallError(0, "Camera snapshots require a direct HTTP connection")
         if TYPE_CHECKING:
             assert self.aiohttp_session
 
@@ -835,7 +839,7 @@ class RpcDevice:
             )
 
         mac = self.shelly["mac"]
-        device_mac = self.options.device_mac
+        device_mac = self.options.remote_device_id or self.options.device_mac
         if device_mac and device_mac.lower() != mac.lower():
             raise MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
 

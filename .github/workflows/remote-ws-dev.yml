@@ -18,10 +18,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups --frozen
       - name: Ruff format
-        run: uv run ruff format --check aioshelly/common.py aioshelly/rpc_device/__init__.py aioshelly/rpc_device/device.py aioshelly/rpc_device/wsrpc.py tests/rpc_device/test_wsserver.py tests/test_common.py
+        run: uv run ruff format --check .
       - name: Ruff lint
-        run: uv run ruff check aioshelly/common.py aioshelly/rpc_device/__init__.py aioshelly/rpc_device/device.py aioshelly/rpc_device/wsrpc.py tests/rpc_device/test_wsserver.py tests/test_common.py
+        run: uv run ruff check .
       - name: Type check
         run: uv run ty check
       - name: Tests
-        run: uv run pytest -q tests/rpc_device/test_wsserver.py tests/test_common.py
+        run: uv run pytest -q
