@@ -348,7 +348,8 @@ async def test_ws_server_reuses_connection_object_after_reconnect() -> None:
 
 
 @pytest.mark.asyncio
-async def test_rpc_device_remote_connection_updates() -> None:
+@pytest.mark.parametrize("initialized", [True, False])
+async def test_rpc_device_remote_connection_updates(initialized: bool) -> None:
     """Test remote connect and disconnect events reach RpcDevice listeners."""
     websocket = make_websocket()
     server = WsServer()
@@ -387,8 +388,60 @@ async def test_rpc_device_remote_connection_updates() -> None:
     listener.assert_called_once_with(device, RpcUpdateType.DISCONNECTED)
 
     listener.reset_mock()
+    device.initialized = initialized
     server._notify_connection_update("AABBCCDDEEFF", True)
     listener.assert_called_once_with(device, RpcUpdateType.ONLINE)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "frame",
+    [
+        {"method": 42, "params": {}},
+        {"method": "NotifyStatus", "params": []},
+        {"method": "NotifyEvent", "params": None},
+    ],
+)
+async def test_malformed_remote_notification_is_not_dispatched(frame: dict) -> None:
+    """Reject malformed notifications before they reach a device listener."""
+    server = WsServer()
+    websocket, queue = make_streaming_websocket()
+    listener = MagicMock()
+    server.subscribe_remote_updates("AABBCCDDEEFF", listener)
+    handler = asyncio.create_task(
+        server.handle_connection(websocket, "AABBCCDDEEFF", "peer")
+    )
+    await queue.put(frame)
+    await handler
+    listener.assert_not_called()
+    assert websocket.closed
+
+
+@pytest.mark.asyncio
+async def test_remote_timeout_does_not_expose_rpc_parameters() -> None:
+    """A failed configuration call must not include sensitive URL parameters."""
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", make_websocket())
+    with pytest.raises(DeviceConnectionTimeoutError) as error:
+        await connection.call(
+            "Ws.SetConfig",
+            {"config": {"server": "wss://example.com?secret=credential"}},
+            timeout=0.01,
+        )
+    assert "credential" not in repr(error.value)
+
+
+@pytest.mark.asyncio
+async def test_remote_disconnect_does_not_expose_rpc_parameters() -> None:
+    """Pending calls fail without exposing their configuration parameters."""
+    connection = WsServerConnection("AABBCCDDEEFF", "peer", make_websocket())
+    call = asyncio.create_task(
+        connection.call("Ws.SetConfig", {"config": {"server": "credential"}})
+    )
+    await asyncio.sleep(0)
+    connection.mark_disconnected()
+    with pytest.raises(DeviceConnectionError) as error:
+        await call
+    assert "credential" not in repr(error.value)
 
 
 @pytest.mark.asyncio

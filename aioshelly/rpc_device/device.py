@@ -218,7 +218,7 @@ class RpcDevice:
             self._on_notification(RPCSource.SERVER, NOTIFY_WS_CLOSED, None)
             return
 
-        if self._update_listener and self.initialized:
+        if self._update_listener:
             self._update_listener(self, RpcUpdateType.ONLINE)
 
     def _on_notification(

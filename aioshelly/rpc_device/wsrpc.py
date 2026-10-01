@@ -764,7 +764,9 @@ class WsServerConnection:
         """Mark the connection disconnected and fail all pending RPC calls."""
         for call in self._calls.values():
             if not call.resolve.done():
-                call.resolve.set_exception(DeviceConnectionError(call))
+                call.resolve.set_exception(
+                    DeviceConnectionError("Remote WebSocket disconnected")
+                )
         self._calls.clear()
         self._websocket = None
 
@@ -865,7 +867,7 @@ class WsServerConnection:
         except TimeoutError as exc:
             if not call.resolve.done():
                 call.resolve.cancel()
-            raise DeviceConnectionTimeoutError(call) from exc
+            raise DeviceConnectionTimeoutError("Remote RPC timeout") from exc
         except (OSError, client_exceptions.ClientError) as exc:
             raise DeviceConnectionError("Remote WebSocket send failed") from exc
         finally:
@@ -888,7 +890,7 @@ class WsServerConnection:
             for method, params in calls:
                 remaining = deadline - self._loop.time()
                 if remaining <= 0:
-                    raise DeviceConnectionTimeoutError(calls)
+                    raise DeviceConnectionTimeoutError("Remote RPC timeout")
                 results.append(
                     await self._rpc_call_with_auth_retry(
                         method,
@@ -1005,6 +1007,13 @@ class WsServer(WsBase):
                     break
                 if connection.handle_frame(frame):
                     continue
+                if frame.get("method") is None:
+                    continue
+                if not isinstance(frame.get("method"), str) or not isinstance(
+                    frame.get("params"), dict
+                ):
+                    await websocket.close()
+                    break
                 if listener := self.remote_subscriptions.get(connection.device_id):
                     listener(frame)
         except (ConnectionClosed, InvalidMessage):
