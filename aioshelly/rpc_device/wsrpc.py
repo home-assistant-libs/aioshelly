@@ -690,6 +690,7 @@ class WsServerConnection:
         self._calls: dict[int, RPCCall] = {}
         self._call_id = 0
         self._session = SessionData(f"aios-{id(self)}", peer_src, None)
+        self._auth_lock = asyncio.Lock()
         self._loop = asyncio.get_running_loop()
 
     @property
@@ -758,6 +759,10 @@ class WsServerConnection:
         if websocket is not None and not websocket.closed:
             await websocket.close()
 
+    def set_auth_data(self, realm: str, username: str, password: str) -> None:
+        """Set authentication data for RPC calls."""
+        self._session.auth_data = AuthData(realm, username, password)
+
     async def call(
         self,
         method: str,
@@ -765,6 +770,17 @@ class WsServerConnection:
         timeout: float = 10.0,
     ) -> dict[str, Any]:
         """Call an RPC method over the device-initiated WebSocket."""
+        return (await self.calls(((method, params),), timeout))[0]
+
+    async def _rpc_call_with_auth_retry(
+        self,
+        method: str,
+        params: dict[str, Any] | None,
+        timeout: float,
+        allow_auth_retry: bool,
+        stale_retry: bool = False,
+    ) -> dict[str, Any]:
+        """Call an RPC method and retry once after an authentication challenge."""
         if not self.connected:
             raise DeviceConnectionError("Remote WebSocket is not connected")
 
@@ -783,14 +799,46 @@ class WsServerConnection:
                 await self._send_json(call.build_request_frame())
                 response = await call.resolve
 
-            if "result" not in response:
-                _, code, msg = WsRPC._parse_rpc_error(response)
-                if code == HTTPStatus.UNAUTHORIZED.value:
-                    raise InvalidAuthError(msg)
+            if "result" in response:
+                call.result = response["result"]
+                return call.result
+
+            error, code, msg = WsRPC._parse_rpc_error(response)
+            if code != HTTPStatus.UNAUTHORIZED.value:
                 raise RpcCallError(code, msg)
 
-            call.result = response["result"]
-            return call.result
+            auth_data = self._session.auth_data
+            if auth_data is None:
+                raise InvalidAuthError(msg)
+
+            try:
+                auth_challenge = json_loads(error["message"])
+            except ValueError as err:
+                raise InvalidAuthError(msg) from err
+
+            if auth_challenge.get("stale") is True:
+                if stale_retry:
+                    raise InvalidAuthError(msg)
+                auth_data.update_challenge(auth_challenge)
+                return await self._rpc_call_with_auth_retry(
+                    method,
+                    params,
+                    timeout,
+                    allow_auth_retry=False,
+                    stale_retry=True,
+                )
+
+            if not allow_auth_retry:
+                raise InvalidAuthError(msg)
+
+            auth_data.update_challenge(auth_challenge)
+            return await self._rpc_call_with_auth_retry(
+                method,
+                params,
+                timeout,
+                allow_auth_retry=False,
+                stale_retry=stale_retry,
+            )
         except TimeoutError as exc:
             if not call.resolve.done():
                 call.resolve.cancel()
@@ -808,14 +856,29 @@ class WsServerConnection:
         timeout: float = 10.0,
     ) -> list[dict[str, Any]]:
         """Call RPC methods sequentially over the inbound WebSocket."""
-        deadline = self._loop.time() + timeout
-        results: list[dict[str, Any]] = []
-        for method, params in calls:
-            remaining = deadline - self._loop.time()
-            if remaining <= 0:
-                raise DeviceConnectionTimeoutError(calls)
-            results.append(await self.call(method, params, remaining))
-        return results
+
+        async def execute() -> list[dict[str, Any]]:
+            deadline = self._loop.time() + timeout
+            results: list[dict[str, Any]] = []
+            for method, params in calls:
+                remaining = deadline - self._loop.time()
+                if remaining <= 0:
+                    raise DeviceConnectionTimeoutError(calls)
+                results.append(
+                    await self._rpc_call_with_auth_retry(
+                        method,
+                        params,
+                        remaining,
+                        allow_auth_retry=self._session.auth_data is not None,
+                    )
+                )
+            return results
+
+        if self._session.auth_data is None:
+            return await execute()
+
+        async with self._auth_lock:
+            return await execute()
 
     async def _send_json(self, data: dict[str, Any]) -> None:
         """Send an RPC frame to the remote device."""
