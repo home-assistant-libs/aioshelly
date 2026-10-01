@@ -145,6 +145,7 @@ class RpcDevice:
 
         # Subscribe to WebSocket updates if using WsRPC
         self._unsub_ws: Callable | None = None
+        self._unsub_connection: Callable | None = None
         if isinstance(self._rpc, WsRPC) and ws_context is not None:
             # options.ip_address is guaranteed non-None if we have WsRPC
             if TYPE_CHECKING:
@@ -158,6 +159,9 @@ class RpcDevice:
         elif isinstance(self._rpc, WsServerConnection) and ws_context is not None:
             self._unsub_ws = ws_context.subscribe_updates(
                 self._rpc.device_id, self._handle_remote_frame
+            )
+            self._unsub_connection = ws_context.subscribe_connection_updates(
+                self._handle_remote_connection
             )
 
         self._update_listener: Callable | None = None
@@ -206,6 +210,20 @@ class RpcDevice:
         if method is None:
             return
         self._on_notification(RPCSource.SERVER, method, frame.get("params"))
+
+    def _handle_remote_connection(self, device_id: str, connected: bool) -> None:
+        """Handle remote WebSocket connection state changes."""
+        if not isinstance(self._rpc, WsServerConnection):
+            return
+        if device_id != self._rpc.device_id:
+            return
+
+        if not connected:
+            self._on_notification(RPCSource.SERVER, NOTIFY_WS_CLOSED, None)
+            return
+
+        if self._update_listener and self.initialized:
+            self._update_listener(self, RpcUpdateType.ONLINE)
 
     def _on_notification(
         self, source: RPCSource, method: str, params: dict[str, Any] | None = None
@@ -353,6 +371,10 @@ class RpcDevice:
                     err,
                 )
             self._unsub_ws = None
+
+        if self._unsub_connection:
+            self._unsub_connection()
+            self._unsub_connection = None
 
         await self._rpc.disconnect()
 
