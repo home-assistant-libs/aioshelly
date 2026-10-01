@@ -14,7 +14,7 @@ from aioshelly.exceptions import (
     InvalidAuthError,
     RpcCallError,
 )
-from aioshelly.json import json_loads
+from aioshelly.json import json_dumps, json_loads
 from aioshelly.rpc_device.wsrpc import WsServer, WsServerConnection
 
 
@@ -207,3 +207,59 @@ async def test_ws_server_call_without_connection() -> None:
 
     with pytest.raises(DeviceConnectionError, match="No active inbound WebSocket"):
         await server.call("AABBCCDDEEFF", "Shelly.GetStatus")
+
+
+@pytest.mark.asyncio
+async def test_server_connection_auth_retry() -> None:
+    """Test digest authentication retry over an inbound WebSocket."""
+    websocket = make_websocket()
+    connection = WsServerConnection(
+        "AABBCCDDEEFF",
+        "shellypro1pm-aabbccddeeff",
+        websocket,
+    )
+    connection.set_auth_data(
+        "shellypro1pm-aabbccddeeff",
+        "admin",
+        "secret",
+    )
+
+    call_task = asyncio.create_task(connection.call("Shelly.GetStatus"))
+    await asyncio.sleep(0)
+
+    first_request = json_loads(websocket.send_frame.await_args_list[0].args[0])
+    assert "auth" not in first_request
+
+    challenge = {
+        "auth_type": "digest",
+        "nonce": "test-nonce",
+        "nc": 1,
+        "realm": "shellypro1pm-aabbccddeeff",
+        "algorithm": "SHA-256",
+    }
+    connection.handle_frame(
+        {
+            "id": first_request["id"],
+            "src": "shellypro1pm-aabbccddeeff",
+            "error": {
+                "code": HTTPStatus.UNAUTHORIZED.value,
+                "message": json_dumps(challenge),
+            },
+        }
+    )
+    await asyncio.sleep(0)
+
+    assert websocket.send_frame.await_count == 2
+    second_request = json_loads(websocket.send_frame.await_args_list[1].args[0])
+    assert second_request["auth"]["realm"] == "shellypro1pm-aabbccddeeff"
+    assert second_request["auth"]["nonce"] == "test-nonce"
+
+    connection.handle_frame(
+        {
+            "id": second_request["id"],
+            "src": "shellypro1pm-aabbccddeeff",
+            "result": {"switch:0": {"output": True}},
+        }
+    )
+
+    assert await call_task == {"switch:0": {"output": True}}
