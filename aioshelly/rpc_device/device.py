@@ -134,13 +134,9 @@ class RpcDevice:
                 raise ValueError(
                     "ws_context required for remote WebSocket transport"
                 )
-            connection = ws_context.get_connection(options.remote_device_id)
-            if connection is None:
-                raise DeviceConnectionError(
-                    f"No active inbound WebSocket for device "
-                    f"{options.remote_device_id}"
-                )
-            self._rpc = connection
+            self._rpc = ws_context.get_or_create_connection(
+                options.remote_device_id
+            )
         else:
             # BLE transport (guaranteed non-None by ConnectionOptions)
             if TYPE_CHECKING:
@@ -189,6 +185,11 @@ class RpcDevice:
                 options.ip_address,
                 options.port,
                 options.device_mac,
+            )
+        elif options.remote_device_id is not None:
+            _LOGGER.debug(
+                "remote device %s: RPC device create (WebSocket)",
+                options.remote_device_id,
             )
         else:
             _LOGGER.debug(
@@ -254,7 +255,7 @@ class RpcDevice:
     def ip_address(self) -> str:
         """Device ip address."""
         if self.options.ip_address is None:
-            raise AttributeError("IP address not available for BLE devices")
+            raise AttributeError("IP address not available for this transport")
         return self.options.ip_address
 
     @property
@@ -994,7 +995,7 @@ class RpcDevice:
         if not ws_enable["restart_required"]:
             return False
         _LOGGER.info(
-            "Outbound websocket enabled, restarting device %s", self.ip_address
+            "Outbound websocket enabled, restarting %s", self._device_info_str()
         )
         await self.trigger_reboot(3500)
         return True
