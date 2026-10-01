@@ -58,7 +58,7 @@ from .models import (
     ShellyWsConfig,
     ShellyWsSetConfig,
 )
-from .wsrpc import RPCSource, WsRPC, WsServer
+from .wsrpc import RPCSource, WsRPC, WsServer, WsServerConnection
 
 MAX_ITERATIONS = 10
 
@@ -107,7 +107,7 @@ class RpcDevice:
         ws_context: WsServer | None,
         aiohttp_session: ClientSession | None,
         options: ConnectionOptions,
-        rpc: WsRPC | BleRPC | None = None,
+        rpc: WsRPC | WsServerConnection | BleRPC | None = None,
     ) -> None:
         """Device init."""
         self.aiohttp_session: ClientSession | None = aiohttp_session
@@ -120,7 +120,7 @@ class RpcDevice:
 
         # Create or use provided RPC client
         if rpc is not None:
-            self._rpc: WsRPC | BleRPC = rpc
+            self._rpc: WsRPC | WsServerConnection | BleRPC = rpc
         elif options.ip_address is not None:
             # WebSocket transport
             self._rpc = WsRPC(
@@ -129,6 +129,18 @@ class RpcDevice:
                 port=options.port,
                 verify_ssl=options.verify_ssl,
             )
+        elif options.remote_device_id is not None:
+            if ws_context is None:
+                raise ValueError(
+                    "ws_context required for remote WebSocket transport"
+                )
+            connection = ws_context.get_connection(options.remote_device_id)
+            if connection is None:
+                raise DeviceConnectionError(
+                    f"No active inbound WebSocket for device "
+                    f"{options.remote_device_id}"
+                )
+            self._rpc = connection
         else:
             # BLE transport (guaranteed non-None by ConnectionOptions)
             if TYPE_CHECKING:
@@ -146,6 +158,10 @@ class RpcDevice:
                 sub_id = options.device_mac
             self._unsub_ws = ws_context.subscribe_updates(
                 sub_id, partial(self._rpc.handle_frame, RPCSource.SERVER)
+            )
+        elif isinstance(self._rpc, WsServerConnection) and ws_context is not None:
+            self._unsub_ws = ws_context.subscribe_updates(
+                self._rpc.device_id, self._handle_remote_frame
             )
 
         self._update_listener: Callable | None = None
@@ -182,6 +198,13 @@ class RpcDevice:
             )
 
         return cls(ws_context, aiohttp_session, options)
+
+    def _handle_remote_frame(self, frame: dict[str, Any]) -> None:
+        """Handle notifications received over a remote inbound WebSocket."""
+        method = frame.get("method")
+        if method is None:
+            return
+        self._on_notification(RPCSource.SERVER, method, frame.get("params"))
 
     def _on_notification(
         self, source: RPCSource, method: str, params: dict[str, Any] | None = None
@@ -241,6 +264,8 @@ class RpcDevice:
 
     def _device_info_str(self) -> str:
         """Return device info string for logging."""
+        if self.options.remote_device_id:
+            return f"remote device {self.options.remote_device_id}"
         if self.options.ble_device:
             return f"BLE device {self.options.ble_device.address}"
         return f"host {self.options.ip_address}:{self.options.port}"
@@ -278,6 +303,11 @@ class RpcDevice:
                             "aiohttp_session required for WebSocket transport"
                         )
                     await self._rpc.connect(self.aiohttp_session)
+                elif isinstance(self._rpc, WsServerConnection):
+                    if not self._rpc.connected:
+                        raise DeviceConnectionError(
+                            "Remote WebSocket is not connected"
+                        )
                 else:
                     await self._rpc.connect()
             await self._init_calls()
@@ -317,9 +347,8 @@ class RpcDevice:
                 self._unsub_ws()
             except KeyError as err:
                 _LOGGER.error(
-                    "host %s:%s error during shutdown: %r",
-                    self.ip_address,
-                    self.port,
+                    "%s error during shutdown: %r",
+                    self._device_info_str(),
                     err,
                 )
             self._unsub_ws = None
@@ -780,7 +809,7 @@ class RpcDevice:
             self.requires_auth
             and self.options.username
             and self.options.password
-            and isinstance(self._rpc, WsRPC)
+            and isinstance(self._rpc, (WsRPC, WsServerConnection))
         ):
             self._rpc.set_auth_data(
                 self.shelly.get("auth_domain") or self.shelly["id"],
@@ -991,8 +1020,8 @@ class RpcDevice:
     ) -> list[dict[str, Any]]:
         """Call RPC method."""
         try:
-            # BleRPC only supports single calls, WsRPC supports batching
-            if isinstance(self._rpc, WsRPC):
+            # BleRPC only supports single calls; WebSocket transports support batches.
+            if isinstance(self._rpc, (WsRPC, WsServerConnection)):
                 return await self._rpc.calls(calls, timeout)
 
             # BLE: execute calls sequentially
