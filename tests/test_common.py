@@ -206,6 +206,27 @@ def test_connection_options_both_provided() -> None:
         ConnectionOptions(ip_address="192.168.1.1", ble_device=ble_device)
 
 
+def test_connection_options_remote_device() -> None:
+    """Test ConnectionOptions with a remote device id."""
+    options = ConnectionOptions(remote_device_id="aabbccddeeff")
+
+    assert options.remote_device_id == "AABBCCDDEEFF"
+    assert options.ip_address is None
+    assert options.ble_device is None
+
+
+def test_connection_options_remote_device_cannot_mix_transports() -> None:
+    """Test a remote device id cannot be combined with another transport."""
+    with pytest.raises(
+        ValueError,
+        match="Cannot combine remote_device_id with ip_address or ble_device",
+    ):
+        ConnectionOptions(
+            ip_address="192.168.1.1",
+            remote_device_id="AABBCCDDEEFF",
+        )
+
+
 def test_use_ssl_function() -> None:
     """Test use_ssl standalone function."""
     assert use_ssl(DEFAULT_HTTPS_PORT) is True
