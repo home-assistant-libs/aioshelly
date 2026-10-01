@@ -131,12 +131,8 @@ class RpcDevice:
             )
         elif options.remote_device_id is not None:
             if ws_context is None:
-                raise ValueError(
-                    "ws_context required for remote WebSocket transport"
-                )
-            self._rpc = ws_context.get_or_create_connection(
-                options.remote_device_id
-            )
+                raise ValueError("ws_context required for remote WebSocket transport")
+            self._rpc = ws_context.get_or_create_connection(options.remote_device_id)
         else:
             # BLE transport (guaranteed non-None by ConnectionOptions)
             if TYPE_CHECKING:
@@ -324,9 +320,7 @@ class RpcDevice:
                     await self._rpc.connect(self.aiohttp_session)
                 elif isinstance(self._rpc, WsServerConnection):
                     if not self._rpc.connected:
-                        raise DeviceConnectionError(
-                            "Remote WebSocket is not connected"
-                        )
+                        raise DeviceConnectionError("Remote WebSocket is not connected")
                 else:
                     await self._rpc.connect()
             await self._init_calls()
