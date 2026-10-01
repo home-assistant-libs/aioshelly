@@ -94,7 +94,9 @@ async def test_server_connection_rpc_error() -> None:
         websocket,
     )
 
-    call_task = asyncio.create_task(connection.call("Switch.Set", {"id": 0, "on": True}))
+    call_task = asyncio.create_task(
+        connection.call("Switch.Set", {"id": 0, "on": True})
+    )
     await asyncio.sleep(0)
     payload = json_loads(websocket.send_frame.await_args.args[0])
 
