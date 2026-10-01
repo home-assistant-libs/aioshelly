@@ -906,6 +906,7 @@ class WsServer(WsBase):
         self._runner: AppRunner | None = None
         self.subscriptions: dict[str, Callable] = {}
         self.connections: dict[str, WsServerConnection] = {}
+        self.connection_subscriptions: set[Callable[[str, bool], None]] = set()
 
     async def initialize(self, port: int, api_url: str = WS_API_URL) -> None:
         """Initialize the websocket server, used only in standalone mode."""
@@ -954,6 +955,7 @@ class WsServer(WsBase):
                 connection = self.get_or_create_connection(device_id)
                 if not connection.uses_websocket(ws_res):
                     connection.attach(peer_src, ws_res)
+                    self._notify_connection_update(device_id, True)
                     _LOGGER.debug(
                         "Attached inbound RPC transport for device id %s",
                         device_id,
@@ -977,6 +979,7 @@ class WsServer(WsBase):
             connection = self.connections.get(device_id)
             if connection is not None and connection.uses_websocket(ws_res):
                 connection.mark_disconnected()
+                self._notify_connection_update(device_id, False)
 
         _LOGGER.debug("Websocket server connection from %s closed", ip)
         return ws_res
@@ -1009,6 +1012,24 @@ class WsServer(WsBase):
                 f"No active inbound WebSocket for device {device_id}"
             )
         return await connection.call(method, params, timeout)
+
+    def _notify_connection_update(self, device_id: str, connected: bool) -> None:
+        """Notify listeners when a device inbound WebSocket changes state."""
+        for listener in tuple(self.connection_subscriptions):
+            try:
+                listener(device_id, connected)
+            except Exception:
+                _LOGGER.exception(
+                    "Error handling connection update for device %s",
+                    device_id,
+                )
+
+    def subscribe_connection_updates(
+        self, listener: Callable[[str, bool], None]
+    ) -> Callable:
+        """Subscribe to inbound WebSocket connection state changes."""
+        self.connection_subscriptions.add(listener)
+        return lambda: self.connection_subscriptions.discard(listener)
 
     def subscribe_updates(self, ip: str, message_received: Callable) -> Callable:
         """Subscribe to received updates."""
