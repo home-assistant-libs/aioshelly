@@ -674,7 +674,6 @@ class WsRPC(WsBase):
         await self._client.send_frame(json_bytes(data), WSMsgType.TEXT)
 
 
-
 class WsServerConnection:
     """RPC transport over a device-initiated WebSocket connection."""
 
