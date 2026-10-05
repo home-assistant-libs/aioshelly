@@ -2,6 +2,12 @@
 
 from .device import RpcDevice, RpcUpdateType
 from .utils import bluetooth_mac_from_primary_mac
-from .wsrpc import WsServer
+from .wsrpc import WsServer, WsServerConnection
 
-__all__ = ["RpcDevice", "RpcUpdateType", "WsServer", "bluetooth_mac_from_primary_mac"]
+__all__ = [
+    "RpcDevice",
+    "RpcUpdateType",
+    "WsServer",
+    "WsServerConnection",
+    "bluetooth_mac_from_primary_mac",
+]

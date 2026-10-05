@@ -13,7 +13,11 @@ import pytest_asyncio
 @pytest_asyncio.fixture(autouse=True)
 async def ha_manager() -> MagicMock:
     """Mock ha manager."""
-    await habluetooth.BluetoothManager().async_setup()
+    adapters = MagicMock()
+    adapters.adapters = {}
+    adapters.refresh = AsyncMock()
+    manager = habluetooth.BluetoothManager(bluetooth_adapters=adapters)
+    await manager.async_setup()
 
 
 @pytest.fixture
