@@ -10,13 +10,13 @@ from ..rpc_device import RpcDevice
 from ..rpc_device.models import ShellyWiFiNetwork
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncGenerator
 
     from bleak.backends.device import BLEDevice
 
 
 @asynccontextmanager
-async def ble_rpc_device(ble_device: BLEDevice) -> AsyncIterator[RpcDevice]:
+async def ble_rpc_device(ble_device: BLEDevice) -> AsyncGenerator[RpcDevice]:
     """Create and manage BLE RPC device connection.
 
     Args:
