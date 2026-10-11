@@ -57,7 +57,7 @@ async def test_devices(init: bool, gen: int | None) -> None:
     """Test multiple devices."""
     options: ConnectionOptions
 
-    with Path.open(Path("devices.json"), encoding="utf8") as fp:
+    with Path.open(Path("devices.jsonl"), encoding="utf8") as fp:
         device_options = [ConnectionOptions(**json.loads(line)) for line in fp]
 
     async with ClientSession() as aiohttp_session:
@@ -122,7 +122,7 @@ def get_arguments() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         "-d",
         action="store_true",
         help=(
-            'Connect to all the devices in "devices.json" '
+            'Connect to all the devices in "devices.jsonl" '
             "at once and print their status"
         ),
     )

@@ -132,7 +132,7 @@ The repository includes example script to quickly try it out.
 python3 tools/example.py -ip <ip> [-u <username>] [-p <password] -i
 ```
 
-### Connect to all the devices in `devices.json` at once and print their status:
+### Connect to all the devices in `devices.jsonl` at once and print their status:
 
 ```bash
 python3 tools/example.py -d -i
