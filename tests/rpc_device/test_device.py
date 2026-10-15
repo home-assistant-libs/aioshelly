@@ -2353,6 +2353,77 @@ async def test_ledstrip_set(
 
 
 @pytest.mark.asyncio
+async def test_ledstrip_list_effects(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice ledstrip_list_effects() method."""
+    effects = [
+        {
+            "key": "solid",
+            "name": "Solid Color",
+            "description": "Displays a single solid color across all LEDs",
+            "controls": ["rgb"],
+        },
+        {
+            "key": "rainbow",
+            "name": "Rainbow",
+            "description": "Cycles through all colors of the rainbow",
+            "controls": ["speed", "reverse"],
+        },
+        {
+            "key": "ddp",
+            "name": "DDP Receiver",
+            "description": "Receives pixel data via Distributed Display Protocol (UDP)",
+        },
+    ]
+    rpc_device.call_rpc_multiple.return_value = [
+        {"effects": effects, "offset": 0, "total": 3}
+    ]
+
+    result = await rpc_device.ledstrip_list_effects()
+
+    assert result == {
+        "solid": {"name": "Solid Color", "controls": ["rgb"]},
+        "rainbow": {"name": "Rainbow", "controls": ["speed", "reverse"]},
+        "ddp": {"name": "DDP Receiver", "controls": []},
+    }
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "LedStrip.ListAllEffects"
+    assert call_args_list[0][0][0][0][1] == {"offset": 0}
+
+
+@pytest.mark.asyncio
+async def test_ledstrip_list_effects_paginated(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice ledstrip_list_effects() method with paginated response."""
+    effects = [
+        {"key": "solid", "name": "Solid Color"},
+        {"key": "blink", "name": "Blink"},
+        {"key": "fade", "name": "Fade"},
+    ]
+    rpc_device.call_rpc_multiple.side_effect = [
+        [{"effects": effects[:2], "offset": 0, "total": 3}],
+        [{"effects": effects[2:], "offset": 2, "total": 3}],
+    ]
+
+    result = await rpc_device.ledstrip_list_effects()
+
+    assert result == {
+        "solid": {"name": "Solid Color", "controls": []},
+        "blink": {"name": "Blink", "controls": []},
+        "fade": {"name": "Fade", "controls": []},
+    }
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "LedStrip.ListAllEffects"
+    assert call_args_list[0][0][0][0][1] == {"offset": 0}
+    assert call_args_list[1][0][0][0][0] == "LedStrip.ListAllEffects"
+    assert call_args_list[1][0][0][0][1] == {"offset": 2}
+
+
+@pytest.mark.asyncio
 async def test_ircode_emit(
     rpc_device: RpcDevice,
 ) -> None:
