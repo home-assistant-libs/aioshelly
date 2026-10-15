@@ -51,6 +51,7 @@ from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
     ShellyBLESetConfig,
+    ShellyLedStripEffect,
     ShellyScript,
     ShellyScriptCode,
     ShellyWiFiNetwork,
@@ -563,6 +564,30 @@ class RpcDevice:
             "value": value,
         }
         await self.call_rpc("Enum.Set", params=params)
+
+    async def ledstrip_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the LED strip component."""
+        await self.call_rpc("LedStrip.Set", params={"id": id_, **params})
+
+    async def ledstrip_list_effects(self) -> dict[str, ShellyLedStripEffect]:
+        """Get LED strip effects as a dict keyed by the effect key."""
+        effects: dict[str, ShellyLedStripEffect] = {}
+        offset = 0
+        counter = 0
+
+        while counter < MAX_ITERATIONS:
+            counter += 1
+            page = await self.call_rpc("LedStrip.ListAllEffects", {"offset": offset})
+            for effect in page["effects"]:
+                effects[effect["key"]] = {
+                    "name": effect["name"],
+                    "controls": effect.get("controls", []),
+                }
+            offset += len(page["effects"])
+            if offset >= page["total"] or not page["effects"]:
+                break
+
+        return effects
 
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
