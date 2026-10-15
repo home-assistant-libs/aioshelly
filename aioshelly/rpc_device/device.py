@@ -745,6 +745,11 @@ class RpcDevice:
         params = {"timings": timings, "freq": freq, "repeats": repeats}
         await self.call_rpc("IR.EmitRaw", params)
 
+    async def ir_set_raw_receive(self, value: bool) -> None:
+        """Enable or disable raw IR receiving."""
+        params = {"config": {"raw_receive": value}}
+        await self.call_rpc("IR.SetConfig", params)
+
     async def ircode_emit(self, _id: int, repeats: int = 1, after: int = 0) -> None:
         """Emit IR code by ID."""
         await self.call_rpc(
