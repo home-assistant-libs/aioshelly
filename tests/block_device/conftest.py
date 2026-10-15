@@ -11,9 +11,9 @@ from aioshelly.block_device import BlockDevice
 
 
 @pytest_asyncio.fixture
-async def client_session() -> AsyncGenerator[ClientSession, None]:
+async def client_session() -> AsyncGenerator[MagicMock, None]:
     """Fixture for a ClientSession."""
-    return MagicMock(spec=ClientSession)
+    yield MagicMock(spec=ClientSession)
 
 
 @pytest_asyncio.fixture
