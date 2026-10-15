@@ -20,6 +20,13 @@ class ShellyScriptCode(TypedDict, total=False):
     data: str
 
 
+class ShellyLedStripEffect(TypedDict, total=False):
+    """Shelly LED strip effect."""
+
+    name: str
+    controls: list[str]
+
+
 class ShellyBLERpcConfig(TypedDict, total=False):
     """Shelly BLE RPC Config."""
 
