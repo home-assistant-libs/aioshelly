@@ -2313,6 +2313,21 @@ async def test_ir_emit_raw(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("value", [True, False])
+async def test_ir_set_raw_receive(
+    rpc_device: RpcDevice,
+    value: bool,
+) -> None:
+    """Test RpcDevice ir_set_raw_receive() method."""
+    await rpc_device.ir_set_raw_receive(value)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "IR.SetConfig"
+    assert call_args_list[0][0][0][0][1] == {"config": {"raw_receive": value}}
+
+
+@pytest.mark.asyncio
 async def test_ircode_emit(
     rpc_device: RpcDevice,
 ) -> None:
