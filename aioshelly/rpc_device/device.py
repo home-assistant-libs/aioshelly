@@ -564,6 +564,10 @@ class RpcDevice:
         }
         await self.call_rpc("Enum.Set", params=params)
 
+    async def ledstrip_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the LED strip component."""
+        await self.call_rpc("LedStrip.Set", params={"id": id_, **params})
+
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
         params = {

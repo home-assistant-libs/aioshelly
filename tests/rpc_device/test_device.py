@@ -2328,6 +2328,31 @@ async def test_ir_set_raw_receive(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"reverse": True},
+        {"reverse": False},
+        {"speed": 34},
+        {"palette": "forest"},
+        {"intensity": 65},
+        {"speed": 34, "intensity": 65},
+    ],
+)
+async def test_ledstrip_set(
+    rpc_device: RpcDevice,
+    params: dict[str, Any],
+) -> None:
+    """Test RpcDevice ledstrip_set() method."""
+    await rpc_device.ledstrip_set(0, params)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "LedStrip.Set"
+    assert call_args_list[0][0][0][0][1] == {"id": 0, **params}
+
+
+@pytest.mark.asyncio
 async def test_ircode_emit(
     rpc_device: RpcDevice,
 ) -> None:
