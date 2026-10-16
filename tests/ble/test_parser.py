@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from aioshelly.ble.parser import parse_ble_scan_result_event
 
 
@@ -56,3 +58,9 @@ def test_parse_v2() -> None:
             b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x01\x02\x03\x04\x05\x06\x07\x08\t\n",
         ),
     ]
+
+
+def test_parse_unsupported_version() -> None:
+    """Test parse raises on unsupported version."""
+    with pytest.raises(ValueError, match="Unsupported BLE scan result version: 3"):
+        parse_ble_scan_result_event([3, []])
