@@ -18,8 +18,8 @@ from aioshelly.exceptions import (
     InvalidMessage,
     RpcCallError,
 )
-from aioshelly.json import json_dumps
-from aioshelly.rpc_device.wsrpc import AuthData, _receive_json_or_raise
+from aioshelly.json import json_bytes, json_dumps
+from aioshelly.rpc_device.wsrpc import AuthData, RPCSource, _receive_json_or_raise
 
 from . import load_device_fixture
 from .conftest import ResponseMocker, WsRPCMocker
@@ -455,3 +455,75 @@ async def test_wscall_cancelled_drops_pending_calls(
             await task
 
     assert ws_rpc._calls == {}
+
+
+@pytest.mark.asyncio
+async def test_rx_msgs_invalid_message_is_logged_and_skipped(
+    ws_rpc: WsRPCMocker,
+    rpc_websocket_responses: ResponseMocker,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test an invalid message is logged, not re-dispatched, and rx keeps running."""
+    received: list[str] = []
+    second_received = asyncio.Event()
+
+    def on_notification(_: RPCSource, method: str, __: dict | None) -> None:
+        received.append(method)
+        if method == "NotifySecond":
+            second_received.set()
+
+    async def send_notification(method: str) -> None:
+        frame = {"src": "shellyplus2pm-aabbccddeeff", "method": method}
+        await rpc_websocket_responses.mock_ws_message(
+            WSMessage(WSMsgType.TEXT, json_bytes(frame), None)
+        )
+
+    with (
+        patch.object(ws_rpc, "_on_notification", side_effect=on_notification),
+        caplog.at_level(logging.ERROR, logger="aioshelly.rpc_device.wsrpc"),
+    ):
+        await send_notification("NotifyFirst")
+        await rpc_websocket_responses.mock_ws_message(
+            WSMessage(WSMsgType.BINARY, b"binary", None)
+        )
+        await send_notification("NotifySecond")
+        async with asyncio.timeout(1):
+            await second_received.wait()
+
+    assert (
+        "Invalid Message from host 127.0.0.1:80: Received non-Text message"
+        in caplog.text
+    )
+    # The invalid message must not re-dispatch the previous frame
+    assert received == ["NotifyFirst", "NotifySecond"]
+    assert ws_rpc.connected
+    assert not ws_rpc._rx_task.done()
+
+
+@pytest.mark.asyncio
+async def test_rx_msgs_invalid_first_message_keeps_rx_running(
+    ws_rpc: WsRPCMocker,
+    rpc_websocket_responses: ResponseMocker,
+) -> None:
+    """Test an invalid message before any frame was received does not kill rx."""
+    received: list[str] = []
+    notified = asyncio.Event()
+
+    def on_notification(_: RPCSource, method: str, __: dict | None) -> None:
+        received.append(method)
+        notified.set()
+
+    with patch.object(ws_rpc, "_on_notification", side_effect=on_notification):
+        await rpc_websocket_responses.mock_ws_message(
+            WSMessage(WSMsgType.BINARY, b"binary", None)
+        )
+        frame = {"src": "shellyplus2pm-aabbccddeeff", "method": "NotifyStatus"}
+        await rpc_websocket_responses.mock_ws_message(
+            WSMessage(WSMsgType.TEXT, json_bytes(frame), None)
+        )
+        async with asyncio.timeout(1):
+            await notified.wait()
+
+    assert received == ["NotifyStatus"]
+    assert ws_rpc.connected
+    assert not ws_rpc._rx_task.done()
