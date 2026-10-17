@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -33,6 +34,24 @@ async def test_create_scanner_back_compat() -> None:
     ble_device, advertisement_data = scanner_data["AA:BB:CC:DD:EE:FF"]
     assert advertisement_data.rssi == -50
     assert ble_device.address == "AA:BB:CC:DD:EE:FF"
+
+
+@pytest.mark.asyncio
+async def test_scanner_ignores_non_scan_result_events() -> None:
+    """Test events other than ble.scan_result are ignored."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    scanner.async_on_event({"event": "other", "data": [2, []]})
+    assert scanner.discovered_devices_and_advertisement_data == {}
+
+
+@pytest.mark.asyncio
+async def test_scanner_logs_parse_error(caplog: pytest.LogCaptureFixture) -> None:
+    """Test a malformed ble.scan_result event is logged and ignored."""
+    scanner = create_scanner("AA:BB:CC:DD:EE:FF", "shelly")
+    with caplog.at_level(logging.ERROR):
+        scanner.async_on_event({"event": "ble.scan_result", "data": [99]})
+    assert "Failed to parse BLE event" in caplog.text
+    assert scanner.discovered_devices_and_advertisement_data == {}
 
 
 @pytest.mark.asyncio
