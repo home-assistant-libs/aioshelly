@@ -462,6 +462,56 @@ async def test_device_already_initialized(
     assert rpc_device.status is not None
 
 
+@pytest.mark.asyncio
+async def test_device_reinitialize_keeps_last_known_data(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test re-initialize keeps last known status/config and refreshes status."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
+
+    await rpc_device.initialize()
+
+    status = rpc_device.status
+    config = rpc_device.config
+
+    # Re-initialize fails, last known data is still available
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        DeviceConnectionError,
+    ]
+
+    with pytest.raises(DeviceConnectionError):
+        await rpc_device.initialize()
+
+    assert rpc_device.initialized is False
+    assert rpc_device.status is status
+    assert rpc_device.config is config
+
+    # Re-initialize succeeds, status is fetched again
+    rpc_device.call_rpc_multiple.reset_mock()
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_device_info],
+        [blu_gateway_config, blu_gateway_status, blu_gateway_components],
+        [blu_gateway_remote_config],
+    ]
+
+    await rpc_device.initialize()
+
+    assert rpc_device.initialized is True
+    init_calls = rpc_device.call_rpc_multiple.call_args_list[1][0][0]
+    assert ("Shelly.GetStatus", None) in init_calls
+
+
 @pytest.mark.parametrize(
     ("exc", "result_exc", "result_str"),
     [
@@ -1048,9 +1098,11 @@ async def test_poll(
 async def test_poll_not_initialized(
     rpc_device: RpcDevice,
 ) -> None:
-    """Test RpcDevice poll method when NotInitialized."""
-    with pytest.raises(NotInitialized):
+    """Test RpcDevice poll method before status is loaded."""
+    with pytest.raises(DeviceConnectionError):
         await rpc_device.poll()
+
+    rpc_device.call_rpc_multiple.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -1059,6 +1111,7 @@ async def test_poll_call_error(
     blu_gateway_status: dict[str, Any],
 ) -> None:
     """Test RpcDevice poll method when RpcCallError."""
+    rpc_device._status = {"lorem": "ipsum"}
     rpc_device.call_rpc_multiple.return_value = [None]
 
     with pytest.raises(
@@ -1068,7 +1121,6 @@ async def test_poll_call_error(
 
     rpc_device.call_rpc_multiple.return_value = [blu_gateway_status, None]
     rpc_device._dynamic_components = [{"key": "component1"}]
-    rpc_device._status = {"lorem": "ipsum"}
 
     with pytest.raises(
         RpcCallError, match=re.escape("empty response to Shelly.GetComponents")
