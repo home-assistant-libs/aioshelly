@@ -7,9 +7,18 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from aiohttp import ClientConnectionResetError
+from aiohttp import (
+    ClientConnectionResetError,
+    ClientError,
+    ClientSession,
+    ClientWebSocketResponse,
+    WSServerHandshakeError,
+)
 from aiohttp.http_websocket import WSMessage, WSMsgType
+from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.web import Application, get
 
+from aioshelly.const import NOTIFY_WS_CLOSED, WS_API_URL
 from aioshelly.exceptions import (
     ConnectionClosed,
     DeviceConnectionError,
@@ -19,10 +28,21 @@ from aioshelly.exceptions import (
     RpcCallError,
 )
 from aioshelly.json import json_bytes, json_dumps
-from aioshelly.rpc_device.wsrpc import AuthData, RPCSource, _receive_json_or_raise
+from aioshelly.rpc_device.wsrpc import (
+    HA2,
+    AuthData,
+    RPCCall,
+    RPCSource,
+    SessionData,
+    WsServer,
+    _receive_json_or_raise,
+    hex_hash,
+)
 
 from . import load_device_fixture
-from .conftest import ResponseMocker, WsRPCMocker
+from .conftest import NotifyHistory, ResponseMocker, WsRPCMocker
+
+LOGGER_NAME = "aioshelly.rpc_device.wsrpc"
 
 
 def make_401_response(
@@ -527,3 +547,571 @@ async def test_rx_msgs_invalid_first_message_keeps_rx_running(
     assert received == ["NotifyStatus"]
     assert ws_rpc.connected
     assert not ws_rpc._rx_task.done()
+
+
+def test_auth_data_update_challenge_accepts_string_nc() -> None:
+    """Test challenge update coerces a string nc (Shelly WallDisplay) to int."""
+    auth_data = AuthData("auth_domain", "username", "password")
+
+    auth_data.update_challenge(
+        {"nonce": "test_nonce", "algorithm": "SHA-256", "nc": "5"}
+    )
+
+    assert auth_data.nonce == "test_nonce"
+    assert auth_data.nc == 5
+
+
+def test_auth_data_update_challenge_defaults_nc_to_one() -> None:
+    """Test challenge update uses nc=1 when the challenge has no nc."""
+    auth_data = AuthData("auth_domain", "username", "password")
+
+    auth_data.update_challenge({"nonce": "test_nonce", "algorithm": "SHA-256"})
+
+    assert auth_data.nc == 1
+
+
+def test_auth_data_get_auth_builds_digest_and_increments_nc() -> None:
+    """Test get_auth returns a valid digest frame and increments nc."""
+    auth_data = AuthData("auth_domain", "username", "password")
+    auth_data.update_challenge({"nonce": "test_nonce", "algorithm": "SHA-256", "nc": 3})
+
+    frame = auth_data.get_auth()
+
+    assert auth_data.ha1 == hex_hash("username:auth_domain:password")
+    assert frame["realm"] == "auth_domain"
+    assert frame["username"] == "username"
+    assert frame["nonce"] == "test_nonce"
+    assert frame["nc"] == 3
+    assert frame["algorithm"] == "SHA-256"
+    assert frame["response"] == hex_hash(
+        f"{auth_data.ha1}:test_nonce:3:{frame['cnonce']}:auth:{HA2}"
+    )
+    assert auth_data.nc == 4
+
+
+def _make_rpc_call(
+    params: dict[str, Any] | None = None,
+    session: SessionData | None = None,
+) -> RPCCall:
+    """Build an RPCCall with a fresh future."""
+    if session is None:
+        session = SessionData("aios-1", None, None)
+    return RPCCall(
+        7,
+        "Shelly.GetStatus",
+        params,
+        session,
+        asyncio.get_running_loop().create_future(),
+    )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_repr() -> None:
+    """Test RPCCall representation."""
+    call = _make_rpc_call({"id": 0})
+    call.result = {"ok": True}
+
+    assert repr(call) == (
+        "<RPCCall method=Shelly.GetStatus params={'id': 0} "
+        "call_id=7 result={'ok': True}>"
+    )
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_build_request_frame_minimal() -> None:
+    """Test request frame omits params, dst and auth when not available."""
+    call = _make_rpc_call()
+
+    assert call.build_request_frame() == {
+        "id": 7,
+        "method": "Shelly.GetStatus",
+        "src": "aios-1",
+    }
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_build_request_frame_full() -> None:
+    """Test request frame includes params, dst and auth once a nonce is known."""
+    auth_data = AuthData("auth_domain", "username", "password")
+    session = SessionData("aios-1", "shellyplus2pm-aabbccddeeff", auth_data)
+    call = _make_rpc_call({"id": 0}, session)
+
+    # No nonce yet: auth must not be added
+    assert "auth" not in call.build_request_frame()
+
+    auth_data.update_challenge({"nonce": "test_nonce", "algorithm": "SHA-256"})
+    frame = call.build_request_frame()
+
+    assert frame["params"] == {"id": 0}
+    assert frame["dst"] == "shellyplus2pm-aabbccddeeff"
+    assert frame["auth"]["nonce"] == "test_nonce"
+
+
+@pytest.mark.asyncio
+async def test_connect_when_already_connected_raises(
+    ws_rpc: WsRPCMocker, client_session: ClientSession
+) -> None:
+    """Test connecting an already connected client raises RuntimeError."""
+    with pytest.raises(RuntimeError, match="Already connected"):
+        await ws_rpc.connect(client_session)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error",
+    [
+        ClientError("connection refused"),
+        WSServerHandshakeError(MagicMock(), (), status=400, message="bad handshake"),
+    ],
+)
+async def test_connect_client_error_raises_device_connection_error(
+    ws_rpc: WsRPCMocker, client_session: ClientSession, error: Exception
+) -> None:
+    """Test aiohttp client errors during connect raise DeviceConnectionError."""
+    await ws_rpc.disconnect()
+    client_session.ws_connect.side_effect = error
+
+    with pytest.raises(DeviceConnectionError):
+        await ws_rpc.connect(client_session)
+
+    assert not ws_rpc.connected
+
+
+@pytest.mark.asyncio
+async def test_connect_setsockopt_failure_logs_warning(
+    ws_rpc: WsRPCMocker,
+    client_session: ClientSession,
+    rpc_websocket_response: ClientWebSocketResponse,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test failing to set the socket receive buffer size is only logged."""
+    await ws_rpc.disconnect()
+    sock = rpc_websocket_response.get_extra_info.return_value
+    sock.setsockopt.side_effect = OSError("not supported")
+
+    with caplog.at_level(logging.WARNING, logger=LOGGER_NAME):
+        await ws_rpc.connect(client_session)
+
+    assert ws_rpc.connected
+    assert (
+        "127.0.0.1:80: Failed to set socket receive buffer size: not supported"
+        in caplog.text
+    )
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_method_call_replies_not_implemented(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test a peer method call with an id gets a 'Not Implemented' error reply."""
+    frame = {"id": 42, "src": "shellyplus2pm-aabbccddeeff", "method": "Shelly.Foo"}
+
+    with patch.object(ws_rpc, "_send_next_response", new=AsyncMock()):
+        ws_rpc.handle_frame(RPCSource.CLIENT, frame)
+        assert len(ws_rpc._background_tasks) == 1
+        await asyncio.gather(*ws_rpc._background_tasks)
+
+    assert ws_rpc._background_tasks == set()
+    ws_rpc._client.send_frame.assert_awaited_once_with(
+        json_bytes(
+            {
+                "id": 42,
+                "src": ws_rpc._session.src,
+                "error": {"code": 500, "message": "Not Implemented"},
+            }
+        ),
+        WSMsgType.TEXT,
+    )
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_notification_calls_on_notification(
+    ws_rpc: WsRPCMocker, notify_history: NotifyHistory
+) -> None:
+    """Test a method frame without id is dispatched as a notification."""
+    params = {"ts": 1.0, "switch:0": {"output": True}}
+    frame = {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "method": "NotifyStatus",
+        "params": params,
+    }
+
+    ws_rpc.handle_frame(RPCSource.CLIENT, frame)
+
+    assert notify_history.history == [(RPCSource.CLIENT, "NotifyStatus", params)]
+    assert ws_rpc._session.dst == "shellyplus2pm-aabbccddeeff"
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_notification_handler_error_is_logged(
+    ws_rpc: WsRPCMocker, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test an exception raised by the notification callback is logged."""
+    frame = {"src": "shellyplus2pm-aabbccddeeff", "method": "NotifyEvent"}
+
+    with (
+        patch.object(ws_rpc, "_on_notification", side_effect=ValueError("boom")),
+        caplog.at_level(logging.ERROR, logger=LOGGER_NAME),
+    ):
+        ws_rpc.handle_frame(RPCSource.CLIENT, frame)
+
+    assert f"Error handling notification frame: {frame}" in caplog.text
+    assert "ValueError: boom" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_logs_warning_when_remote_src_changes(
+    ws_rpc: WsRPCMocker, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test a changed peer src is logged and the session dst is updated."""
+    ws_rpc.handle_frame(RPCSource.CLIENT, {"src": "device-1", "method": "Notify"})
+
+    with caplog.at_level(logging.WARNING, logger=LOGGER_NAME):
+        ws_rpc.handle_frame(RPCSource.CLIENT, {"src": "device-2", "method": "Notify"})
+
+    assert "Remote src changed: device-1 -> device-2" in caplog.text
+    assert ws_rpc._session.dst == "device-2"
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_unknown_response_id_logs_warning(
+    ws_rpc: WsRPCMocker, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test a response for an unknown request id is logged and dropped."""
+    with caplog.at_level(logging.WARNING, logger=LOGGER_NAME):
+        ws_rpc.handle_frame(
+            RPCSource.CLIENT,
+            {"id": 999, "src": "shellyplus2pm-aabbccddeeff", "result": {}},
+        )
+
+    assert (
+        "Response from (127.0.0.1:80) for an unknown request id: 999: None"
+        in caplog.text
+    )
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_response_for_cancelled_call_is_dropped(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test a response for a cancelled call does not set a result on the future."""
+    call = _make_rpc_call()
+    call.resolve.cancel()
+    ws_rpc._calls[call.call_id] = call
+
+    ws_rpc.handle_frame(RPCSource.CLIENT, {"id": call.call_id, "result": {}})
+
+    assert ws_rpc._calls == {}
+    assert call.resolve.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_invalid_frame_logs_warning(
+    ws_rpc: WsRPCMocker, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test a frame without method and id is logged as invalid."""
+    with caplog.at_level(logging.WARNING, logger=LOGGER_NAME):
+        ws_rpc.handle_frame(RPCSource.CLIENT, {"src": "shellyplus2pm-aabbccddeeff"})
+
+    assert "Invalid frame: {'src': 'shellyplus2pm-aabbccddeeff'}" in caplog.text
+
+
+async def _send_notification(
+    rpc_websocket_responses: ResponseMocker, method: str
+) -> None:
+    """Push a notification frame into the mocked websocket."""
+    frame = {"src": "shellyplus2pm-aabbccddeeff", "method": method}
+    await rpc_websocket_responses.mock_ws_message(
+        WSMessage(WSMsgType.TEXT, json_bytes(frame), None)
+    )
+
+
+@pytest.mark.asyncio
+async def test_rx_msgs_unexpected_error_is_logged_and_reraised(
+    ws_rpc: WsRPCMocker,
+    rpc_websocket_responses: ResponseMocker,
+    notify_history: NotifyHistory,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test an unexpected receive error is logged, closes the connection and raises."""
+    rx_task = ws_rpc._rx_task
+    # The rx task is awaiting the current receive; the next one will fail
+    ws_rpc._client.receive = AsyncMock(side_effect=RuntimeError("unexpected"))
+    await _send_notification(rpc_websocket_responses, "NotifyStatus")
+
+    with (
+        caplog.at_level(logging.ERROR, logger=LOGGER_NAME),
+        pytest.raises(RuntimeError, match="unexpected"),
+    ):
+        await rx_task
+
+    assert "Unexpected error while receiving message" in caplog.text
+    assert notify_history.history[-1] == (RPCSource.CLIENT, NOTIFY_WS_CLOSED, None)
+    assert not ws_rpc.connected
+    # The failed task has already been awaited, keep disconnect() from re-raising
+    ws_rpc._rx_task = None
+
+
+@pytest.mark.asyncio
+async def test_rx_msgs_stops_when_client_closed_after_receive(
+    ws_rpc: WsRPCMocker,
+    rpc_websocket_responses: ResponseMocker,
+    notify_history: NotifyHistory,
+) -> None:
+    """Test the rx loop ends without dispatching when the client closed meanwhile."""
+    client = ws_rpc._client
+    client.closed = True
+    await _send_notification(rpc_websocket_responses, "NotifyStatus")
+
+    await ws_rpc._rx_task
+
+    assert notify_history.history == [(RPCSource.CLIENT, NOTIFY_WS_CLOSED, None)]
+    assert not ws_rpc.connected
+    client.close.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_rx_msgs_closed_fails_only_pending_calls(
+    ws_rpc: WsRPCMocker, rpc_websocket_responses: ResponseMocker
+) -> None:
+    """Test closing the connection fails pending calls and keeps resolved ones."""
+    loop = asyncio.get_running_loop()
+    session = SessionData("aios-1", None, None)
+    resolved = RPCCall(1, "Shelly.GetStatus", None, session, loop.create_future())
+    resolved.resolve.set_result({"id": 1, "result": {}})
+    pending = RPCCall(2, "Shelly.GetConfig", None, session, loop.create_future())
+    ws_rpc._calls = {resolved.call_id: resolved, pending.call_id: pending}
+
+    await rpc_websocket_responses.mock_ws_message(
+        WSMessage(WSMsgType.CLOSE, None, None)
+    )
+    await ws_rpc._rx_task
+
+    assert ws_rpc._calls == {}
+    assert resolved.resolve.result() == {"id": 1, "result": {}}
+    with pytest.raises(DeviceConnectionError):
+        pending.resolve.result()
+
+
+@pytest.mark.asyncio
+async def test_call_returns_single_result(ws_rpc: WsRPCMocker) -> None:
+    """Test call() returns the result of a single RPC call."""
+    ws_rpc.next_id_mock = ws_rpc._call_id
+    ws_rpc.responses = [make_success_response({"ok": True})]
+
+    assert await ws_rpc.call("Shelly.GetStatus") == {"ok": True}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "auth_data", [None, AUTH_DATA], ids=["without_auth", "with_auth"]
+)
+@pytest.mark.parametrize(
+    "response",
+    [
+        {"src": "shellyplus2pm-aabbccddeeff"},
+        {"src": "shellyplus2pm-aabbccddeeff", "error": {"code": 500}},
+    ],
+    ids=["no_error", "no_message"],
+)
+async def test_wscall_malformed_error_response_raises_rpc_call_error(
+    ws_rpc: WsRPCMocker, auth_data: AuthData | None, response: dict[str, Any]
+) -> None:
+    """Test a response without result and without a valid error raises."""
+    ws_rpc._session.auth_data = auth_data
+
+    with pytest.raises(RpcCallError, match="bad response") as exc_info:
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [response]
+        )
+
+    assert exc_info.value.code == 0
+
+
+@pytest.mark.asyncio
+async def test_wscalls_non401_error_without_auth_raises_rpc_call_error(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test a non-401 error on the batched (non-auth) path raises RpcCallError."""
+    response = {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 404, "message": "Not Found"},
+    }
+
+    with pytest.raises(RpcCallError, match="Not Found") as exc_info:
+        await ws_rpc.calls_with_mocked_responses(
+            [("Shelly.GetConfig", None)], [response]
+        )
+
+    assert exc_info.value.code == 404
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("auth_data", "allow_auth_retry", "expected"),
+    [
+        pytest.param(AUTH_DATA, True, None, id="retry_allowed"),
+        pytest.param(AUTH_DATA, False, InvalidAuthError, id="retry_not_allowed"),
+        pytest.param(None, True, InvalidAuthError, id="no_auth_data"),
+    ],
+)
+async def test_raise_for_unrecoverable_errors_401(
+    ws_rpc: WsRPCMocker,
+    auth_data: AuthData | None,
+    allow_auth_retry: bool,
+    expected: type[Exception] | None,
+) -> None:
+    """Test 401 handling in _raise_for_unrecoverable_errors."""
+    ws_rpc._session.auth_data = auth_data
+
+    if expected is None:
+        assert (
+            ws_rpc._raise_for_unrecoverable_errors(
+                401, "unauthorized", allow_auth_retry
+            )
+            is None
+        )
+        return
+
+    with pytest.raises(expected, match="unauthorized"):
+        ws_rpc._raise_for_unrecoverable_errors(401, "unauthorized", allow_auth_retry)
+
+
+def test_ws_server_subscribe_updates_returns_unsubscribe() -> None:
+    """Test subscribing returns a callable that removes the subscription."""
+    ws_server = WsServer()
+    callback = MagicMock()
+
+    unsubscribe = ws_server.subscribe_updates("AABBCCDDEEFF", callback)
+
+    assert ws_server.subscriptions == {"AABBCCDDEEFF": callback}
+    unsubscribe()
+    assert ws_server.subscriptions == {}
+
+
+@pytest.mark.asyncio
+async def test_ws_server_close_without_initialize_is_noop() -> None:
+    """Test closing a server that was never initialized does nothing."""
+    ws_server = WsServer()
+
+    ws_server.close()
+
+    assert ws_server._background_tasks == set()
+
+
+@pytest.mark.asyncio
+async def test_ws_server_initialize_and_close() -> None:
+    """Test initialize sets up the app runner and close schedules its cleanup."""
+    ws_server = WsServer()
+
+    with (
+        patch("aioshelly.rpc_device.wsrpc.AppRunner") as runner_cls,
+        patch("aioshelly.rpc_device.wsrpc.TCPSite") as site_cls,
+    ):
+        runner = runner_cls.return_value
+        runner.setup = AsyncMock()
+        runner.cleanup = AsyncMock()
+        site = site_cls.return_value
+        site.start = AsyncMock()
+
+        await ws_server.initialize(8123, "/custom/ws")
+
+        app = runner_cls.call_args.args[0]
+        assert isinstance(app, Application)
+        assert {(r.method, r.resource.canonical) for r in app.router.routes()} == {
+            ("GET", "/custom/ws"),
+            ("HEAD", "/custom/ws"),
+        }
+        runner.setup.assert_awaited_once()
+        site_cls.assert_called_once_with(runner, port=8123)
+        site.start.assert_awaited_once()
+
+        ws_server.close()
+        assert len(ws_server._background_tasks) == 1
+        await asyncio.gather(*ws_server._background_tasks)
+
+    runner.cleanup.assert_awaited_once()
+    assert ws_server._background_tasks == set()
+
+
+@pytest.mark.asyncio
+async def test_ws_server_websocket_handler_dispatches_frames(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test the websocket handler routes frames to device id or host subscribers."""
+    ws_server = WsServer()
+    device_frames: list[dict[str, Any]] = []
+    host_frames: list[dict[str, Any]] = []
+    received = asyncio.Event()
+
+    def on_device_frame(frame: dict[str, Any]) -> None:
+        device_frames.append(frame)
+        received.set()
+
+    def on_host_frame(frame: dict[str, Any]) -> None:
+        host_frames.append(frame)
+        received.set()
+
+    async def send_and_wait(ws: ClientWebSocketResponse, payload: str) -> None:
+        received.clear()
+        await ws.send_str(payload)
+        async with asyncio.timeout(1):
+            await received.wait()
+
+    ws_server.subscribe_updates("AABBCCDDEEFF", on_device_frame)
+    unsubscribe_host = ws_server.subscribe_updates("127.0.0.1", on_host_frame)
+
+    app = Application()
+    app.add_routes([get(WS_API_URL, ws_server.websocket_handler)])
+    device_frame = {"src": "shellyplus2pm-aabbccddeeff", "method": "NotifyStatus"}
+    unknown_frame = {"src": "shellyplus1-001122334455", "method": "NotifyStatus"}
+
+    with caplog.at_level(logging.DEBUG, logger=LOGGER_NAME):
+        async with (
+            TestClient(TestServer(app)) as client,
+            client.ws_connect(WS_API_URL) as ws,
+        ):
+            # Frames that cannot be dispatched are logged and skipped
+            await ws.send_str("not-json")
+            await ws.send_str(json_dumps({"method": "NotifyStatus"}))
+            await ws.send_str(json_dumps({"src": "nodash"}))
+            # Known device id goes to the device subscriber
+            await send_and_wait(ws, json_dumps(device_frame))
+            # Unknown device id falls back to the host subscriber
+            await send_and_wait(ws, json_dumps(unknown_frame))
+            # Without a host subscriber the frame is dropped
+            unsubscribe_host()
+            await ws.send_str(json_dumps(unknown_frame))
+            await send_and_wait(ws, json_dumps(device_frame))
+
+    assert device_frames == [device_frame, device_frame]
+    assert host_frames == [unknown_frame]
+    assert "Websocket server connection from 127.0.0.1 ready" in caplog.text
+    assert "Invalid Message from host 127.0.0.1: Received invalid JSON" in caplog.text
+    assert "Invalid device id from host 127.0.0.1: 'src'" in caplog.text
+    assert "Invalid device id from host 127.0.0.1: list index out of range" in (
+        caplog.text
+    )
+    assert "Calling WsRPC message update for device id AABBCCDDEEFF" in caplog.text
+    assert "Calling WsRPC message update for host 127.0.0.1" in caplog.text
+    assert "Websocket server connection from 127.0.0.1 closed" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_ws_server_websocket_handler_closes_on_close_frame() -> None:
+    """Test a close frame surfaced by the websocket response closes it."""
+    ws_server = WsServer()
+    request = MagicMock(remote="127.0.0.1")
+
+    with patch("aioshelly.rpc_device.wsrpc.WebSocketResponse") as ws_res_cls:
+        ws_res = ws_res_cls.return_value
+        ws_res.prepare = AsyncMock()
+        ws_res.close = AsyncMock()
+        ws_res.__aiter__.return_value = [WSMessage(WSMsgType.CLOSE, None, None)]
+
+        result = await ws_server.websocket_handler(request)
+
+    assert result is ws_res
+    ws_res_cls.assert_called_once_with(protocols=["json-rpc"])
+    ws_res.prepare.assert_awaited_once_with(request)
+    ws_res.close.assert_awaited_once()
