@@ -9,13 +9,12 @@ license = "Apache-2.0"
 description = "Asynchronous library to control Shelly devices."
 readme = "README.md"
 authors = [{ name = "Paulus Schoutsen", email = "paulus@home-assistant.io" }]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
@@ -58,13 +57,13 @@ include = ["aioshelly*"]
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.ty.environment]
-python-version = "3.11"
+python-version = "3.12"
 
 [tool.ty.src]
 include = ["aioshelly"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 
 lint.select = ["ALL"]
 
@@ -111,7 +110,7 @@ max-complexity = 18
 legacy_tox_ini = """
 
 [tox]
-envlist = py311, py312, py313, py314, lint, prek, ty, tests
+envlist = py312, py313, py314, lint, prek, ty, tests
 skip_missing_interpreters = True
 
 [testenv]
@@ -120,8 +119,7 @@ setenv =
 
 [gh-actions]
 python =
-  3.11: py311, tests, lint, prek, ty
-  3.12: py312, tests
+  3.12: py312, tests, lint, prek, ty
   3.13: py313, tests
   3.14: py314, tests
 
