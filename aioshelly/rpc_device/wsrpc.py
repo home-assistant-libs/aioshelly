@@ -410,6 +410,7 @@ class WsRPC(WsBase):
                         self._port,
                         err,
                     )
+                    continue
                 except (ConnectionClosed, client_exceptions.ClientConnectionResetError):
                     _LOGGER.debug(
                         "Connection issue with device %s:%s",
