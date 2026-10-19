@@ -589,6 +589,11 @@ class RpcDevice:
 
         return effects
 
+    async def ledstrip_list_palettes(self) -> dict[str, str]:
+        """Get LED strip palette names as a dict keyed by the palette key."""
+        result = await self.call_rpc("LedStrip.ListAllPalettes")
+        return {palette["key"]: palette["name"] for palette in result["palettes"]}
+
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
         params = {
