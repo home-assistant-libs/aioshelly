@@ -2424,6 +2424,49 @@ async def test_ledstrip_list_effects_paginated(
 
 
 @pytest.mark.asyncio
+async def test_ledstrip_list_palettes(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice ledstrip_list_palettes() method."""
+    palettes = [
+        {
+            "key": "rainbow",
+            "name": "Rainbow",
+            "colors": ["#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#FF00FF"],
+        },
+        {
+            "key": "pastel",
+            "name": "Pastel",
+            "colors": ["#FFB6C1", "#C8A2FF", "#ADD8E6", "#98FB98", "#FFB6C1"],
+        },
+        {
+            "key": "fire",
+            "name": "Fire",
+            "colors": ["#000000", "#C02000", "#FFA000", "#FFFF00", "#FFFFFF"],
+        },
+        {
+            "key": "monochrome",
+            "name": "Monochrome",
+            "colors": ["#616161", "#EAEAEA", "#FFFFFF", "#E0E0E0", "#5B5B5B"],
+            "controls": ["rgb"],
+        },
+    ]
+    rpc_device.call_rpc_multiple.return_value = [{"palettes": palettes, "total": 4}]
+
+    result = await rpc_device.ledstrip_list_palettes()
+
+    assert result == {
+        "rainbow": "Rainbow",
+        "pastel": "Pastel",
+        "fire": "Fire",
+        "monochrome": "Monochrome",
+    }
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "LedStrip.ListAllPalettes"
+
+
+@pytest.mark.asyncio
 async def test_ircode_emit(
     rpc_device: RpcDevice,
 ) -> None:
