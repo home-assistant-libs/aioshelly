@@ -2221,8 +2221,24 @@ async def test_media_list_media(
 
     assert call_args_list[0][0][0][0][0] == "Media.List"
 
-    assert isinstance(result, list)
-    assert len(result) == 2
+    assert result == [
+        {
+            "album": "Album 1",
+            "artist": "Artist 1",
+            "filename": "track1.mp3",
+            "id": 1,
+            "title": "Track One",
+            "type": "AUDIO",
+        },
+        {
+            "album": "Album 2",
+            "artist": "Artist 2",
+            "filename": "track2.mp3",
+            "id": 2,
+            "title": "Track Two",
+            "type": "AUDIO",
+        },
+    ]
 
 
 @pytest.mark.asyncio
@@ -2270,8 +2286,20 @@ async def test_media_list_radio_stations(
 
     assert call_args_list[0][0][0][0][0] == "Media.Radio.ListFavourites"
 
-    assert isinstance(result, list)
-    assert len(result) == 2
+    assert result == [
+        {
+            "country_code": "PL",
+            "icon": "https://radio1.pl/favicon.png",
+            "id": 0,
+            "name": "Radio Station 1",
+        },
+        {
+            "country_code": "PL",
+            "icon": "https://radio2.pl/favicon.png",
+            "id": 1,
+            "name": "Radio Station 2",
+        },
+    ]
 
 
 @pytest.mark.asyncio

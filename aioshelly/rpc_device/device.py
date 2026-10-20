@@ -52,6 +52,8 @@ from .models import (
     ShellyBLEConfig,
     ShellyBLESetConfig,
     ShellyLedStripEffect,
+    ShellyMedia,
+    ShellyRadioStation,
     ShellyScript,
     ShellyScriptCode,
     ShellyWiFiNetwork,
@@ -697,20 +699,22 @@ class RpcDevice:
         params = {"id": media_id}
         await self.call_rpc("Media.MediaPlayer.Play", params)
 
-    async def media_list_media(self) -> list[dict[str, Any]]:
+    async def media_list_media(self) -> list[ShellyMedia]:
         """List media."""
         result = await self.call_rpc("Media.List")
-        return result["list"]
+        media: list[ShellyMedia] = result["list"]
+        return media
 
     async def media_play_radio_station(self, media_id: int) -> None:
         """Play favourite radio station by ID."""
         params = {"id": media_id}
         await self.call_rpc("Media.Radio.PlayFavourite", params)
 
-    async def media_list_radio_stations(self) -> list[dict[str, Any]]:
+    async def media_list_radio_stations(self) -> list[ShellyRadioStation]:
         """List favourite radio stations."""
         result = await self.call_rpc("Media.Radio.ListFavourites")
-        return result["list"]
+        stations: list[ShellyRadioStation] = result["list"]
+        return stations
 
     async def camera_get_image(self, camera_id: int) -> bytes:
         """Return a still image from the camera's HTTP snapshot endpoint."""
