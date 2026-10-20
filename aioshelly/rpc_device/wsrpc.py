@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextlib
 import hashlib
 import logging
 import secrets
@@ -88,9 +89,14 @@ def hex_hash(message: str) -> str:
     return hashlib.sha256(message.encode("utf-8")).hexdigest()
 
 
-def _current_task_cancelled() -> bool:
-    """Return whether the currently running task has been cancelled."""
-    return bool((current_task := asyncio.current_task()) and current_task.cancelled())
+def _current_task_cancelling() -> int:
+    """Return the number of pending cancellation requests for the running task.
+
+    ``Task.cancelled()`` only reports a task that already finished cancelled,
+    so it is always ``False`` for the running task; ``Task.cancelling()``
+    reports pending cancellation requests instead.
+    """
+    return task.cancelling() if (task := asyncio.current_task()) else 0
 
 
 HA2 = hex_hash("dummy_method:dummy_uri")
@@ -314,11 +320,14 @@ class WsRPC(WsBase):
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
         if self._rx_task is not None:
+            cancelling = _current_task_cancelling()
             self._rx_task.cancel()
             try:
                 await self._rx_task
             except asyncio.CancelledError:
-                if _current_task_cancelled():
+                # Re-raise only if the current task was cancelled while awaiting,
+                # otherwise the error just came from the cancelled rx task.
+                if _current_task_cancelling() > cancelling:
                     raise
             self._rx_task = None
         if self._client is None:
@@ -558,11 +567,8 @@ class WsRPC(WsBase):
                 call.result = response["result"]
         except TimeoutError as exc:
             call.resolve.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await call.resolve
-            except asyncio.CancelledError:
-                if _current_task_cancelled():
-                    raise
             raise DeviceConnectionTimeoutError(call) from exc
         finally:
             self._abandon_calls((call,))
@@ -643,11 +649,8 @@ class WsRPC(WsBase):
         except TimeoutError as exc:
             for call in sent_calls:
                 call.resolve.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await call.resolve
-                except asyncio.CancelledError:
-                    if _current_task_cancelled():
-                        raise
             raise DeviceConnectionTimeoutError(sent_calls) from exc
         finally:
             self._abandon_calls(sent_calls)
