@@ -187,16 +187,63 @@ async def test_wscall_not_connected_with_auth(ws_rpc: WsRPCMocker) -> None:
 
 
 @pytest.mark.asyncio
-async def test_disconnect_reraises_cancelled_error(ws_rpc: WsRPCMocker) -> None:
-    """Test disconnect re-raises CancelledError when current task is cancelled."""
-    ws_rpc._rx_task = asyncio.get_running_loop().create_future()
-    ws_rpc._rx_task.cancel()
+async def test_disconnect_reraises_cancelled_error_when_caller_cancelled(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test disconnect re-raises CancelledError when the calling task is cancelled."""
+    rx_task_cancelled = asyncio.Event()
 
-    with (
-        patch("aioshelly.rpc_device.wsrpc._current_task_cancelled", return_value=True),
-        pytest.raises(asyncio.CancelledError),
-    ):
-        await ws_rpc.disconnect()
+    async def _rx_msgs() -> None:
+        try:
+            await asyncio.Event().wait()
+        finally:
+            rx_task_cancelled.set()
+            # Yield so the caller is still awaiting the rx task when cancelled
+            await asyncio.sleep(0)
+
+    ws_rpc._rx_task = asyncio.create_task(_rx_msgs())
+    await asyncio.sleep(0)
+
+    disconnect_task = asyncio.create_task(ws_rpc.disconnect())
+    await rx_task_cancelled.wait()
+    disconnect_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await disconnect_task
+
+
+@pytest.mark.asyncio
+async def test_disconnect_completes_when_called_from_cancelled_task(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test disconnect closes the client when called from a cancelled task."""
+
+    async def _rx_msgs() -> None:
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+
+    async def _run() -> None:
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            # Cleanup inside a cancelled task: the rx task's CancelledError
+            # must not be mistaken for a new cancellation of this task.
+            ws_rpc._rx_task = asyncio.create_task(_rx_msgs())
+            await asyncio.sleep(0)
+            await ws_rpc.disconnect()
+            raise
+
+    task = asyncio.create_task(_run())
+    await asyncio.sleep(0)
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert ws_rpc._rx_task is None
+    ws_rpc._client.close.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -220,33 +267,6 @@ async def test_wscall_timeout_with_auth_raises_device_connection_timeout_error(
     with (
         patch.object(ws_rpc, "_send_next_response", new=AsyncMock(return_value=None)),
         pytest.raises(DeviceConnectionTimeoutError),
-    ):
-        await ws_rpc.calls([("Shelly.GetConfig", None)], timeout=0.01)
-
-
-@pytest.mark.asyncio
-async def test_wscall_timeout_with_auth_reraises_cancelled_error(
-    ws_rpc: WsRPCMocker,
-) -> None:
-    """Test timeout cleanup re-raises CancelledError when current task is cancelled."""
-    ws_rpc.set_auth_data("auth_domain", "username", "password")
-    with (
-        patch.object(ws_rpc, "_send_next_response", new=AsyncMock(return_value=None)),
-        patch("aioshelly.rpc_device.wsrpc._current_task_cancelled", return_value=True),
-        pytest.raises(asyncio.CancelledError),
-    ):
-        await ws_rpc.calls([("Shelly.GetConfig", None)], timeout=0.01)
-
-
-@pytest.mark.asyncio
-async def test_wscall_timeout_without_auth_reraises_cancelled_error(
-    ws_rpc: WsRPCMocker,
-) -> None:
-    """Test timeout cleanup re-raises CancelledError when current task is cancelled."""
-    with (
-        patch.object(ws_rpc, "_send_next_response", new=AsyncMock(return_value=None)),
-        patch("aioshelly.rpc_device.wsrpc._current_task_cancelled", return_value=True),
-        pytest.raises(asyncio.CancelledError),
     ):
         await ws_rpc.calls([("Shelly.GetConfig", None)], timeout=0.01)
 
