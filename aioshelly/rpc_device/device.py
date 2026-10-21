@@ -63,7 +63,6 @@ from .models import (
 from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
-MAX_STORAGE_ITERATIONS = 100
 
 SCRIPT_SUPPORT_METHODS = {
     "Script.List",
@@ -717,29 +716,30 @@ class RpcDevice:
     async def get_storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
         """Get all media items from the storage component."""
         items: list[ShellyStorageItem] = []
-        rev: int | None = None
-        counter = 0
+        first_page = await self.call_rpc(
+            "Storage.List", {"id": storage_id, "offset": 0}
+        )
+        page = first_page
+        items.extend(page["items"])
 
-        while counter < MAX_STORAGE_ITERATIONS:
-            counter += 1
+        # Each page is fetched once; an empty page means the device returned fewer
+        # items than promised.
+        while page["items"] and len(items) < first_page["total"]:
             page = await self.call_rpc(
                 "Storage.List", {"id": storage_id, "offset": len(items)}
             )
-            if rev is not None and page["rev"] != rev:
-                # The contents of the storage changed while we were paginating, so
-                # the offsets used so far no longer point at the same items; start
-                # over to avoid duplicated or skipped items.
-                items = []
-                rev = None
-                continue
-
-            rev = page["rev"]
-            if not page["items"]:
-                break
-
             items.extend(page["items"])
-            if len(items) >= page["total"]:
-                break
+
+        if page["rev"] != first_page["rev"] or len(items) != page["total"]:
+            _LOGGER.warning(
+                "Storage %s: fetched %s of %s items (rev %s -> %s), "
+                "list may be incomplete",
+                storage_id,
+                len(items),
+                page["total"],
+                first_page["rev"],
+                page["rev"],
+            )
 
         return items
 

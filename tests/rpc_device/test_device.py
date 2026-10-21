@@ -26,7 +26,6 @@ from aioshelly.exceptions import (
 )
 from aioshelly.rpc_device.blerpc import BleRPC
 from aioshelly.rpc_device.device import (
-    MAX_STORAGE_ITERATIONS,
     RpcDevice,
     RpcUpdateType,
     mergedicts,
@@ -2310,16 +2309,17 @@ async def test_media_list_radio_stations(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("pages", "expected_offsets", "expected_media_ids"),
+    ("pages", "expected_offsets", "expected_media_ids", "expected_warning"),
     [
         # single page with all items
         (
             [_storage_page([STORAGE_VIDEO_ITEM, STORAGE_IMAGE_ITEM], 2)],
             [0],
             ["video-1", "image-1"],
+            False,
         ),
         # empty storage
-        ([_storage_page([], 0)], [0], []),
+        ([_storage_page([], 0)], [0], [], False),
         # two pages
         (
             [
@@ -2328,6 +2328,7 @@ async def test_media_list_radio_stations(
             ],
             [0, 1],
             ["video-1", "image-1"],
+            False,
         ),
         # the device stops returning items before `total` is reached
         (
@@ -2337,6 +2338,7 @@ async def test_media_list_radio_stations(
             ],
             [0, 1],
             ["video-1"],
+            True,
         ),
     ],
 )
@@ -2345,6 +2347,8 @@ async def test_get_storage_list(
     pages: list[dict[str, Any]],
     expected_offsets: list[int],
     expected_media_ids: list[str],
+    expected_warning: bool,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test RpcDevice get_storage_list() method."""
     rpc_device.call_rpc_multiple.side_effect = [[page] for page in pages]
@@ -2358,43 +2362,29 @@ async def test_get_storage_list(
         assert call_args_list[index][0][0][0][1] == {"id": 0, "offset": offset}
 
     assert [item["media_id"] for item in result] == expected_media_ids
+    assert ("list may be incomplete" in caplog.text) is expected_warning
 
 
 @pytest.mark.asyncio
 async def test_get_storage_list_contents_changed(
     rpc_device: RpcDevice,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Test get_storage_list() restarts when the storage changes while paginating."""
-    new_item: ShellyStorageItem = {**STORAGE_VIDEO_ITEM, "media_id": "video-2"}
+    """Test get_storage_list() does not restart when the storage changes, it warns."""
     rpc_device.call_rpc_multiple.side_effect = [
         [_storage_page([STORAGE_VIDEO_ITEM], 2)],
-        # a new recording appeared, shifting all offsets by one
-        [_storage_page([STORAGE_VIDEO_ITEM], 3, offset=1, rev=2)],
-        [_storage_page([new_item, STORAGE_VIDEO_ITEM, STORAGE_IMAGE_ITEM], 3, rev=2)],
+        # a new recording appeared while paginating
+        [_storage_page([STORAGE_IMAGE_ITEM], 3, offset=1, rev=2)],
     ]
 
     result = await rpc_device.get_storage_list(0)
 
-    assert rpc_device.call_rpc_multiple.call_count == 3
+    assert rpc_device.call_rpc_multiple.call_count == 2
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
-    assert [args[0][0][0][1]["offset"] for args in call_args_list] == [0, 1, 0]
+    assert [args[0][0][0][1]["offset"] for args in call_args_list] == [0, 1]
 
-    assert [item["media_id"] for item in result] == ["video-2", "video-1", "image-1"]
-
-
-@pytest.mark.asyncio
-async def test_get_storage_list_max_iterations(
-    rpc_device: RpcDevice,
-) -> None:
-    """Test get_storage_list() gives up when `total` is never reached."""
-    rpc_device.call_rpc_multiple.return_value = [
-        _storage_page([STORAGE_VIDEO_ITEM], 1000)
-    ]
-
-    result = await rpc_device.get_storage_list(0)
-
-    assert rpc_device.call_rpc_multiple.call_count == MAX_STORAGE_ITERATIONS
-    assert len(result) == MAX_STORAGE_ITERATIONS
+    assert [item["media_id"] for item in result] == ["video-1", "image-1"]
+    assert "fetched 2 of 3 items (rev 1 -> 2), list may be incomplete" in caplog.text
 
 
 @pytest.mark.asyncio
