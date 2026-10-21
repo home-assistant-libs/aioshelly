@@ -89,12 +89,7 @@ def hex_hash(message: str) -> str:
 
 
 def _current_task_cancelling() -> int:
-    """Return the number of pending cancellation requests for the running task.
-
-    ``Task.cancelled()`` only reports a task that already finished cancelled,
-    so it is always ``False`` for the running task; ``Task.cancelling()``
-    reports pending cancellation requests instead.
-    """
+    """Return the number of pending cancellation requests for the running task."""
     return task.cancelling() if (task := asyncio.current_task()) else 0
 
 
