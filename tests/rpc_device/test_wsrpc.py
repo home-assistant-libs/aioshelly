@@ -211,6 +211,9 @@ async def test_disconnect_reraises_cancelled_error_when_caller_cancelled(
     with pytest.raises(asyncio.CancelledError):
         await disconnect_task
 
+    assert ws_rpc._rx_task is None
+    ws_rpc._client.close.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_disconnect_completes_when_called_from_cancelled_task(
