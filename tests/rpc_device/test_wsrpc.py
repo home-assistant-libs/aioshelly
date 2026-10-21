@@ -201,6 +201,8 @@ async def test_disconnect_reraises_cancelled_error_when_caller_cancelled(
             # Yield so the caller is still awaiting the rx task when cancelled
             await asyncio.sleep(0)
 
+    client = ws_rpc._client
+    ws_rpc._rx_task.cancel()
     ws_rpc._rx_task = asyncio.create_task(_rx_msgs())
     await asyncio.sleep(0)
 
@@ -212,7 +214,7 @@ async def test_disconnect_reraises_cancelled_error_when_caller_cancelled(
         await disconnect_task
 
     assert ws_rpc._rx_task is None
-    ws_rpc._client.close.assert_awaited_once()
+    client.close.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -233,11 +235,13 @@ async def test_disconnect_completes_when_called_from_cancelled_task(
         except asyncio.CancelledError:
             # Cleanup inside a cancelled task: the rx task's CancelledError
             # must not be mistaken for a new cancellation of this task.
+            ws_rpc._rx_task.cancel()
             ws_rpc._rx_task = asyncio.create_task(_rx_msgs())
             await asyncio.sleep(0)
             await ws_rpc.disconnect()
             raise
 
+    client = ws_rpc._client
     task = asyncio.create_task(_run())
     await asyncio.sleep(0)
     task.cancel()
@@ -246,7 +250,7 @@ async def test_disconnect_completes_when_called_from_cancelled_task(
         await task
 
     assert ws_rpc._rx_task is None
-    ws_rpc._client.close.assert_awaited_once()
+    client.close.assert_awaited_once()
 
 
 @pytest.mark.asyncio

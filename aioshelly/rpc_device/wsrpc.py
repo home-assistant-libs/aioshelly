@@ -318,22 +318,20 @@ class WsRPC(WsBase):
 
     async def disconnect(self) -> None:
         """Disconnect all sessions."""
-        try:
-            if self._rx_task is not None:
-                cancelling = _current_task_cancelling()
-                self._rx_task.cancel()
-                try:
-                    await self._rx_task
-                except asyncio.CancelledError:
-                    # Re-raise only if the current task was cancelled while
-                    # awaiting, otherwise the error came from the cancelled rx task.
-                    if _current_task_cancelling() > cancelling:
-                        raise
-                finally:
-                    self._rx_task = None
-        finally:
-            if self._client is not None:
-                await self._client.close()
+        if self._rx_task is not None:
+            cancelling = _current_task_cancelling()
+            self._rx_task.cancel()
+            try:
+                await self._rx_task
+            except asyncio.CancelledError:
+                # Re-raise only if the current task was cancelled while
+                # awaiting, otherwise the error came from the cancelled rx task.
+                if _current_task_cancelling() > cancelling:
+                    raise
+            finally:
+                self._rx_task = None
+        if self._client is not None:
+            await self._client.close()
 
     def set_auth_data(self, realm: str, username: str, password: str) -> None:
         """Set authentication data and generate session auth."""
@@ -566,7 +564,6 @@ class WsRPC(WsBase):
                     )
                 call.result = response["result"]
         except TimeoutError as exc:
-            call.resolve.cancel()
             raise DeviceConnectionTimeoutError(call) from exc
         finally:
             self._abandon_calls((call,))
@@ -645,8 +642,6 @@ class WsRPC(WsBase):
                     else:
                         call.result = response["result"]
         except TimeoutError as exc:
-            for call in sent_calls:
-                call.resolve.cancel()
             raise DeviceConnectionTimeoutError(sent_calls) from exc
         finally:
             self._abandon_calls(sent_calls)
