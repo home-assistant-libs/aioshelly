@@ -1,0 +1,13 @@
+{
+    "name": "Shelly Plus H&T [DDEEFF]",
+    "id": "shellyplusht-aabbccddeeff",
+    "mac": "AABBCCDDEEFF",
+    "slot": 1,
+    "model": "SNSN-0013A",
+    "gen": 2,
+    "fw_id": "20240105-142929/1.1.1-g68a461a",
+    "ver": "1.1.1",
+    "app": "PlusHT",
+    "auth_en": false,
+    "auth_domain": null
+}

@@ -97,6 +97,24 @@ async def mini_1_g4_components() -> AsyncGenerator[dict[str, Any], None]:
 
 
 @pytest_asyncio.fixture
+async def plus_ht_device_info() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Plus H&T device info."""
+    yield await load_device_fixture("shellyplusht", "Shelly.GetDeviceInfo")
+
+
+@pytest_asyncio.fixture
+async def plus_ht_config() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Plus H&T config."""
+    yield await load_device_fixture("shellyplusht", "Shelly.GetConfig")
+
+
+@pytest_asyncio.fixture
+async def plus_ht_wakeup_status() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for Plus H&T status from wakeup NotifyFullStatus."""
+    yield await load_device_fixture("shellyplusht", "NotifyFullStatus")
+
+
+@pytest_asyncio.fixture
 async def shelly2pmg3_status() -> AsyncGenerator[dict[str, Any], None]:
     """Fixture for Shelly 2PM Gen3 status."""
     yield await load_device_fixture("shelly2pmg3", "Shelly.GetStatus")
@@ -460,6 +478,34 @@ async def test_device_already_initialized(
 
     assert rpc_device.initialized is True
     assert rpc_device.status is not None
+
+
+@pytest.mark.asyncio
+async def test_device_initialize_uses_wakeup_status(
+    rpc_device: RpcDevice,
+    plus_ht_device_info: dict[str, Any],
+    plus_ht_config: dict[str, Any],
+    plus_ht_wakeup_status: dict[str, Any],
+) -> None:
+    """Test first init of a sleeping device reuses status from wakeup event."""
+    rpc_device._rpc = AsyncMock(spec=WsRPC)
+    rpc_device._status = plus_ht_wakeup_status
+
+    rpc_device.call_rpc_multiple.side_effect = [
+        [plus_ht_device_info],
+        [plus_ht_config],
+    ]
+
+    await rpc_device.initialize()
+
+    # Device info and config are fetched, status is not
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert len(call_args_list) == 2
+    assert call_args_list[0].args[0] == (("Shelly.GetDeviceInfo", None),)
+    assert call_args_list[1].args[0] == [("Shelly.GetConfig", None)]
+    assert rpc_device.shelly is plus_ht_device_info
+    assert rpc_device.config is plus_ht_config
+    assert rpc_device.status is plus_ht_wakeup_status
 
 
 @pytest.mark.asyncio
