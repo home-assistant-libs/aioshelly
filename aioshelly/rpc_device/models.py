@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 
 class ShellyScript(TypedDict, total=False):
@@ -52,6 +52,25 @@ class ShellyRadioStation(TypedDict, total=False):
     name: str
     icon: str
     country_code: str
+class ShellyStorageTrigger(TypedDict):
+    """Event that triggered a Shelly Storage recording."""
+
+    component: str
+    event: str
+    ts: int
+
+
+class ShellyStorageItem(TypedDict):
+    """Shelly Storage media item from 'Storage.List'."""
+
+    media_id: str
+    type: Literal["image", "video"]
+    ts: float
+    duration: NotRequired[int]
+    size: NotRequired[int]
+    url: str
+    thumbnail_url: NotRequired[str]
+    trigger: NotRequired[ShellyStorageTrigger]
 
 
 class ShellyBLERpcConfig(TypedDict, total=False):

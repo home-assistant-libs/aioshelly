@@ -63,6 +63,7 @@ from .models import (
     ShellyUiConfig,
     ShellyUiSetConfig,
     ShellyWallDisplayUiConfig,
+    ShellyStorageItem,
     ShellyWiFiNetwork,
     ShellyWiFiSetConfig,
     ShellyWsConfig,
@@ -771,9 +772,9 @@ class RpcDevice:
         stations: list[ShellyRadioStation] = result["list"]
         return stations
 
-    async def get_storage_list(self, storage_id: int) -> list[dict[str, Any]]:
+    async def get_storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
         """Get all media items from the storage component."""
-        items: list[dict[str, Any]] = []
+        items: list[ShellyStorageItem] = []
         rev: int | None = None
         counter = 0
 
