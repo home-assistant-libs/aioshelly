@@ -1,0 +1,60 @@
+{
+    "ts": 0.87,
+    "ble": {},
+    "cloud": {
+        "connected": false
+    },
+    "devicepower:0": {
+        "id": 0,
+        "battery": {
+            "V": 5.12,
+            "percent": 55
+        },
+        "external": {
+            "present": false
+        }
+    },
+    "ht_ui": {},
+    "humidity:0": {
+        "id": 0,
+        "rh": 88.0
+    },
+    "mqtt": {
+        "connected": false
+    },
+    "sys": {
+        "mac": "AABBCCDDEEFF",
+        "restart_required": false,
+        "time": null,
+        "unixtime": null,
+        "uptime": 0,
+        "ram_size": 246744,
+        "ram_free": 166584,
+        "fs_size": 458752,
+        "fs_free": 172032,
+        "cfg_rev": 16,
+        "kvs_rev": 0,
+        "webhook_rev": 0,
+        "available_updates": {},
+        "wakeup_reason": {
+            "boot": "deepsleep_wake",
+            "cause": "status_update"
+        },
+        "wakeup_period": 7200,
+        "reset_reason": 8
+    },
+    "temperature:0": {
+        "id": 0,
+        "tC": 27.7,
+        "tF": 81.8
+    },
+    "wifi": {
+        "sta_ip": "10.10.10.20",
+        "status": "got ip",
+        "ssid": "WiFi-Network-Name",
+        "rssi": -35
+    },
+    "ws": {
+        "connected": true
+    }
+}

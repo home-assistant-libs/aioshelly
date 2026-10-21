@@ -254,11 +254,8 @@ class RpcDevice:
 
         async with self._initialize_lock:
             self._initializing = True
-            # First initialize may already have status from wakeup event
-            # If device is initialized again we need to fetch new status
-            if self.initialized:
-                self.initialized = False
-                self._status = None
+            # Keep the last known status/config until fresh data is fetched
+            self.initialized = False
 
             try:
                 await self._connect_websocket()
@@ -788,6 +785,8 @@ class RpcDevice:
 
     async def poll(self) -> None:
         """Poll device for calls that do not receive push updates."""
+        if self._status is None:
+            raise DeviceConnectionError("Device status not loaded yet")
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetStatus", None)]
         if has_dynamic := bool(self._dynamic_components):
             # Only poll dynamic components if we have them
@@ -795,8 +794,6 @@ class RpcDevice:
         results = await self.call_rpc_multiple(calls, DEVICE_POLL_TIMEOUT)
         if (status := results[0]) is None:
             raise RpcCallError(0, "empty response to Shelly.GetStatus")
-        if self._status is None:
-            raise NotInitialized
         self._status.update(status)
         if has_dynamic:
             if (dynamic := results[1]) is None:
@@ -829,7 +826,9 @@ class RpcDevice:
             raise MacAddressMismatchError(f"Input MAC: {device_mac}, Shelly MAC: {mac}")
 
         calls: list[tuple[str, dict[str, Any] | None]] = [("Shelly.GetConfig", None)]
-        if fetch_status := self._status is None:
+        # First initialize may already have status from wakeup event,
+        # if device was initialized before we need to fetch new status
+        if fetch_status := self._config is not None or self._status is None:
             calls.append(("Shelly.GetStatus", None))
         if fetch_dynamic := self._supports_dynamic_components():
             calls.append(("Shelly.GetComponents", {"dynamic_only": True}))
@@ -1046,8 +1045,11 @@ class RpcDevice:
 
     @property
     def status(self) -> dict[str, Any]:
-        """Get device status."""
-        if not self.initialized or self._status is None:
+        """Get device status.
+
+        Returns the last known status, also while re-initializing.
+        """
+        if self._status is None:
             raise NotInitialized
 
         return self._status
@@ -1062,8 +1064,11 @@ class RpcDevice:
 
     @property
     def config(self) -> dict[str, Any]:
-        """Get device config."""
-        if not self.initialized or self._config is None:
+        """Get device config.
+
+        Returns the last known config, also while re-initializing.
+        """
+        if self._config is None:
             raise NotInitialized
 
         return self._config
