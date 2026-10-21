@@ -27,6 +27,26 @@ class ShellyLedStripEffect(TypedDict, total=False):
     controls: list[str]
 
 
+class ShellyMedia(TypedDict, total=False):
+    """Shelly media item from Media.List."""
+
+    id: int
+    title: str
+    artist: str
+    album: str
+    filename: str
+    type: str
+
+
+class ShellyRadioStation(TypedDict, total=False):
+    """Shelly favourite radio station from Media.Radio.ListFavourites."""
+
+    id: int
+    name: str
+    icon: str
+    country_code: str
+
+
 class ShellyBLERpcConfig(TypedDict, total=False):
     """Shelly BLE RPC Config."""
 
