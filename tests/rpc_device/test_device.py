@@ -31,6 +31,7 @@ from aioshelly.rpc_device.device import (
     RpcUpdateType,
     mergedicts,
 )
+from aioshelly.rpc_device.models import ShellyStorageItem
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
@@ -45,7 +46,7 @@ VIRT_COMP_CONFIG = {
 }
 VIRT_COMP_ATTRS = {"role": "current_humidity"}
 WEBSOCKET_URL = "ws://10.10.10.10:8123/api/shelly/ws"
-STORAGE_VIDEO_ITEM = {
+STORAGE_VIDEO_ITEM: ShellyStorageItem = {
     "media_id": "video-1",
     "type": "video",
     "ts": 1789907507.382,
@@ -59,7 +60,7 @@ STORAGE_VIDEO_ITEM = {
     "url": "/storage/video-1/4db27786/MOV_20260920_123147381.mp4",
     "thumbnail_url": "/storage/video-1/71cec2ae/IMG_20260920_123147381.jpg",
 }
-STORAGE_IMAGE_ITEM = {
+STORAGE_IMAGE_ITEM: ShellyStorageItem = {
     "media_id": "image-1",
     "type": "image",
     "ts": 1789907362.923,
@@ -69,7 +70,7 @@ STORAGE_IMAGE_ITEM = {
 
 
 def _storage_page(
-    items: list[dict[str, Any]], total: int, offset: int = 0, rev: int = 1
+    items: list[ShellyStorageItem], total: int, offset: int = 0, rev: int = 1
 ) -> dict[str, Any]:
     """Build a 'Storage.List' response page."""
     return {"total": total, "offset": offset, "rev": rev, "items": items}
@@ -2364,7 +2365,7 @@ async def test_get_storage_list_contents_changed(
     rpc_device: RpcDevice,
 ) -> None:
     """Test get_storage_list() restarts when the storage changes while paginating."""
-    new_item = {**STORAGE_VIDEO_ITEM, "media_id": "video-2"}
+    new_item: ShellyStorageItem = {**STORAGE_VIDEO_ITEM, "media_id": "video-2"}
     rpc_device.call_rpc_multiple.side_effect = [
         [_storage_page([STORAGE_VIDEO_ITEM], 2)],
         # a new recording appeared, shifting all offsets by one
