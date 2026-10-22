@@ -31,11 +31,18 @@ class ShellyMedia(TypedDict, total=False):
     """Shelly media item from Media.List."""
 
     id: int
-    title: str
+    filename: str
+    preview: str
+    track: int
     artist: str
     album: str
-    filename: str
+    year: int
+    duration: int
+    title: str
+    size: int
+    index: int
     type: str
+    valid: bool
 
 
 class ShellyRadioStation(TypedDict, total=False):
