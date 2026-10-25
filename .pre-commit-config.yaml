@@ -5,7 +5,7 @@ repos:
       - id: pyupgrade
         args: ["--py312-plus"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.0
+    rev: v0.17.1
     hooks:
       - id: ruff
         args:
@@ -52,6 +52,6 @@ repos:
       - id: prettier
         stages: [manual]
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.87
+    rev: v0.0.90
     hooks:
       - id: ty
