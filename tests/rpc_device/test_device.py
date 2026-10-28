@@ -1,5 +1,6 @@
 """Tests for rpc_device.device module."""
 
+import asyncio
 import re
 from collections.abc import AsyncGenerator
 from http import HTTPStatus
@@ -39,6 +40,39 @@ VIRT_COMP_CONFIG = {
     "meta": {"ui": {"view": "slider", "unit": "%", "step": 1}},
 }
 VIRT_COMP_ATTRS = {"role": "current_humidity"}
+BLU_TRV_STATUS = {
+    "id": 200,
+    "target_C": 21.0,
+    "current_C": 21.1,
+    "pos": 2,
+    "connected": True,
+    "rssi": -59,
+    "battery": 100,
+    "packet_id": 14,
+    "last_updated_ts": 1793107660,
+    "key": False,
+    "paired": True,
+    "rpc": True,
+    "rsv": 41,
+    "fw_ver": "v1.5.0",
+}
+BLU_TRV_REMOTE_STATUS = {
+    "v": 5,
+    "ts": 1793107720,
+    "status": {
+        "sys": {"unixtime": 1793107719, "uptime": 166653, "state_rev": 42},
+        "temperature:0": {"id": 0, "tC": 22.16, "tF": 71.89, "errors": []},
+        "trv:0": {
+            "id": 0,
+            "pos": 3,
+            "steps": 46130,
+            "current_C": 21.17,
+            "target_C": 21.5,
+            "schedule_rev": 0,
+            "errors": [],
+        },
+    },
+}
 WEBSOCKET_URL = "ws://10.10.10.10:8123/api/shelly/ws"
 
 
@@ -963,6 +997,148 @@ async def test_on_notification_notify_status(rpc_device: RpcDevice) -> None:
     assert rpc_device._update_listener.call_count == 1
     assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.STATUS
     assert rpc_device.status == {"sys": {}, "test": True}
+
+
+@pytest.mark.asyncio
+async def test_on_notification_blutrv_rsv_changed(rpc_device: RpcDevice) -> None:
+    """Test a BLU TRV status refresh when its rsv changes."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+    rpc_device._status = {
+        "sys": {},
+        "blutrv:200": {**BLU_TRV_STATUS, "errors": ["not_calibrated"]},
+    }
+    rpc_device.call_rpc_multiple.return_value = [BLU_TRV_REMOTE_STATUS]
+
+    rpc_device._on_notification(
+        RPCSource.CLIENT, "NotifyStatus", {"blutrv:200": {"pos": 3, "rsv": 42}}
+    )
+    await asyncio.gather(*list(rpc_device._blutrv_refresh_tasks))
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0] == (
+        ("BluTrv.GetRemoteStatus", {"id": 200}),
+    )
+    assert rpc_device.status["blutrv:200"] == {
+        **BLU_TRV_STATUS,
+        "current_C": 21.2,
+        "target_C": 21.5,
+        "pos": 3,
+        "rsv": 42,
+        "errors": ["not_calibrated"],
+    }
+    assert rpc_device._update_listener.call_count == 2
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.STATUS
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"blutrv:200": {"pos": 3, "rsv": 41}},
+        {"blutrv:200": {"pos": 3}},
+        {"blutrv:201": {"pos": 3, "rsv": 42}},
+    ],
+)
+@pytest.mark.asyncio
+async def test_on_notification_blutrv_no_refresh(
+    rpc_device: RpcDevice, params: dict[str, Any]
+) -> None:
+    """Test no BLU TRV refresh for an unchanged rsv, no rsv or an unknown TRV."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+    rpc_device._status = {"sys": {}, "blutrv:200": {**BLU_TRV_STATUS}}
+
+    rpc_device._on_notification(RPCSource.CLIENT, "NotifyStatus", params)
+
+    assert not rpc_device._blutrv_refresh_tasks
+    assert rpc_device.call_rpc_multiple.call_count == 0
+    assert rpc_device._update_listener.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_on_notification_blutrv_not_initialized(rpc_device: RpcDevice) -> None:
+    """Test no BLU TRV refresh while the device is not initialized."""
+    rpc_device._update_listener = Mock()
+    rpc_device._status = {"sys": {}, "blutrv:200": {**BLU_TRV_STATUS}}
+
+    rpc_device._on_notification(
+        RPCSource.CLIENT, "NotifyStatus", {"blutrv:200": {"pos": 3, "rsv": 42}}
+    )
+
+    assert not rpc_device._blutrv_refresh_tasks
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+
+@pytest.mark.parametrize(
+    "side_effect", [DeviceConnectionError, RpcCallError(404), [[{"status": {}}]]]
+)
+@pytest.mark.asyncio
+async def test_on_notification_blutrv_refresh_error(
+    rpc_device: RpcDevice, side_effect: Any
+) -> None:
+    """Test a failed BLU TRV refresh keeps the notified status."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+    rpc_device._status = {"sys": {}, "blutrv:200": {**BLU_TRV_STATUS}}
+    rpc_device.call_rpc_multiple.side_effect = side_effect
+
+    rpc_device._on_notification(
+        RPCSource.CLIENT, "NotifyStatus", {"blutrv:200": {"pos": 3, "rsv": 42}}
+    )
+    await asyncio.gather(*list(rpc_device._blutrv_refresh_tasks))
+
+    assert rpc_device.status["blutrv:200"]["pos"] == 3
+    assert rpc_device.status["blutrv:200"]["rsv"] == 42
+    assert rpc_device.status["blutrv:200"]["current_C"] == 21.1
+    assert rpc_device._update_listener.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_on_notification_blutrv_removed_during_refresh(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test a BLU TRV refresh is dropped if the TRV goes during the call."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+    rpc_device._status = {"sys": {}, "blutrv:200": {**BLU_TRV_STATUS}}
+
+    async def remove_trv(*_: Any) -> list[dict[str, Any]]:
+        rpc_device._status = {"sys": {}}
+        return [BLU_TRV_REMOTE_STATUS]
+
+    rpc_device.call_rpc_multiple.side_effect = remove_trv
+
+    rpc_device._on_notification(
+        RPCSource.CLIENT, "NotifyStatus", {"blutrv:200": {"pos": 3, "rsv": 42}}
+    )
+    await asyncio.gather(*list(rpc_device._blutrv_refresh_tasks))
+
+    assert rpc_device.status == {"sys": {}}
+    assert rpc_device._update_listener.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_shutdown_cancels_blutrv_refresh(rpc_device: RpcDevice) -> None:
+    """Test shutdown cancels a pending BLU TRV refresh."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+    rpc_device._status = {"sys": {}, "blutrv:200": {**BLU_TRV_STATUS}}
+
+    async def never_answer(*_: Any) -> None:
+        await asyncio.Event().wait()
+
+    rpc_device.call_rpc_multiple.side_effect = never_answer
+
+    rpc_device._on_notification(
+        RPCSource.CLIENT, "NotifyStatus", {"blutrv:200": {"pos": 3, "rsv": 42}}
+    )
+    (task,) = rpc_device._blutrv_refresh_tasks
+    await asyncio.sleep(0)
+    await rpc_device.shutdown()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert rpc_device._update_listener is None
 
 
 @pytest.mark.asyncio

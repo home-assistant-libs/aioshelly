@@ -120,6 +120,7 @@ class RpcDevice:
         self._event: dict[str, Any] | None = None
         self._config: dict[str, Any] | None = None
         self._dynamic_components: list[dict[str, Any]] = []
+        self._blutrv_refresh_tasks: set[asyncio.Task] = set()
 
         # Create or use provided RPC client
         if rpc is not None:
@@ -208,6 +209,7 @@ class RpcDevice:
                 self._status = params
                 update_type = RpcUpdateType.STATUS
             elif method == "NotifyStatus" and self._status is not None:
+                self._refresh_changed_blutrvs(params)
                 mergedicts(self._status, params)
                 update_type = RpcUpdateType.STATUS
             elif method == "NotifyEvent":
@@ -229,6 +231,59 @@ class RpcDevice:
         # as it may be in the process of initializing.
         if self.initialized:
             self._update_listener(self, update_type)
+
+    def _refresh_changed_blutrvs(self, params: dict[str, Any]) -> None:
+        """Refresh BLU TRVs whose state revision has changed.
+
+        The gateway doesn't notify every change to a BLU TRV's
+        current_C, target_C and pos, but the TRV's rsv changes whenever
+        its state does, so read the TRV's state when rsv changes.
+        """
+        if not self.initialized or self._status is None:
+            return
+
+        for key, value in params.items():
+            if not key.startswith(f"{BLU_TRV_IDENTIFIER}:") or not isinstance(
+                value, dict
+            ):
+                continue
+            if (old := self._status.get(key)) is None:
+                continue
+            if (rsv := value.get("rsv")) is None or rsv == old.get("rsv"):
+                continue
+            task = asyncio.create_task(self._refresh_blutrv(key))
+            self._blutrv_refresh_tasks.add(task)
+            task.add_done_callback(self._blutrv_refresh_tasks.discard)
+
+    async def _refresh_blutrv(self, key: str) -> None:
+        """Read a BLU TRV's state from the gateway.
+
+        BluTrv.GetRemoteStatus is used rather than BluTrv.GetStatus, because
+        the gateway's own status can lag the TRV's state for a while after
+        rsv changes.
+        """
+        try:
+            result = await self.call_rpc(
+                "BluTrv.GetRemoteStatus", {"id": int(key.split(":")[1])}
+            )
+            trv = result["status"]["trv:0"]
+        except (ShellyError, KeyError) as err:
+            _LOGGER.debug(
+                "%s: error refreshing %s: %r", self._device_info_str(), key, err
+            )
+            return
+
+        if self._status is None or key not in self._status:
+            return
+
+        status = self._status[key]
+        if (current := trv.get("current_C")) is not None:
+            # the gateway's own status has current_C to one decimal place
+            status["current_C"] = round(current, 1)
+        status.update({k: trv[k] for k in ("target_C", "pos") if k in trv})
+
+        if self._update_listener and self.initialized:
+            self._update_listener(self, RpcUpdateType.STATUS)
 
     @property
     def ip_address(self) -> str:
@@ -308,6 +363,8 @@ class RpcDevice:
         """
         _LOGGER.debug("%s: RPC device shutdown", self._device_info_str())
         self._update_listener = None
+        for task in self._blutrv_refresh_tasks:
+            task.cancel()
         await self._disconnect_websocket()
 
     async def _disconnect_websocket(self) -> None:
