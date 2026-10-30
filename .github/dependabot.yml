@@ -1,6 +1,15 @@
 version: 2
 enable-beta-ecosystems: true  # Required to use the pre-commit ecosystems
 
+# Keep tools pinned in both pyproject.toml and .pre-commit-config.yaml in sync
+multi-ecosystem-groups:
+  ruff:
+    schedule:
+      interval: "weekly"
+  ty:
+    schedule:
+      interval: "weekly"
+
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -21,3 +30,26 @@ updates:
     groups:
       pre-commit:
         patterns: ["*"]
+        exclude-patterns:
+          - "*/astral-sh/ruff-pre-commit"
+          - "*/astral-sh/ty-pre-commit"
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    patterns: ["ruff"]
+    multi-ecosystem-group: "ruff"
+
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    patterns: ["*/astral-sh/ruff-pre-commit"]
+    multi-ecosystem-group: "ruff"
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    patterns: ["ty"]
+    multi-ecosystem-group: "ty"
+
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    patterns: ["*/astral-sh/ty-pre-commit"]
+    multi-ecosystem-group: "ty"
