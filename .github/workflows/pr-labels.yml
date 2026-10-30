@@ -9,9 +9,13 @@ on:
       - synchronize
   workflow_call:
 
+permissions: {}
+
 jobs:
   pr_labels:
     name: Verify
+    permissions:
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - name: Verify PR has a valid label
