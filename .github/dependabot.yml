@@ -6,7 +6,7 @@ multi-ecosystem-groups:
   ruff:
     schedule:
       interval: "weekly"
-  ty:
+  ty-checker:
     schedule:
       interval: "weekly"
 
@@ -47,9 +47,9 @@ updates:
   - package-ecosystem: "uv"
     directory: "/"
     patterns: ["ty"]
-    multi-ecosystem-group: "ty"
+    multi-ecosystem-group: "ty-checker"
 
   - package-ecosystem: "pre-commit"
     directory: "/"
     patterns: ["*/astral-sh/ty-pre-commit"]
-    multi-ecosystem-group: "ty"
+    multi-ecosystem-group: "ty-checker"
