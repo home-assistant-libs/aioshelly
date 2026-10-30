@@ -56,6 +56,8 @@ from .models import (
     ShellyRadioStation,
     ShellyScript,
     ShellyScriptCode,
+    ShellyUiConfig,
+    ShellyUiSetConfig,
     ShellyWiFiNetwork,
     ShellyWiFiSetConfig,
     ShellyWsConfig,
@@ -988,6 +990,36 @@ class RpcDevice:
     async def ws_getconfig(self) -> ShellyWsConfig:
         """Get the outbound websocket config."""
         return cast(ShellyWsConfig, await self.call_rpc("Ws.GetConfig"))
+
+    async def plugs_ui_setconfig(self, config: ShellyUiConfig) -> ShellyUiSetConfig:
+        """Set the plug UI (LEDs and controls) config with PLUGS_UI.SetConfig.
+
+        The device merges the given config, so only changed keys must be passed.
+        """
+        return cast(
+            ShellyUiSetConfig,
+            await self.call_rpc("PLUGS_UI.SetConfig", {"config": config}),
+        )
+
+    async def plugs_ui_getconfig(self) -> ShellyUiConfig:
+        """Get the plug UI (LEDs and controls) config with PLUGS_UI.GetConfig."""
+        return cast(ShellyUiConfig, await self.call_rpc("PLUGS_UI.GetConfig"))
+
+    async def powerstrip_ui_setconfig(
+        self, config: ShellyUiConfig
+    ) -> ShellyUiSetConfig:
+        """Set the power strip UI config with POWERSTRIP_UI.SetConfig.
+
+        The device merges the given config, so only changed keys must be passed.
+        """
+        return cast(
+            ShellyUiSetConfig,
+            await self.call_rpc("POWERSTRIP_UI.SetConfig", {"config": config}),
+        )
+
+    async def powerstrip_ui_getconfig(self) -> ShellyUiConfig:
+        """Get the power strip UI config with POWERSTRIP_UI.GetConfig."""
+        return cast(ShellyUiConfig, await self.call_rpc("POWERSTRIP_UI.GetConfig"))
 
     async def update_outbound_websocket(self, server: str) -> bool:
         """Update the outbound websocket (if needed).
