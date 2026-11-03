@@ -682,6 +682,104 @@ async def test_ble_setconfig(rpc_device: RpcDevice) -> None:
     }
 
 
+UI_CONFIG = {
+    "leds": {
+        "mode": "power",
+        "colors": {
+            "switch:0": {
+                "on": {"rgb": [0.0, 100.0, 0.0], "brightness": 100.0},
+                "off": {"rgb": [100.0, 0.0, 0.0], "brightness": 100.0},
+            },
+            "power": {"brightness": 100.0},
+        },
+        "night_mode": {"enable": False, "brightness": 100.0, "active_between": []},
+    },
+    "controls": {"switch:0": {"in_mode": "momentary"}},
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "rpc_method"),
+    [
+        ("plugs_ui_getconfig", "PLUGS_UI.GetConfig"),
+        ("powerstrip_ui_getconfig", "POWERSTRIP_UI.GetConfig"),
+    ],
+)
+async def test_ui_getconfig(
+    rpc_device: RpcDevice, method: str, rpc_method: str
+) -> None:
+    """Test RpcDevice plugs_ui_getconfig and powerstrip_ui_getconfig methods."""
+    rpc_device.call_rpc_multiple.return_value = [UI_CONFIG]
+
+    result = await getattr(rpc_device, method)()
+
+    assert result == UI_CONFIG
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "rpc_method"),
+    [
+        ("plugs_ui_setconfig", "PLUGS_UI.SetConfig"),
+        ("powerstrip_ui_setconfig", "POWERSTRIP_UI.SetConfig"),
+    ],
+)
+async def test_ui_setconfig(
+    rpc_device: RpcDevice, method: str, rpc_method: str
+) -> None:
+    """Test RpcDevice plugs_ui_setconfig and powerstrip_ui_setconfig methods."""
+    rpc_device.call_rpc_multiple.return_value = [{"restart_required": False}]
+    config = {
+        "leds": {
+            "mode": "switch",
+            "colors": {"switch:0": {"on": {"rgb": [0, 0, 100], "brightness": 50}}},
+        }
+    }
+
+    result = await getattr(rpc_device, method)(config)
+
+    assert result == {"restart_required": False}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"config": config}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "key", "rpc_method"),
+    [
+        ("update_plugs_ui_config", "plugs_ui", "PLUGS_UI.GetConfig"),
+        ("update_powerstrip_ui_config", "powerstrip_ui", "POWERSTRIP_UI.GetConfig"),
+    ],
+)
+async def test_update_ui_config(
+    rpc_device: RpcDevice, method: str, key: str, rpc_method: str
+) -> None:
+    """Test RpcDevice update_plugs_ui_config and update_powerstrip_ui_config."""
+    rpc_device.call_rpc_multiple.return_value = [UI_CONFIG]
+
+    # no config, do not try to update UI config
+    await getattr(rpc_device, method)()
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    # UI config not found in config
+    rpc_device._config = {"sys": {}}
+    await getattr(rpc_device, method)()
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    # UI config found in config and updated
+    rpc_device._config = {"sys": {}, key: {"leds": {"mode": "switch"}}}
+    await getattr(rpc_device, method)()
+
+    assert rpc_device.config[key] == UI_CONFIG
+    assert rpc_device.config["sys"] == {}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+
+
 @pytest.mark.asyncio
 async def test_wifi_setconfig(rpc_device: RpcDevice) -> None:
     """Test RpcDevice wifi_setconfig method."""

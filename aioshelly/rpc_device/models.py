@@ -101,3 +101,60 @@ class ShellyWsSetConfig(TypedDict, total=False):
     """Shelly Outbound Websocket Set Config."""
 
     restart_required: bool
+
+
+class ShellyUiLedColor(TypedDict, total=False):
+    """Shelly UI LED Color."""
+
+    rgb: list[float] | None
+    brightness: float
+
+
+class ShellyUiSwitchLedColors(TypedDict, total=False):
+    """Shelly UI Switch LED Colors."""
+
+    on: ShellyUiLedColor
+    off: ShellyUiLedColor
+
+
+# Functional syntax is needed as "switch:0" is not a valid identifier
+ShellyUiLedColors = TypedDict(
+    "ShellyUiLedColors",
+    {"switch:0": ShellyUiSwitchLedColors, "power": ShellyUiLedColor},
+    total=False,
+)
+
+
+class ShellyUiNightMode(TypedDict, total=False):
+    """Shelly UI Night Mode."""
+
+    enable: bool
+    brightness: float
+    active_between: list[str]
+
+
+class ShellyUiLeds(TypedDict, total=False):
+    """Shelly UI LEDs."""
+
+    mode: str
+    colors: ShellyUiLedColors
+    night_mode: ShellyUiNightMode
+
+
+class ShellyUiControl(TypedDict, total=False):
+    """Shelly UI Control."""
+
+    in_mode: str
+
+
+class ShellyUiConfig(TypedDict, total=False):
+    """Shelly PLUGS_UI/POWERSTRIP_UI Config."""
+
+    leds: ShellyUiLeds
+    controls: dict[str, ShellyUiControl]
+
+
+class ShellyUiSetConfig(TypedDict, total=False):
+    """Shelly PLUGS_UI/POWERSTRIP_UI Set Config."""
+
+    restart_required: bool
