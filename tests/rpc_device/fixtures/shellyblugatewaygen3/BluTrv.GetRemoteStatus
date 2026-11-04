@@ -1,0 +1,29 @@
+{
+    "v": 12,
+    "ts": 1739221213,
+    "status": {
+        "sys": {
+            "time": "21:30",
+            "unixtime": 1739221213,
+            "offset": 3600,
+            "uptime": 134880,
+            "cfg_rev": 8,
+            "state_rev": 12
+        },
+        "temperature:0": {
+            "id": 0,
+            "tC": 18.82,
+            "tF": 65.87,
+            "errors": ["disabled"]
+        },
+        "trv:0": {
+            "id": 0,
+            "pos": 0,
+            "steps": 268543,
+            "current_C": 21.0,
+            "target_C": 19.0,
+            "schedule_rev": 0,
+            "errors": ["ext_temp_missing"]
+        }
+    }
+}
