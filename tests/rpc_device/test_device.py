@@ -781,6 +781,88 @@ async def test_update_ui_config(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "rpc_method"),
+    [
+        ("switch_getconfig", "Switch.GetConfig"),
+        ("cover_getconfig", "Cover.GetConfig"),
+    ],
+)
+async def test_component_getconfig(
+    rpc_device: RpcDevice, method: str, rpc_method: str
+) -> None:
+    """Test RpcDevice switch_getconfig and cover_getconfig methods."""
+    rpc_device.call_rpc_multiple.return_value = [{"id": 1, "in_locked": True}]
+
+    result = await getattr(rpc_device, method)(1)
+
+    assert result == {"id": 1, "in_locked": True}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 1}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "rpc_method"),
+    [
+        ("switch_setconfig", "Switch.SetConfig"),
+        ("cover_setconfig", "Cover.SetConfig"),
+    ],
+)
+@pytest.mark.parametrize("restart_required", [False, True])
+async def test_component_setconfig(
+    rpc_device: RpcDevice, method: str, rpc_method: str, restart_required: bool
+) -> None:
+    """Test RpcDevice switch_setconfig and cover_setconfig methods."""
+    rpc_device.call_rpc_multiple.return_value = [{"restart_required": restart_required}]
+
+    result = await getattr(rpc_device, method)(1, {"in_locked": True})
+
+    assert result == {"restart_required": restart_required}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "id": 1,
+        "config": {"in_locked": True},
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "key", "rpc_method"),
+    [
+        ("update_switch_config", "switch:1", "Switch.GetConfig"),
+        ("update_cover_config", "cover:1", "Cover.GetConfig"),
+    ],
+)
+async def test_update_component_config(
+    rpc_device: RpcDevice, method: str, key: str, rpc_method: str
+) -> None:
+    """Test RpcDevice update_switch_config and update_cover_config."""
+    rpc_device.call_rpc_multiple.return_value = [{"id": 1, "in_locked": True}]
+
+    # no config, do not try to update the component config
+    await getattr(rpc_device, method)(1)
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    # component not found in config
+    rpc_device._config = {"sys": {}}
+    await getattr(rpc_device, method)(1)
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    # component found in config and updated
+    rpc_device._config = {"sys": {}, key: {"id": 1, "name": None, "in_locked": False}}
+    await getattr(rpc_device, method)(1)
+
+    assert rpc_device.config[key] == {"id": 1, "name": None, "in_locked": True}
+    assert rpc_device.config["sys"] == {}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 1}
+
+
+@pytest.mark.asyncio
 async def test_wifi_setconfig(rpc_device: RpcDevice) -> None:
     """Test RpcDevice wifi_setconfig method."""
     await rpc_device.wifi_setconfig(ap_enable=False)
