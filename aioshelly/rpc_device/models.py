@@ -119,6 +119,7 @@ class ShellyCoverSlat(TypedDict, total=False):
 class ShellyCoverConfig(TypedDict, total=False):
     """Shelly Cover Config."""
 
+    id: int
     name: str | None
     motor: ShellyCoverMotor
     maxtime_open: float
@@ -154,6 +155,7 @@ class ShellySwitchCounts(TypedDict, total=False):
 class ShellySwitchConfig(TypedDict, total=False):
     """Shelly Switch Config."""
 
+    id: int
     name: str | None
     in_mode: str
     in_locked: bool
@@ -162,6 +164,8 @@ class ShellySwitchConfig(TypedDict, total=False):
     auto_on_delay: float
     auto_off: bool
     auto_off_delay: float
+    power_restore_delay_enable: bool
+    power_restore_delay: int | None
     autorecover_voltage_errors: bool
     input_id: int
     power_limit: float | None
