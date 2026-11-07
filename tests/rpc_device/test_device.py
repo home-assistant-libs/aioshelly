@@ -781,6 +781,78 @@ async def test_update_ui_config(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("key", "rpc_method", "params"),
+    [
+        ("switch:1", "Switch.GetConfig", {"id": 1}),
+        ("cover:0", "Cover.GetConfig", {"id": 0}),
+        ("plugs_ui", "PLUGS_UI.GetConfig", None),
+        ("powerstrip_ui", "POWERSTRIP_UI.GetConfig", None),
+    ],
+)
+async def test_update_component_config_rpc_call(
+    rpc_device: RpcDevice, key: str, rpc_method: str, params: dict[str, Any] | None
+) -> None:
+    """Test RpcDevice update_component_config calls the component namespace."""
+    rpc_device._config = {key: {}}
+    rpc_device.call_rpc_multiple.return_value = [{}]
+
+    await rpc_device.update_component_config(key)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0] == (rpc_method, params)
+
+
+@pytest.mark.asyncio
+async def test_update_component_config(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice update_component_config merges and returns changed keys."""
+    rpc_device._config = {
+        "sys": {"device": {"name": "Test"}},
+        "switch:0": {"id": 0, "name": "Old", "in_locked": False, "extra": 1},
+        "switch:1": {"id": 1, "name": "Other", "in_locked": False},
+    }
+    rpc_device.call_rpc_multiple.return_value = [
+        {"id": 0, "name": "New", "in_locked": True, "auto_on": False}
+    ]
+
+    changed = await rpc_device.update_component_config("switch:0")
+
+    # new keys and keys whose value changed are reported
+    assert changed == {"name", "in_locked", "auto_on"}
+    # existing keys not returned by the device are kept
+    assert rpc_device.config["switch:0"] == {
+        "id": 0,
+        "name": "New",
+        "in_locked": True,
+        "extra": 1,
+        "auto_on": False,
+    }
+    # other components are not touched
+    assert rpc_device.config["switch:1"] == {
+        "id": 1,
+        "name": "Other",
+        "in_locked": False,
+    }
+    assert rpc_device.config["sys"] == {"device": {"name": "Test"}}
+
+    # same config again, nothing changed
+    assert await rpc_device.update_component_config("switch:0") == set()
+
+
+@pytest.mark.asyncio
+async def test_update_component_config_not_in_config(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice update_component_config when the component is missing."""
+    # no config, do not try to update the component config
+    assert await rpc_device.update_component_config("switch:0") == set()
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+    # component not found in config
+    rpc_device._config = {"sys": {}}
+    assert await rpc_device.update_component_config("switch:0") == set()
+    assert rpc_device.call_rpc_multiple.call_count == 0
+
+
+@pytest.mark.asyncio
 async def test_wifi_setconfig(rpc_device: RpcDevice) -> None:
     """Test RpcDevice wifi_setconfig method."""
     await rpc_device.wifi_setconfig(ap_enable=False)

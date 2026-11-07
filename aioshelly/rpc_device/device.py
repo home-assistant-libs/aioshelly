@@ -76,6 +76,14 @@ SCRIPT_SUPPORT_METHODS = {
     "Script.Stop",
 }
 
+# RPC namespaces that don't follow the capitalized component name convention
+# (for example "switch" -> "Switch"). Namespaces with internal capitals
+# (for example "EM1Data") must be added here as well.
+RPC_CONFIG_NAMESPACE_OVERRIDES = {
+    "plugs_ui": "PLUGS_UI",
+    "powerstrip_ui": "POWERSTRIP_UI",
+}
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -1044,6 +1052,36 @@ class RpcDevice:
 
         ui_config = await self.powerstrip_ui_getconfig()
         self._config["powerstrip_ui"].update(ui_config)
+
+    async def update_component_config(self, key: str) -> set[str]:
+        """Update the config of a single component.
+
+        Fetch the config of the component (for example "switch:0" or
+        "plugs_ui") with `<Namespace>.GetConfig` and merge it into the
+        device config. Only this component is touched, so data merged
+        into the device config from other sources (for example dynamic
+        components) is kept.
+
+        Returns the config keys whose value changed. Returns an empty set
+        if the component is not in the current config.
+        """
+        if self._config is None or key not in self._config:
+            return set()
+
+        component, _, id_ = key.partition(":")
+        namespace = RPC_CONFIG_NAMESPACE_OVERRIDES.get(
+            component, component.capitalize()
+        )
+        config: dict[str, Any] = await self.call_rpc(
+            f"{namespace}.GetConfig", {"id": int(id_)} if id_ else None
+        )
+
+        # No await below, compare and merge happen in one step so the
+        # cached config can not change in between
+        current = self._config[key]
+        changed = {k for k, v in config.items() if current.get(k) != v}
+        current.update(config)
+        return changed
 
     async def update_outbound_websocket(self, server: str) -> bool:
         """Update the outbound websocket (if needed).
