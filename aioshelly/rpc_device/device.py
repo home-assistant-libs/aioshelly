@@ -1085,32 +1085,6 @@ class RpcDevice:
             ShellyCoverConfig, await self.call_rpc("Cover.GetConfig", {"id": id_})
         )
 
-    async def update_switch_config(self, id_: int) -> None:
-        """Update switch config.
-
-        This method will update only the config of the specified switch
-        component in the device config if it exists in the current config.
-        """
-        key = f"switch:{id_}"
-        if self._config is None or key not in self._config:
-            return
-
-        switch_config = await self.switch_getconfig(id_)
-        self._config[key].update(switch_config)
-
-    async def update_cover_config(self, id_: int) -> None:
-        """Update cover config.
-
-        This method will update only the config of the specified cover
-        component in the device config if it exists in the current config.
-        """
-        key = f"cover:{id_}"
-        if self._config is None or key not in self._config:
-            return
-
-        cover_config = await self.cover_getconfig(id_)
-        self._config[key].update(cover_config)
-
     async def update_outbound_websocket(self, server: str) -> bool:
         """Update the outbound websocket (if needed).
 
