@@ -2926,3 +2926,30 @@ async def test_camera_get_image_read_error(
 
     with pytest.raises(DeviceConnectionError):
         await rpc_device.camera_get_image(0)
+
+
+@pytest.mark.asyncio
+async def test_fan_set(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice fan_set() method."""
+    await rpc_device.fan_set(0, "manual", on=True, speed=60)
+    await rpc_device.fan_set(0, "manual", on=False)
+    await rpc_device.fan_set(1, "auto")
+
+    assert rpc_device.call_rpc_multiple.call_count == 3
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+
+    assert call_args_list[0][0][0][0][0] == "Fan.Set"
+    assert call_args_list[0][0][0][0][1] == {
+        "id": 0,
+        "mode": "manual",
+        "on": True,
+        "speed": 60,
+    }
+
+    assert call_args_list[1][0][0][0][0] == "Fan.Set"
+    assert call_args_list[1][0][0][0][1] == {"id": 0, "mode": "manual", "on": False}
+
+    assert call_args_list[2][0][0][0][0] == "Fan.Set"
+    assert call_args_list[2][0][0][0][1] == {"id": 1, "mode": "auto"}
