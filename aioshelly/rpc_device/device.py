@@ -51,11 +51,15 @@ from .blerpc import BleRPC
 from .models import (
     ShellyBLEConfig,
     ShellyBLESetConfig,
+    ShellyCoverConfig,
+    ShellyCoverSetConfig,
     ShellyLedStripEffect,
     ShellyMedia,
     ShellyRadioStation,
     ShellyScript,
     ShellyScriptCode,
+    ShellySwitchConfig,
+    ShellySwitchSetConfig,
     ShellyUiConfig,
     ShellyUiSetConfig,
     ShellyWiFiNetwork,
@@ -1052,6 +1056,42 @@ class RpcDevice:
 
         ui_config = await self.powerstrip_ui_getconfig()
         self._config["powerstrip_ui"].update(ui_config)
+
+    async def switch_setconfig(
+        self, id_: int, config: ShellySwitchConfig
+    ) -> ShellySwitchSetConfig:
+        """Set the switch component config with Switch.SetConfig.
+
+        The device merges the given config, so only changed keys must be passed.
+        """
+        return cast(
+            ShellySwitchSetConfig,
+            await self.call_rpc("Switch.SetConfig", {"id": id_, "config": config}),
+        )
+
+    async def switch_getconfig(self, id_: int) -> ShellySwitchConfig:
+        """Get the switch component config with Switch.GetConfig."""
+        return cast(
+            ShellySwitchConfig, await self.call_rpc("Switch.GetConfig", {"id": id_})
+        )
+
+    async def cover_setconfig(
+        self, id_: int, config: ShellyCoverConfig
+    ) -> ShellyCoverSetConfig:
+        """Set the cover component config with Cover.SetConfig.
+
+        The device merges the given config, so only changed keys must be passed.
+        """
+        return cast(
+            ShellyCoverSetConfig,
+            await self.call_rpc("Cover.SetConfig", {"id": id_, "config": config}),
+        )
+
+    async def cover_getconfig(self, id_: int) -> ShellyCoverConfig:
+        """Get the cover component config with Cover.GetConfig."""
+        return cast(
+            ShellyCoverConfig, await self.call_rpc("Cover.GetConfig", {"id": id_})
+        )
 
     async def update_component_config(self, key: str) -> set[str]:
         """Update the config of a single component.
