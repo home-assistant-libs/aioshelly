@@ -669,6 +669,25 @@ class RpcDevice:
         params = {"on": value}
         await self.call_rpc("Ui.Screen.Set", params)
 
+    async def fan_set(
+        self,
+        id_: int,
+        mode: str,
+        on: bool | None = None,
+        speed: int | None = None,
+    ) -> None:
+        """Set parameters for the Fan component.
+
+        `mode` is "manual" or "auto".
+        `on` required for "manual" mode, should not be set for "auto" mode.
+        """
+        params: dict[str, Any] = {"id": id_, "mode": mode}
+        if on is not None:
+            params["on"] = on
+        if speed is not None:
+            params["speed"] = speed
+        await self.call_rpc("Fan.Set", params=params)
+
     async def kvs_get(self, key: str) -> dict[str, Any]:
         """Get value from KVS."""
         params = {"key": key}
