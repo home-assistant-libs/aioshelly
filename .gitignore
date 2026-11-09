@@ -99,3 +99,6 @@ virtualization/vagrant/config
 
 # Typing
 .mypy_cache
+
+# omc
+.omc/
