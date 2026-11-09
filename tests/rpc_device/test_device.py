@@ -2953,3 +2953,38 @@ async def test_fan_set(
 
     assert call_args_list[2][0][0][0][0] == "Fan.Set"
     assert call_args_list[2][0][0][0][1] == {"id": 1, "mode": "auto"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("speed", "duration"), [(100, 60), (None, None), (50, None), (None, 30)]
+)
+async def test_fan_boost(
+    rpc_device: RpcDevice, speed: int | None, duration: int | None
+) -> None:
+    """Test RpcDevice fan_boost() method."""
+    await rpc_device.fan_boost(0, speed=speed, duration=duration)
+
+    expected_params: dict[str, int] = {"id": 0}
+    if speed is not None:
+        expected_params["speed"] = speed
+    if duration is not None:
+        expected_params["duration"] = duration
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Fan.Boost"
+    assert call_args_list[0][0][0][0][1] == expected_params
+
+
+@pytest.mark.asyncio
+async def test_fan_stop_boost(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice fan_stop_boost() method."""
+    await rpc_device.fan_stop_boost(1)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "Fan.StopBoost"
+    assert call_args_list[0][0][0][0][1] == {"id": 1}

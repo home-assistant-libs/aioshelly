@@ -688,6 +688,26 @@ class RpcDevice:
             params["speed"] = speed
         await self.call_rpc("Fan.Set", params=params)
 
+    async def fan_boost(
+        self,
+        id_: int,
+        speed: int | None = None,
+        duration: int | None = None,
+    ) -> None:
+        """Start boost mode for the Fan component."""
+        params: dict[str, Any] = {"id": id_}
+
+        if speed is not None:
+            params["speed"] = speed
+        if duration is not None:
+            params["duration"] = duration
+
+        await self.call_rpc("Fan.Boost", params=params)
+
+    async def fan_stop_boost(self, id_: int) -> None:
+        """Stop boost mode for the Fan component."""
+        await self.call_rpc("Fan.StopBoost", params={"id": id_})
+
     async def kvs_get(self, key: str) -> dict[str, Any]:
         """Get value from KVS."""
         params = {"key": key}
