@@ -24,6 +24,7 @@ Official documentation for the devices and their APIs:
   added in a change ships with tests in the same change.
 - Comments explain why something is done, not what the code does. Do not restate the code or add
   comments for obvious decisions.
+- Avoid very long docstrings; prefer one-line docstrings and keep them to 3 lines at most.
 
 ## Commands
 
