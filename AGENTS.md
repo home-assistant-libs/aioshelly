@@ -12,6 +12,19 @@ Contribution rule from the README: object hierarchy and property/method names mu
 [Shelly API](https://shelly-api-docs.shelly.cloud/). For example the RPC method `Switch.SetConfig`
 is exposed as `RpcDevice.switch_setconfig`.
 
+Official documentation for the devices and their APIs:
+
+- Gen1 devices (Block/CoAP, `block_device/`): https://shelly-api-docs.shelly.cloud/gen1/#shelly-family-overview
+- Gen2+ devices (RPC, `rpc_device/`): https://shelly-api-docs.shelly.cloud/gen2/
+- BLU devices (Bluetooth, `ble/`): https://shelly-api-docs.shelly.cloud/docs-ble/
+
+## Rules
+
+- New code must be covered by tests. No exceptions: every new function, branch, and error path
+  added in a change ships with tests in the same change.
+- Comments explain why something is done, not what the code does. Do not restate the code or add
+  comments for obvious decisions.
+
 ## Commands
 
 Environment is managed with `uv` (`uv sync --all-groups`, then `uv run prek install` for hooks).
