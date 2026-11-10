@@ -71,30 +71,59 @@ function bleCallback(event, res) {
 // (and thus avoid a flash write) on every transition.
 //
 // Two device quirks shape this dance:
-//   1. BLE.Scanner.stop() is asynchronous - a start() issued in the
+//   1. The scanner stop is asynchronous - a start issued in the
 //      same JS frame races with the still-in-progress stop and
 //      silently fails. Defer start onto a Timer so the underlying BLE
 //      stack has time to settle.
-//   2. BLE.Scanner.subscribe() does NOT survive a stop/start cycle -
+//   2. The scan subscription does NOT survive a stop/start cycle -
 //      the subscription is dropped on stop and must be re-attached
 //      after each start, or no scan results will be delivered.
+//
+// The scanner method casing also differs by device family: gen2+
+// firmware exposes Start/Stop capitalized and subscribe lowercase,
+// while the Android-based Wall Display exposes start/stop lowercase.
+// The wrappers below call whichever variant the device provides.
+function scannerStart(options) {
+  if (typeof BLE.Scanner.start === 'function') {
+    BLE.Scanner.start(options);
+  } else {
+    BLE.Scanner.Start(options);
+  }
+}
+
+function scannerStop() {
+  if (typeof BLE.Scanner.stop === 'function') {
+    BLE.Scanner.stop();
+  } else {
+    BLE.Scanner.Stop();
+  }
+}
+
+function scannerSubscribe(callback) {
+  if (typeof BLE.Scanner.subscribe === 'function') {
+    BLE.Scanner.subscribe(callback);
+  } else {
+    BLE.Scanner.Subscribe(callback);
+  }
+}
+
 let pendingActive = null;
 function applyPendingActive() {
   if (pendingActive === null) {
     return;
   }
-  BLE.Scanner.start({
+  scannerStart({
     duration_ms: -1,
     active: pendingActive,
   });
-  BLE.Scanner.subscribe(bleCallback);
+  scannerSubscribe(bleCallback);
   pendingActive = null;
 }
 
 function setActive(v) {
   pendingActive = v;
   if (BLE.Scanner.isRunning()) {
-    BLE.Scanner.stop();
+    scannerStop();
     Timer.set(250, false, applyPendingActive);
   } else {
     applyPendingActive();
