@@ -25,7 +25,12 @@ from aioshelly.exceptions import (
     RpcCallError,
 )
 from aioshelly.rpc_device.blerpc import BleRPC
-from aioshelly.rpc_device.device import RpcDevice, RpcUpdateType, mergedicts
+from aioshelly.rpc_device.device import (
+    MAX_ITERATIONS,
+    RpcDevice,
+    RpcUpdateType,
+    mergedicts,
+)
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
@@ -934,6 +939,30 @@ async def test_wifi_setconfig_sta(rpc_device: RpcDevice) -> None:
     }
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "expected_sta"),
+    [
+        pytest.param({"sta_enable": False}, {"enable": False}, id="enable_only"),
+        pytest.param(
+            {"sta_ssid": "MyNetwork", "sta_password": "MyPassword"},
+            {"ssid": "MyNetwork", "pass": "MyPassword"},
+            id="ssid_and_password",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_wifi_setconfig_sta_partial(
+    rpc_device: RpcDevice, kwargs: dict[str, Any], expected_sta: dict[str, Any]
+) -> None:
+    """Test RpcDevice wifi_setconfig only sends the STA fields that are set."""
+    await rpc_device.wifi_setconfig(**kwargs)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {
+        "config": {"sta": expected_sta}
+    }
+
+
 @pytest.mark.asyncio
 async def test_wifi_setconfig_ap_and_sta(rpc_device: RpcDevice) -> None:
     """Test RpcDevice wifi_setconfig method with both AP and STA configuration."""
@@ -1208,6 +1237,28 @@ async def test_on_notification_battery_device_online(rpc_device: RpcDevice) -> N
 
 
 @pytest.mark.asyncio
+async def test_on_notification_unknown_without_params(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification method with unknown method and no params."""
+    rpc_device._update_listener = Mock()
+    rpc_device.initialized = True
+
+    rpc_device._on_notification(RPCSource.CLIENT, "NotifyStatus")
+
+    assert rpc_device._update_listener.call_count == 1
+    assert rpc_device._update_listener.call_args[0][1] is RpcUpdateType.UNKNOWN
+
+
+@pytest.mark.asyncio
+async def test_on_notification_not_initialized(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice _on_notification is not forwarded before initialization."""
+    rpc_device._update_listener = Mock()
+
+    rpc_device._on_notification(RPCSource.CLIENT, "NotifyStatus", {"test": True})
+
+    rpc_device._update_listener.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_on_notification_no_listener(rpc_device: RpcDevice) -> None:
     """Test RpcDevice _on_notification without listener."""
     # no listener
@@ -1359,6 +1410,21 @@ async def test_poll(
 
 
 @pytest.mark.asyncio
+async def test_poll_without_dynamic_components(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice poll method without dynamic components."""
+    rpc_device._status = {"lorem": "ipsum"}
+    rpc_device.call_rpc_multiple.return_value = [{"sys": {"uptime": 1}}]
+
+    await rpc_device.poll()
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0] == [("Shelly.GetStatus", None)]
+    assert rpc_device.status == {"lorem": "ipsum", "sys": {"uptime": 1}}
+
+
+@pytest.mark.asyncio
 async def test_poll_not_initialized(
     rpc_device: RpcDevice,
 ) -> None:
@@ -1453,6 +1519,20 @@ async def test_incorrect_shutdown(
     await rpc_device1.shutdown()
 
     assert "error during shutdown: KeyError('AABBCCDDEEFF')" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_shutdown_ble_device(ws_context: WsServer) -> None:
+    """Test shutdown of a BLE device, which has no WebSocket subscription."""
+    ble_device = MagicMock(spec=BLEDevice)
+    ble_device.address = "AA:BB:CC:DD:EE:FF"
+    options = ConnectionOptions(ble_device=ble_device)
+    ble_rpc = Mock(spec=BleRPC)
+    rpc_device = RpcDevice(ws_context, None, options, rpc=ble_rpc)
+
+    await rpc_device.shutdown()
+
+    ble_rpc.disconnect.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -2783,6 +2863,22 @@ async def test_ledstrip_list_effects_paginated(
     assert call_args_list[0][0][0][0][1] == {"offset": 0}
     assert call_args_list[1][0][0][0][0] == "LedStrip.ListAllEffects"
     assert call_args_list[1][0][0][0][1] == {"offset": 2}
+
+
+@pytest.mark.asyncio
+async def test_ledstrip_list_effects_max_iterations(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice ledstrip_list_effects() stops after MAX_ITERATIONS pages."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [{"effects": [{"key": f"effect{i}", "name": f"Effect {i}"}], "total": 100}]
+        for i in range(MAX_ITERATIONS)
+    ]
+
+    result = await rpc_device.ledstrip_list_effects()
+
+    assert len(result) == MAX_ITERATIONS
+    assert rpc_device.call_rpc_multiple.call_count == MAX_ITERATIONS
 
 
 @pytest.mark.asyncio
