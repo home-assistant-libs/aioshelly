@@ -81,7 +81,9 @@ class BleRPC:
         _LOGGER.debug("Connecting to Shelly device at %s via BLE", address)
 
         # Retry once if characteristics are missing (cache issue)
-        for attempt in range(MAX_CONNECTION_RETRIES):
+        attempt = 0
+        while True:
+            attempt += 1
             try:
                 # Establish connection with retry support
                 self._client = await establish_connection(
@@ -99,7 +101,7 @@ class BleRPC:
             try:
                 await self._verify_rpc_service()
             except BleCharacteristicNotFoundError as err:
-                if attempt == 0:
+                if attempt < MAX_CONNECTION_RETRIES:
                     # First attempt: clear cache and retry
                     _LOGGER.debug(
                         "%s: characteristic missing, clearing cache: %s",
