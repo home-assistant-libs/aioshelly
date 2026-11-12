@@ -1403,6 +1403,11 @@ class RpcDevice:
             status = component["status"]
             # if there are no errors, the response does not contain an errors object
             status.setdefault("errors", [])
+            # the boost state is not part of the component status, it is only
+            # reported by the remote status and only while the boost is active
+            remote = await self.call_rpc("BluTrv.GetRemoteStatus", {"id": int(_key[1])})
+            if boost := remote["status"]["trv:0"].get("boost"):
+                status["boost"] = boost
             self._status.update({component["key"]: status})
 
     async def supports_scripts(self) -> bool:
