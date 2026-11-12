@@ -332,7 +332,7 @@ class BlockDevice:
                     event = await self._coap_request(path)
                     await event.wait()
                     return
-        raise TimeoutError
+        raise TimeoutError(f"CoAP cit/{path} timed out after {CIT_RETRIES} retries")
 
     async def _coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
