@@ -4,7 +4,10 @@
     {
       "label": "Pytest tests",
       "type": "shell",
-      "command": "${command:python.interpreterPath}",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
       "args": ["-m", "pytest", "tests/"],
       "group": "test",
       "problemMatcher": []
@@ -12,7 +15,10 @@
     {
       "label": "Pytest tests with coverage",
       "type": "shell",
-      "command": "${command:python.interpreterPath}",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
       "args": [
         "-m",
         "pytest",
