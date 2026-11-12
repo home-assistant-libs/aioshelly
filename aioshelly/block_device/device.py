@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
 from enum import Enum, auto
@@ -267,10 +268,7 @@ class BlockDevice:
                     else blk_index in val["L"]
                 )
             }
-            block = Block.create(self, blk, blk_sensors)
-
-            if block:
-                blocks.append(block)
+            blocks.append(Block.create(self, blk, blk_sensors))
 
         self.blocks = blocks
 
@@ -329,14 +327,12 @@ class BlockDevice:
                 path,
                 retry,
             )
-            try:
+            with contextlib.suppress(TimeoutError):
                 async with asyncio.timeout(DEVICE_IO_TIMEOUT / 4):
                     event = await self._coap_request(path)
                     await event.wait()
                     return
-            except TimeoutError:
-                if retry == CIT_RETRIES - 1:
-                    raise
+        raise TimeoutError(f"CoAP cit/{path} timed out after {CIT_RETRIES} retries")
 
     async def _coap_request(self, path: str) -> asyncio.Event:
         """Device CoAP request."""
