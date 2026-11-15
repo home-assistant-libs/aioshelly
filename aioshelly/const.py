@@ -146,6 +146,7 @@ MODEL_PLUG_PM_G3 = "S3PL-30116EU"
 MODEL_PLUG_S_G3 = "S3PL-00112EU"
 MODEL_PM_MINI_G3 = "S3PM-001PCEU16"
 MODEL_SHUTTER_G3 = "S3SH-0A2P4EU"
+MODEL_X_C = "S3XT-0S"
 MODEL_X_MOD1 = "S3MX-0A"
 # Gen4 RPC based models
 MODEL_1_G4 = "S4SW-001X16EU"
@@ -1257,9 +1258,17 @@ DEVICES = {
         supported=True,
         model_id=0x1039,
     ),
+    MODEL_X_C: ShellyDevice(
+        model=MODEL_X_C,
+        name="Shelly X",
+        min_fw_date=GEN3_MIN_FIRMWARE_DATE,
+        gen=GEN3,
+        supported=True,
+        model_id=0x4001,
+    ),
     MODEL_X_MOD1: ShellyDevice(
         model=MODEL_X_MOD1,
-        name="Shelly X MOD1",
+        name="Shelly X",
         min_fw_date=GEN3_MIN_FIRMWARE_DATE,
         gen=GEN3,
         supported=True,
