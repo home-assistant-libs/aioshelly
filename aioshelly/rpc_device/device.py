@@ -62,6 +62,7 @@ from .models import (
     ShellySwitchSetConfig,
     ShellyUiConfig,
     ShellyUiSetConfig,
+    ShellyWallDisplayUiConfig,
     ShellyWiFiNetwork,
     ShellyWiFiSetConfig,
     ShellyWsConfig,
@@ -1071,6 +1072,22 @@ class RpcDevice:
     async def powerstrip_ui_getconfig(self) -> ShellyUiConfig:
         """Get the power strip UI config with POWERSTRIP_UI.GetConfig."""
         return cast(ShellyUiConfig, await self.call_rpc("POWERSTRIP_UI.GetConfig"))
+
+    async def ui_setconfig(
+        self, config: ShellyWallDisplayUiConfig
+    ) -> ShellyUiSetConfig:
+        """Set the Wall Display UI config with Ui.SetConfig.
+
+        The device merges the given config, so only changed keys must be passed.
+        """
+        return cast(
+            ShellyUiSetConfig,
+            await self.call_rpc("Ui.SetConfig", {"config": config}),
+        )
+
+    async def ui_getconfig(self) -> ShellyWallDisplayUiConfig:
+        """Get the Wall Display UI config with Ui.GetConfig."""
+        return cast(ShellyWallDisplayUiConfig, await self.call_rpc("Ui.GetConfig"))
 
     async def update_plugs_ui_config(self) -> None:
         """Update plug UI config.

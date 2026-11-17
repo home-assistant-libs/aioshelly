@@ -31,6 +31,7 @@ from aioshelly.rpc_device.device import (
     RpcUpdateType,
     mergedicts,
 )
+from aioshelly.rpc_device.models import ShellyWallDisplayUiConfig
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
@@ -749,6 +750,48 @@ async def test_ui_setconfig(
     assert result == {"restart_required": False}
     assert rpc_device.call_rpc_multiple.call_count == 1
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == rpc_method
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"config": config}
+
+
+WALL_DISPLAY_UI_CONFIG = {
+    "lock_type": "none",
+    "disable_gestures_when_locked": False,
+    "use_F": False,
+    "screen_saver": {"enable": False, "timeout": 20, "priority_element": "CLOCK"},
+    "screen_off_when_idle": False,
+    "brightness": {
+        "auto": True,
+        "level": 70,
+        "auto_off": {"enable": False, "by_lux": False},
+    },
+    "relay_state_overlay": {"enable": True, "always_visible": False},
+}
+
+
+@pytest.mark.asyncio
+async def test_wall_display_ui_getconfig(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice ui_getconfig method."""
+    rpc_device.call_rpc_multiple.return_value = [WALL_DISPLAY_UI_CONFIG]
+
+    result = await rpc_device.ui_getconfig()
+
+    assert result == WALL_DISPLAY_UI_CONFIG
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Ui.GetConfig"
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] is None
+
+
+@pytest.mark.asyncio
+async def test_wall_display_ui_setconfig(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice ui_setconfig method."""
+    rpc_device.call_rpc_multiple.return_value = [{"restart_required": False}]
+    config: ShellyWallDisplayUiConfig = {"brightness": {"auto": False, "level": 40}}
+
+    result = await rpc_device.ui_setconfig(config)
+
+    assert result == {"restart_required": False}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    assert rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "Ui.SetConfig"
     assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"config": config}
 
 

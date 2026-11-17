@@ -258,6 +258,60 @@ class ShellyUiConfig(TypedDict, total=False):
 
 
 class ShellyUiSetConfig(TypedDict, total=False):
-    """Shelly PLUGS_UI/POWERSTRIP_UI Set Config."""
+    """Shelly PLUGS_UI/POWERSTRIP_UI/Ui Set Config."""
 
     restart_required: bool
+
+
+class ShellyWallDisplayUiScreenSaver(TypedDict, total=False):
+    """Shelly Wall Display UI Screen Saver."""
+
+    enable: bool
+    timeout: int
+    priority_element: str
+
+
+class ShellyWallDisplayUiBrightnessAutoOff(TypedDict, total=False):
+    """Shelly Wall Display UI Brightness Auto Off."""
+
+    enable: bool
+    by_lux: bool
+    timeout: int
+
+
+class ShellyWallDisplayUiBrightnessAutoDim(TypedDict, total=False):
+    """Shelly Wall Display UI Brightness Auto Dim."""
+
+    enable: bool
+    timeout: int
+
+
+class ShellyWallDisplayUiBrightness(TypedDict, total=False):
+    """Shelly Wall Display UI Brightness.
+
+    `level` is set as 0-100 %, but read as the live 0-255 backlight value.
+    """
+
+    auto: bool
+    level: int
+    auto_off: ShellyWallDisplayUiBrightnessAutoOff
+    auto_dim: ShellyWallDisplayUiBrightnessAutoDim
+
+
+class ShellyWallDisplayUiRelayStateOverlay(TypedDict, total=False):
+    """Shelly Wall Display UI Relay State Overlay."""
+
+    enable: bool
+    always_visible: bool
+
+
+class ShellyWallDisplayUiConfig(TypedDict, total=False):
+    """Shelly Wall Display Ui Config."""
+
+    lock_type: str
+    disable_gestures_when_locked: bool
+    use_F: bool
+    screen_saver: ShellyWallDisplayUiScreenSaver
+    screen_off_when_idle: bool
+    brightness: ShellyWallDisplayUiBrightness
+    relay_state_overlay: ShellyWallDisplayUiRelayStateOverlay
