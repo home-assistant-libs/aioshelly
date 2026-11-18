@@ -23,19 +23,32 @@ from aioshelly.ble.const import (
     BLE_CODE,
     BLE_SCRIPT_NAME,
     VAR_ACTIVE,
+    VAR_ALLOWED_ADDRESSES,
     VAR_EVENT_TYPE,
+    VAR_MIN_INTERVAL_MS,
+    VAR_MIN_RSSI,
     VAR_VERSION,
 )
 from aioshelly.const import DEVICES
 from aioshelly.exceptions import RpcCallError
 
 
-def _build_ble_script_code(active: bool, event_type: str, data_version: int) -> str:
+def _build_ble_script_code(
+    active: bool,
+    event_type: str,
+    data_version: int,
+    allowed_addresses: str = "null",
+    min_rssi: str = "null",
+    min_interval_ms: str = "0",
+) -> str:
     """Build the expected BLE script code for a given configuration."""
     return (
         BLE_CODE.replace(VAR_ACTIVE, "true" if active else "false")
         .replace(VAR_EVENT_TYPE, event_type)
         .replace(VAR_VERSION, str(data_version))
+        .replace(VAR_ALLOWED_ADDRESSES, allowed_addresses)
+        .replace(VAR_MIN_RSSI, min_rssi)
+        .replace(VAR_MIN_INTERVAL_MS, min_interval_ms)
     )
 
 
@@ -317,3 +330,63 @@ async def test_async_start_scanner(
         mock_rpc_device.script_putcode.call_args_list == expected_script_putcode_calls
     )
     assert mock_rpc_device.script_start.call_args_list == expected_script_start_calls
+
+
+@pytest.mark.asyncio
+async def test_async_start_scanner_with_filter(mock_rpc_device: AsyncMock) -> None:
+    """Test the advertisement filter is rendered into the script."""
+    mock_rpc_device.script_list.return_value = [{"name": BLE_SCRIPT_NAME, "id": 3}]
+    mock_rpc_device.script_getcode.return_value = {"data": "old"}
+
+    await async_start_scanner(
+        mock_rpc_device,
+        active=False,
+        event_type="ble.scan_result",
+        data_version=2,
+        allowed_addresses=[
+            "CC:DD:EE:FF:00:11",
+            " aa:bb:cc:dd:ee:ff",
+            "aa:bb:cc:dd:ee:ff",
+        ],
+        min_rssi=-85,
+        min_interval=30,
+    )
+
+    expected = _build_ble_script_code(
+        False,
+        "ble.scan_result",
+        2,
+        allowed_addresses='{"aa:bb:cc:dd:ee:ff":true,"cc:dd:ee:ff:00:11":true}',
+        min_rssi="-85",
+        min_interval_ms="30000",
+    )
+    assert "%" not in expected
+    assert mock_rpc_device.script_putcode.call_args_list == [call(3, expected)]
+    assert mock_rpc_device.script_start.call_args_list == [call(3)]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"allowed_addresses": ["not-an-address"]}, "Invalid Bluetooth address"),
+        ({"min_interval": 30}, "requires allowed_addresses"),
+        (
+            {"allowed_addresses": ["aa:bb:cc:dd:ee:ff"], "min_interval": -1},
+            "must not be negative",
+        ),
+    ],
+)
+async def test_async_start_scanner_invalid_filter(
+    mock_rpc_device: AsyncMock, kwargs: dict[str, Any], match: str
+) -> None:
+    """Test invalid filter options are rejected before touching the device."""
+    with pytest.raises(ValueError, match=match):
+        await async_start_scanner(
+            mock_rpc_device,
+            active=False,
+            event_type="ble.scan_result",
+            data_version=2,
+            **kwargs,
+        )
+    mock_rpc_device.script_list.assert_not_called()
