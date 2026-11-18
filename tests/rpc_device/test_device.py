@@ -758,11 +758,12 @@ WALL_DISPLAY_UI_CONFIG = {
     "disable_gestures_when_locked": False,
     "use_F": False,
     "screen_saver": {"enable": False, "timeout": 20, "priority_element": "CLOCK"},
-    "screen_off_when_idle": False,
     "brightness": {
         "auto": True,
         "level": 70,
-        "auto_off": {"enable": False, "by_lux": False},
+        "min_level": 3,
+        "auto_off": {"enable": False, "by_lux": True, "timeout": 0},
+        "auto_dim": {"enable": True, "timeout": 5},
     },
     "relay_state_overlay": {"enable": True, "always_visible": False},
 }

@@ -287,13 +287,11 @@ class ShellyWallDisplayUiBrightnessAutoDim(TypedDict, total=False):
 
 
 class ShellyWallDisplayUiBrightness(TypedDict, total=False):
-    """Shelly Wall Display UI Brightness.
-
-    `level` is set as 0-100 %, but read as the live 0-255 backlight value.
-    """
+    """Shelly Wall Display UI Brightness."""
 
     auto: bool
     level: int
+    min_level: int
     auto_off: ShellyWallDisplayUiBrightnessAutoOff
     auto_dim: ShellyWallDisplayUiBrightnessAutoDim
 
