@@ -1073,7 +1073,7 @@ class RpcDevice:
         """Get the power strip UI config with POWERSTRIP_UI.GetConfig."""
         return cast(ShellyUiConfig, await self.call_rpc("POWERSTRIP_UI.GetConfig"))
 
-    async def ui_setconfig(
+    async def wall_display_ui_setconfig(
         self, config: ShellyWallDisplayUiConfig
     ) -> ShellyUiSetConfig:
         """Set the Wall Display UI config with Ui.SetConfig.
@@ -1085,7 +1085,7 @@ class RpcDevice:
             await self.call_rpc("Ui.SetConfig", {"config": config}),
         )
 
-    async def ui_getconfig(self) -> ShellyWallDisplayUiConfig:
+    async def wall_display_ui_getconfig(self) -> ShellyWallDisplayUiConfig:
         """Get the Wall Display UI config with Ui.GetConfig."""
         return cast(ShellyWallDisplayUiConfig, await self.call_rpc("Ui.GetConfig"))
 

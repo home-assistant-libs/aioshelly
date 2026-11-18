@@ -771,10 +771,10 @@ WALL_DISPLAY_UI_CONFIG = {
 
 @pytest.mark.asyncio
 async def test_wall_display_ui_getconfig(rpc_device: RpcDevice) -> None:
-    """Test RpcDevice ui_getconfig method."""
+    """Test RpcDevice wall_display_ui_getconfig method."""
     rpc_device.call_rpc_multiple.return_value = [WALL_DISPLAY_UI_CONFIG]
 
-    result = await rpc_device.ui_getconfig()
+    result = await rpc_device.wall_display_ui_getconfig()
 
     assert result == WALL_DISPLAY_UI_CONFIG
     assert rpc_device.call_rpc_multiple.call_count == 1
@@ -784,11 +784,11 @@ async def test_wall_display_ui_getconfig(rpc_device: RpcDevice) -> None:
 
 @pytest.mark.asyncio
 async def test_wall_display_ui_setconfig(rpc_device: RpcDevice) -> None:
-    """Test RpcDevice ui_setconfig method."""
+    """Test RpcDevice wall_display_ui_setconfig method."""
     rpc_device.call_rpc_multiple.return_value = [{"restart_required": False}]
     config: ShellyWallDisplayUiConfig = {"brightness": {"auto": False, "level": 40}}
 
-    result = await rpc_device.ui_setconfig(config)
+    result = await rpc_device.wall_display_ui_setconfig(config)
 
     assert result == {"restart_required": False}
     assert rpc_device.call_rpc_multiple.call_count == 1
