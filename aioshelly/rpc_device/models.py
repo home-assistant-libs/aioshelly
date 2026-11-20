@@ -52,6 +52,8 @@ class ShellyRadioStation(TypedDict, total=False):
     name: str
     icon: str
     country_code: str
+
+
 class ShellyStorageTrigger(TypedDict):
     """Event that triggered a Shelly Storage recording."""
 

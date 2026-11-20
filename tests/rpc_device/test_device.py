@@ -31,7 +31,7 @@ from aioshelly.rpc_device.device import (
     RpcUpdateType,
     mergedicts,
 )
-from aioshelly.rpc_device.models import ShellyWallDisplayUiConfig, ShellyStorageItem
+from aioshelly.rpc_device.models import ShellyStorageItem, ShellyWallDisplayUiConfig
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
