@@ -1,5 +1,6 @@
 """Tests for rpc_device.device module."""
 
+import logging
 import re
 from collections.abc import AsyncGenerator
 from http import HTTPStatus
@@ -2692,7 +2693,7 @@ async def test_media_list_radio_stations(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("pages", "expected_offsets", "expected_media_ids", "expected_warning"),
+    ("pages", "expected_offsets", "expected_media_ids", "expected_log"),
     [
         # single page with all items
         (
@@ -2723,6 +2724,16 @@ async def test_media_list_radio_stations(
             ["video-1"],
             True,
         ),
+        # the same item is returned on two pages after the storage changed
+        (
+            [
+                _storage_page([STORAGE_VIDEO_ITEM], 2),
+                _storage_page([STORAGE_VIDEO_ITEM], 2, offset=1, rev=2),
+            ],
+            [0, 1],
+            ["video-1"],
+            True,
+        ),
     ],
 )
 async def test_storage_list(
@@ -2730,10 +2741,11 @@ async def test_storage_list(
     pages: list[dict[str, Any]],
     expected_offsets: list[int],
     expected_media_ids: list[str],
-    expected_warning: bool,
+    expected_log: bool,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test RpcDevice storage_list() method."""
+    caplog.set_level(logging.DEBUG)
     rpc_device.call_rpc_multiple.side_effect = [[page] for page in pages]
 
     result = await rpc_device.storage_list(0)
@@ -2745,7 +2757,7 @@ async def test_storage_list(
         assert call_args_list[index][0][0][0][1] == {"id": 0, "offset": offset}
 
     assert [item["media_id"] for item in result] == expected_media_ids
-    assert ("list may be incomplete" in caplog.text) is expected_warning
+    assert ("list may be incomplete" in caplog.text) is expected_log
 
 
 @pytest.mark.asyncio
@@ -2753,7 +2765,8 @@ async def test_storage_list_contents_changed(
     rpc_device: RpcDevice,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Test storage_list() does not restart when the storage changes, it warns."""
+    """Test storage_list() does not restart when the storage changes, it only logs."""
+    caplog.set_level(logging.DEBUG)
     rpc_device.call_rpc_multiple.side_effect = [
         [_storage_page([STORAGE_VIDEO_ITEM], 2)],
         # a new recording appeared while paginating

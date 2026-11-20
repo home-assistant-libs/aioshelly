@@ -773,23 +773,29 @@ class RpcDevice:
 
     async def storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
         """Get all media items from the storage component."""
-        items: list[ShellyStorageItem] = []
+        # Items can shift between pages when the camera records or deletes a clip,
+        # so the same item may come back twice; keep the first occurrence.
+        items: dict[str, ShellyStorageItem] = {}
         first_page = await self.call_rpc(
             "Storage.List", {"id": storage_id, "offset": 0}
         )
         page = first_page
-        items.extend(page["items"])
+        # Offset and stop condition use the raw count: the device counts its own
+        # positions, duplicates included.
+        received = len(page["items"])
+        items.update((item["media_id"], item) for item in page["items"])
 
         # Each page is fetched once; an empty page means the device returned fewer
         # items than promised.
-        while page["items"] and len(items) < first_page["total"]:
+        while page["items"] and received < first_page["total"]:
             page = await self.call_rpc(
-                "Storage.List", {"id": storage_id, "offset": len(items)}
+                "Storage.List", {"id": storage_id, "offset": received}
             )
-            items.extend(page["items"])
+            received += len(page["items"])
+            items.update((item["media_id"], item) for item in page["items"])
 
         if page["rev"] != first_page["rev"] or len(items) != page["total"]:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "Storage %s: fetched %s of %s items (rev %s -> %s), "
                 "list may be incomplete",
                 storage_id,
@@ -799,7 +805,7 @@ class RpcDevice:
                 page["rev"],
             )
 
-        return items
+        return list(items.values())
 
     async def camera_get_image(self, camera_id: int) -> bytes:
         """Return a still image from the camera's HTTP snapshot endpoint."""
