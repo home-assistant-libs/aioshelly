@@ -1472,7 +1472,7 @@ MODEL_NAMES = {data.model: data.name for data in DEVICES.values()}
 CIT_RETRIES = 3
 
 # Timeout used for Device IO
-DEVICE_IO_TIMEOUT = 10.0
+DEVICE_IO_TIMEOUT = 15.0
 
 # Timeout used for polling
 DEVICE_POLL_TIMEOUT = 45.0

@@ -8,6 +8,7 @@ import hashlib
 import logging
 import secrets
 import socket
+import time
 from asyncio import Task, tasks
 from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ from yarl import URL
 from ..common import use_ssl
 from ..const import (
     DEFAULT_HTTP_PORT,
+    DEVICE_IO_TIMEOUT,
     NOTIFY_WS_CLOSED,
     WS_API_URL,
     WS_HEARTBEAT,
@@ -53,6 +55,9 @@ from ..json import json_bytes, json_loads
 _LOGGER = logging.getLogger(__name__)
 
 BUFFER_SIZE = 1024 * 64
+
+# Number of abandoned calls remembered to identify late responses
+MAX_ABANDONED_CALLS = 16
 
 
 class RPCSource(Enum):
@@ -162,6 +167,7 @@ class RPCCall:
     __slots__ = (
         "auth_data",
         "call_id",
+        "created_at",
         "dst",
         "method",
         "params",
@@ -181,6 +187,7 @@ class RPCCall:
         """Initialize RPC class."""
         self.auth_data = session.auth_data
         self.call_id = call_id
+        self.created_at = time.monotonic()
         self.params = params
         self.method = method
         self.src = session.src
@@ -250,6 +257,9 @@ class WsRPC(WsBase):
         self._rx_task: tasks.Task[None] | None = None
         self._client: ClientWebSocketResponse[Literal[False]] | None = None
         self._calls: dict[int, RPCCall] = {}
+        # Calls the caller gave up on (timeout/cancel), kept to identify
+        # late responses: call_id -> (method, created_at)
+        self._abandoned_calls: dict[int, tuple[str, float]] = {}
         self._call_id = 0
         self._session = SessionData(f"aios-{id(self)}", None, None)
         self._auth_lock = asyncio.Lock()
@@ -263,12 +273,20 @@ class WsRPC(WsBase):
     def _abandon_calls(self, calls: Iterable[RPCCall]) -> None:
         """Drop calls whose futures will not be awaited anymore."""
         for call in calls:
-            self._calls.pop(call.call_id, None)
+            if self._calls.pop(call.call_id, None) is not None:
+                # Still pending, a response may arrive later
+                self._remember_abandoned_call(call)
             if not call.resolve.done():
                 call.resolve.cancel()
             elif not call.resolve.cancelled():
                 # Mark as retrieved to avoid "Future exception was never retrieved"
                 call.resolve.exception()
+
+    def _remember_abandoned_call(self, call: RPCCall) -> None:
+        """Remember an abandoned call to identify a late response."""
+        if len(self._abandoned_calls) >= MAX_ABANDONED_CALLS:
+            del self._abandoned_calls[next(iter(self._abandoned_calls))]
+        self._abandoned_calls[call.call_id] = (call.method, call.created_at)
 
     async def connect(self, aiohttp_session: ClientSession) -> None:
         """Connect to device."""
@@ -377,12 +395,24 @@ class WsRPC(WsBase):
         if frame_id:
             # looks like a response
             if (call := self._calls.pop(frame_id, None)) is None:
+                if abandoned := self._abandoned_calls.pop(frame_id, None):
+                    abandoned_method, created_at = abandoned
+                    _LOGGER.warning(
+                        "Late response from (%s:%s) for %s (id %s) received "
+                        "%.2fs after sending, the call already timed out "
+                        "or was cancelled",
+                        self._ip_address,
+                        self._port,
+                        abandoned_method,
+                        frame_id,
+                        time.monotonic() - created_at,
+                    )
+                    return
                 _LOGGER.warning(
-                    "Response from (%s:%s) for an unknown request id: %s: %s",
+                    "Response from (%s:%s) for an unknown request id: %s",
                     self._ip_address,
                     self._port,
                     frame_id,
-                    method,
                 )
                 return
 
@@ -439,6 +469,7 @@ class WsRPC(WsBase):
                 if not call_item.resolve.done():
                     call_item.resolve.set_exception(DeviceConnectionError(call_item))
             self._calls.clear()
+            self._abandoned_calls.clear()
 
             client = self._client
             self._client = None
@@ -459,7 +490,7 @@ class WsRPC(WsBase):
         self,
         method: str,
         params: dict[str, Any] | None = None,
-        timeout: float = 10.0,
+        timeout: float = DEVICE_IO_TIMEOUT,
     ) -> dict[str, Any]:
         """Websocket RPC call."""
         return (await self.calls([(method, params)], timeout))[0]
@@ -492,7 +523,7 @@ class WsRPC(WsBase):
         self,
         method: str,
         params: dict[str, Any] | None = None,
-        timeout: float = 10.0,
+        timeout: float = DEVICE_IO_TIMEOUT,
         allow_auth_retry: bool = True,
         stale_retry: bool = False,
     ) -> dict[str, Any]:
@@ -576,7 +607,9 @@ class WsRPC(WsBase):
         return call.result
 
     async def calls(
-        self, calls: Iterable[tuple[str, dict[str, Any] | None]], timeout: float = 10.0
+        self,
+        calls: Iterable[tuple[str, dict[str, Any] | None]],
+        timeout: float = DEVICE_IO_TIMEOUT,
     ) -> list[dict[str, Any]]:
         """Websocket RPC calls."""
         if self._session.auth_data is not None:

@@ -30,6 +30,7 @@ from aioshelly.exceptions import (
 from aioshelly.json import json_bytes, json_dumps
 from aioshelly.rpc_device.wsrpc import (
     HA2,
+    MAX_ABANDONED_CALLS,
     AuthData,
     RPCCall,
     RPCSource,
@@ -811,10 +812,68 @@ async def test_handle_frame_unknown_response_id_logs_warning(
             {"id": 999, "src": "shellyplus2pm-aabbccddeeff", "result": {}},
         )
 
+    assert "Response from (127.0.0.1:80) for an unknown request id: 999" in caplog.text
+    assert "shellyplus2pm-aabbccddeeff" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_handle_frame_late_response_after_timeout_logs_method(
+    ws_rpc: WsRPCMocker, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test a response arriving after the call timed out is logged as late."""
+    with (
+        patch.object(ws_rpc, "_send_next_response", new=AsyncMock(return_value=None)),
+        pytest.raises(DeviceConnectionTimeoutError) as exc_info,
+    ):
+        await ws_rpc.calls([("Cover.Close", {"id": 0})], timeout=0.01)
+
+    call_id = exc_info.value.args[0][0].call_id
+    assert ws_rpc._calls == {}
+    assert call_id in ws_rpc._abandoned_calls
+
+    with caplog.at_level(logging.WARNING, logger=LOGGER_NAME):
+        ws_rpc.handle_frame(
+            RPCSource.CLIENT,
+            {"id": call_id, "src": "shellyplus2pm-aabbccddeeff", "result": None},
+        )
+
     assert (
-        "Response from (127.0.0.1:80) for an unknown request id: 999: None"
+        f"Late response from (127.0.0.1:80) for Cover.Close (id {call_id}) received"
         in caplog.text
     )
+    assert "or was cancelled" in caplog.text
+    assert "shellyplus2pm-aabbccddeeff" not in caplog.text
+    assert "unknown request id" not in caplog.text
+    assert call_id not in ws_rpc._abandoned_calls
+
+
+@pytest.mark.asyncio
+async def test_completed_call_is_not_remembered_as_abandoned(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test a call that got its response is not kept as abandoned."""
+    await ws_rpc.calls_with_mocked_responses(
+        [("Shelly.GetConfig", None)], [make_success_response({})]
+    )
+
+    assert ws_rpc._abandoned_calls == {}
+
+
+@pytest.mark.asyncio
+async def test_abandoned_calls_are_bounded(ws_rpc: WsRPCMocker) -> None:
+    """Test only the most recent abandoned calls are remembered."""
+    calls = []
+    for call_id in range(1, MAX_ABANDONED_CALLS + 2):
+        call = _make_rpc_call()
+        call.call_id = call_id
+        ws_rpc._calls[call_id] = call
+        calls.append(call)
+
+    ws_rpc._abandon_calls(calls)
+
+    assert len(ws_rpc._abandoned_calls) == MAX_ABANDONED_CALLS
+    assert 1 not in ws_rpc._abandoned_calls
+    assert MAX_ABANDONED_CALLS + 1 in ws_rpc._abandoned_calls
 
 
 @pytest.mark.asyncio
