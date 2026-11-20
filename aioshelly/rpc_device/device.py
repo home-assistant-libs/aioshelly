@@ -771,7 +771,7 @@ class RpcDevice:
         stations: list[ShellyRadioStation] = result["list"]
         return stations
 
-    async def get_storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
+    async def storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
         """Get all media items from the storage component."""
         items: list[ShellyStorageItem] = []
         first_page = await self.call_rpc(

@@ -2725,7 +2725,7 @@ async def test_media_list_radio_stations(
         ),
     ],
 )
-async def test_get_storage_list(
+async def test_storage_list(
     rpc_device: RpcDevice,
     pages: list[dict[str, Any]],
     expected_offsets: list[int],
@@ -2733,10 +2733,10 @@ async def test_get_storage_list(
     expected_warning: bool,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Test RpcDevice get_storage_list() method."""
+    """Test RpcDevice storage_list() method."""
     rpc_device.call_rpc_multiple.side_effect = [[page] for page in pages]
 
-    result = await rpc_device.get_storage_list(0)
+    result = await rpc_device.storage_list(0)
 
     assert rpc_device.call_rpc_multiple.call_count == len(expected_offsets)
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
@@ -2749,18 +2749,18 @@ async def test_get_storage_list(
 
 
 @pytest.mark.asyncio
-async def test_get_storage_list_contents_changed(
+async def test_storage_list_contents_changed(
     rpc_device: RpcDevice,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Test get_storage_list() does not restart when the storage changes, it warns."""
+    """Test storage_list() does not restart when the storage changes, it warns."""
     rpc_device.call_rpc_multiple.side_effect = [
         [_storage_page([STORAGE_VIDEO_ITEM], 2)],
         # a new recording appeared while paginating
         [_storage_page([STORAGE_IMAGE_ITEM], 3, offset=1, rev=2)],
     ]
 
-    result = await rpc_device.get_storage_list(0)
+    result = await rpc_device.storage_list(0)
 
     assert rpc_device.call_rpc_multiple.call_count == 2
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
