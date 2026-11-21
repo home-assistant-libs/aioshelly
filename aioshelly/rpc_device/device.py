@@ -58,6 +58,7 @@ from .models import (
     ShellyRadioStation,
     ShellyScript,
     ShellyScriptCode,
+    ShellyStorageItem,
     ShellySwitchConfig,
     ShellySwitchSetConfig,
     ShellyUiConfig,
@@ -71,6 +72,7 @@ from .models import (
 from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
+MAX_STORAGE_ITERATIONS = 10
 
 SCRIPT_SUPPORT_METHODS = {
     "Script.List",
@@ -769,6 +771,49 @@ class RpcDevice:
         result = await self.call_rpc("Media.Radio.ListFavourites")
         stations: list[ShellyRadioStation] = result["list"]
         return stations
+
+    async def storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
+        """Get media items from the storage component."""
+        # Items can shift between pages when the camera records or deletes a clip,
+        # so the same item may come back twice; keep the first occurrence.
+        items: dict[str, ShellyStorageItem] = {}
+        first_page = await self.call_rpc(
+            "Storage.List", {"id": storage_id, "offset": 0}
+        )
+        page = first_page
+        # Offset and stop condition use the raw count: the device counts its own
+        # positions, duplicates included.
+        received = len(page["items"])
+        items.update((item["media_id"], item) for item in page["items"])
+
+        # Each page is fetched once; an empty page means the device returned fewer
+        # items than promised.
+        # The cap bounds the RPC calls on cards holding thousands of clips.
+        calls = 1
+        while (
+            page["items"]
+            and received < first_page["total"]
+            and calls < MAX_STORAGE_ITERATIONS
+        ):
+            page = await self.call_rpc(
+                "Storage.List", {"id": storage_id, "offset": received}
+            )
+            calls += 1
+            received += len(page["items"])
+            items.update((item["media_id"], item) for item in page["items"])
+
+        if page["rev"] != first_page["rev"] or len(items) != page["total"]:
+            _LOGGER.debug(
+                "Storage %s: fetched %s of %s items (rev %s -> %s), "
+                "list may be incomplete",
+                storage_id,
+                len(items),
+                page["total"],
+                first_page["rev"],
+                page["rev"],
+            )
+
+        return list(items.values())
 
     async def camera_get_image(self, camera_id: int) -> bytes:
         """Return a still image from the camera's HTTP snapshot endpoint."""
