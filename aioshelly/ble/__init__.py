@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import re
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from habluetooth import BluetoothScanningMode, HaBluetoothConnector
@@ -15,7 +18,10 @@ from .const import (
     BLE_CODE,
     BLE_SCRIPT_NAME,
     VAR_ACTIVE,
+    VAR_ALLOWED_ADDRESSES,
     VAR_EVENT_TYPE,
+    VAR_MIN_INTERVAL_MS,
+    VAR_MIN_RSSI,
     VAR_VERSION,
 )
 
@@ -23,6 +29,22 @@ if TYPE_CHECKING:
     from ..const import ShellyDevice
 
 LOGGER = logging.getLogger(__name__)
+
+_ADDRESS_RE = re.compile(r"^([0-9a-f]{2}:){5}[0-9a-f]{2}$")
+
+
+def _format_allowed_addresses(allowed_addresses: Iterable[str] | None) -> str:
+    """Format the address allowlist as a JavaScript object literal.
+
+    Sorted, so an unchanged allowlist does not rewrite the device flash.
+    """
+    if allowed_addresses is None:
+        return "null"
+    addresses = sorted({address.strip().lower() for address in allowed_addresses})
+    for address in addresses:
+        if not _ADDRESS_RE.match(address):
+            raise ValueError(f"Invalid Bluetooth address: {address}")
+    return json.dumps(dict.fromkeys(addresses, True), separators=(",", ":"))
 
 
 async def _async_get_scripts_by_name(device: RpcDevice) -> dict[str, int]:
@@ -38,10 +60,27 @@ async def async_stop_scanner(device: RpcDevice) -> None:
         await device.script_stop(script_id)
 
 
-async def async_start_scanner(
-    device: RpcDevice, active: bool, event_type: str, data_version: int
+async def async_start_scanner(  # noqa: PLR0913
+    device: RpcDevice,
+    active: bool,
+    event_type: str,
+    data_version: int,
+    *,
+    allowed_addresses: Iterable[str] | None = None,
+    min_rssi: int | None = None,
+    min_interval: float = 0,
 ) -> None:
-    """Start scanner."""
+    """Start scanner.
+
+    The optional filter runs on the device, so dropped advertisements
+    never use the network link.
+    """
+    if min_interval < 0:
+        raise ValueError("min_interval must not be negative")
+    if min_interval and allowed_addresses is None:
+        raise ValueError("min_interval requires allowed_addresses")
+    allowed_addresses_literal = _format_allowed_addresses(allowed_addresses)
+
     script_name_to_id = await _async_get_scripts_by_name(device)
     if BLE_SCRIPT_NAME not in script_name_to_id:
         await device.script_create(BLE_SCRIPT_NAME)
@@ -55,6 +94,9 @@ async def async_start_scanner(
         BLE_CODE.replace(VAR_ACTIVE, "true" if active else "false")
         .replace(VAR_EVENT_TYPE, event_type)
         .replace(VAR_VERSION, str(data_version))
+        .replace(VAR_ALLOWED_ADDRESSES, allowed_addresses_literal)
+        .replace(VAR_MIN_RSSI, "null" if min_rssi is None else str(int(min_rssi)))
+        .replace(VAR_MIN_INTERVAL_MS, str(round(min_interval * 1000)))
     )
 
     needs_putcode = False
