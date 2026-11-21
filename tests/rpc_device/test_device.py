@@ -79,6 +79,12 @@ async def blu_gateway_remote_config() -> AsyncGenerator[dict[str, Any], None]:
 
 
 @pytest_asyncio.fixture
+async def blu_gateway_remote_status() -> AsyncGenerator[dict[str, Any], None]:
+    """Fixture for BLU Gateway Gen3 remote status."""
+    yield await load_device_fixture("shellyblugatewaygen3", "BluTrv.GetRemoteStatus")
+
+
+@pytest_asyncio.fixture
 async def mini_1_g4_device_info() -> AsyncGenerator[dict[str, Any], None]:
     """Fixture for Mini 1 Gen4 device info."""
     yield await load_device_fixture("shellymini1gen4", "Shelly.GetDeviceInfo")
@@ -303,6 +309,7 @@ async def test_get_dynamic_components(
     blu_gateway_config: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
     """Test get_dynamic_components method."""
@@ -313,15 +320,17 @@ async def test_get_dynamic_components(
     rpc_device.call_rpc_multiple.side_effect = [
         [blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
 
     await rpc_device.get_dynamic_components()
 
-    assert rpc_device.call_rpc_multiple.call_count == 2
-    assert (
-        rpc_device.call_rpc_multiple.call_args[0][0][0][0] == "BluTrv.GetRemoteConfig"
-    )
-    assert rpc_device.call_rpc_multiple.call_args[0][0][0][1] == {"id": 200}
+    assert rpc_device.call_rpc_multiple.call_count == 3
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[1][0][0][0][0] == "BluTrv.GetRemoteConfig"
+    assert call_args_list[1][0][0][0][1] == {"id": 200}
+    assert call_args_list[2][0][0][0][0] == "BluTrv.GetRemoteStatus"
+    assert call_args_list[2][0][0][0][1] == {"id": 200}
 
     assert rpc_device.config["blutrv:200"]["local_name"] == "SBTR-001AEU"
     assert rpc_device.config["blutrv:200"]["name"] == "Shelly BLU TRV [DDEEFF]"
@@ -333,6 +342,60 @@ async def test_get_dynamic_components(
     assert rpc_device.status["blutrv:200"]["pos"] == 0
     assert rpc_device.status["blutrv:200"]["rssi"] == -58
     assert rpc_device.status["blutrv:200"]["errors"] == []
+
+
+@pytest.mark.asyncio
+async def test_get_dynamic_components_blu_trv_boost(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test BLU TRV boost is added to the status when it is active."""
+    boost = {"started_at": 1739221000, "duration": 1800}
+    blu_gateway_remote_status["status"]["trv:0"]["boost"] = boost
+    rpc_device.initialized = True
+    rpc_device._shelly = blu_gateway_device_info
+    rpc_device._config = blu_gateway_config
+    rpc_device._status = blu_gateway_status
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_components],
+        [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
+    ]
+
+    await rpc_device.get_dynamic_components()
+
+    assert rpc_device.status["blutrv:200"]["boost"] == boost
+
+
+@pytest.mark.asyncio
+async def test_get_dynamic_components_blu_trv_no_boost(
+    rpc_device: RpcDevice,
+    blu_gateway_device_info: dict[str, Any],
+    blu_gateway_config: dict[str, Any],
+    blu_gateway_status: dict[str, Any],
+    blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
+    blu_gateway_components: dict[str, Any],
+) -> None:
+    """Test BLU TRV status has no boost key when boost is not active."""
+    rpc_device.initialized = True
+    rpc_device._shelly = blu_gateway_device_info
+    rpc_device._config = blu_gateway_config
+    rpc_device._status = blu_gateway_status
+    rpc_device.call_rpc_multiple.side_effect = [
+        [blu_gateway_components],
+        [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
+    ]
+
+    await rpc_device.get_dynamic_components()
+
+    assert "boost" not in rpc_device.status["blutrv:200"]
 
 
 @pytest.mark.asyncio
@@ -382,6 +445,7 @@ async def test_device_initialize_and_shutdown(
     blu_gateway_config: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
     """Test RpcDevice initialize and shutdown methods."""
@@ -389,6 +453,7 @@ async def test_device_initialize_and_shutdown(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
     rpc_device.subscribe_updates(Mock())
 
@@ -422,6 +487,7 @@ async def test_device_init_auth_matches_device_setting(
     blu_gateway_config: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
     auth_en: bool,
 ) -> None:
@@ -431,6 +497,7 @@ async def test_device_init_auth_matches_device_setting(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
 
     await rpc_device.initialize()
@@ -458,6 +525,7 @@ async def test_device_already_initialized(
     blu_gateway_config: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
     """Test RpcDevice initialize."""
@@ -465,6 +533,7 @@ async def test_device_already_initialized(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
     rpc_device._rpc = AsyncMock(spec=WsRPC)
 
@@ -477,6 +546,7 @@ async def test_device_already_initialized(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
 
     # call initialize() once again
@@ -521,6 +591,7 @@ async def test_device_reinitialize_keeps_last_known_data(
     blu_gateway_config: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
     """Test re-initialize keeps last known status/config and refreshes status."""
@@ -528,6 +599,7 @@ async def test_device_reinitialize_keeps_last_known_data(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
     rpc_device._rpc = AsyncMock(spec=WsRPC)
 
@@ -555,6 +627,7 @@ async def test_device_reinitialize_keeps_last_known_data(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
 
     await rpc_device.initialize()
@@ -1368,6 +1441,7 @@ async def test_device_mac_address_mixed_case(
     blu_gateway_config: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
     """Test RpcDevice initialize method when MAC differs in string case only."""
@@ -1380,6 +1454,7 @@ async def test_device_mac_address_mixed_case(
         [blu_gateway_device_info],
         [blu_gateway_config, blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
 
     await rpc_device.initialize()
@@ -1432,12 +1507,14 @@ async def test_poll(
     blu_gateway_device_info: dict[str, Any],
     blu_gateway_status: dict[str, Any],
     blu_gateway_remote_config: dict[str, Any],
+    blu_gateway_remote_status: dict[str, Any],
     blu_gateway_components: dict[str, Any],
 ) -> None:
     """Test RpcDevice poll method."""
     rpc_device.call_rpc_multiple.side_effect = [
         [blu_gateway_status, blu_gateway_components],
         [blu_gateway_remote_config],
+        [blu_gateway_remote_status],
     ]
     rpc_device._shelly = blu_gateway_device_info
     rpc_device._status = {"lorem": "ipsum"}
@@ -1446,11 +1523,12 @@ async def test_poll(
 
     await rpc_device.poll()
 
-    assert rpc_device.call_rpc_multiple.call_count == 2
+    assert rpc_device.call_rpc_multiple.call_count == 3
     call_args_list = rpc_device.call_rpc_multiple.call_args_list
     assert call_args_list[0][0][0][0][0] == "Shelly.GetStatus"
     assert call_args_list[0][0][0][1][0] == "Shelly.GetComponents"
     assert call_args_list[1][0][0][0][0] == "BluTrv.GetRemoteConfig"
+    assert call_args_list[2][0][0][0][0] == "BluTrv.GetRemoteStatus"
 
 
 @pytest.mark.asyncio
@@ -2346,6 +2424,9 @@ async def test_rpc_device_initialize_ble() -> None:
     remote_config = await load_device_fixture(
         "shellyblugatewaygen3", "BluTrv.GetRemoteConfig"
     )
+    remote_status = await load_device_fixture(
+        "shellyblugatewaygen3", "BluTrv.GetRemoteStatus"
+    )
 
     ws_context = Mock(spec=WsServer)
     ble_device = MagicMock(spec=BLEDevice)
@@ -2362,6 +2443,7 @@ async def test_rpc_device_initialize_ble() -> None:
             status,
             components,
             remote_config,
+            remote_status,
         ]
     )
 
