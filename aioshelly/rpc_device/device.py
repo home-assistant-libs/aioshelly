@@ -72,6 +72,7 @@ from .models import (
 from .wsrpc import RPCSource, WsRPC, WsServer
 
 MAX_ITERATIONS = 10
+MAX_STORAGE_ITERATIONS = 10
 
 SCRIPT_SUPPORT_METHODS = {
     "Script.List",
@@ -772,7 +773,7 @@ class RpcDevice:
         return stations
 
     async def storage_list(self, storage_id: int) -> list[ShellyStorageItem]:
-        """Get all media items from the storage component."""
+        """Get media items from the storage component."""
         # Items can shift between pages when the camera records or deletes a clip,
         # so the same item may come back twice; keep the first occurrence.
         items: dict[str, ShellyStorageItem] = {}
@@ -787,10 +788,17 @@ class RpcDevice:
 
         # Each page is fetched once; an empty page means the device returned fewer
         # items than promised.
-        while page["items"] and received < first_page["total"]:
+        # The cap bounds the RPC calls on cards holding thousands of clips.
+        calls = 1
+        while (
+            page["items"]
+            and received < first_page["total"]
+            and calls < MAX_STORAGE_ITERATIONS
+        ):
             page = await self.call_rpc(
                 "Storage.List", {"id": storage_id, "offset": received}
             )
+            calls += 1
             received += len(page["items"])
             items.update((item["media_id"], item) for item in page["items"])
 

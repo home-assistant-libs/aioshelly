@@ -2784,6 +2784,34 @@ async def test_storage_list_contents_changed(
 
 
 @pytest.mark.asyncio
+async def test_storage_list_iteration_cap(
+    rpc_device: RpcDevice,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test storage_list() stops after MAX_STORAGE_ITERATIONS calls."""
+    caplog.set_level(logging.DEBUG)
+    monkeypatch.setattr("aioshelly.rpc_device.device.MAX_STORAGE_ITERATIONS", 2)
+    rpc_device.call_rpc_multiple.side_effect = [
+        [
+            _storage_page(
+                [{**STORAGE_VIDEO_ITEM, "media_id": f"video-{n}"}], 10, offset=n
+            )
+        ]
+        for n in range(10)
+    ]
+
+    result = await rpc_device.storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert [args[0][0][0][1]["offset"] for args in call_args_list] == [0, 1]
+
+    assert [item["media_id"] for item in result] == ["video-0", "video-1"]
+    assert "fetched 2 of 10 items (rev 1 -> 1), list may be incomplete" in caplog.text
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("addon_type", "methods", "rpc_response", "expected", "call_count"),
     [
