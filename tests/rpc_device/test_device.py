@@ -1,5 +1,6 @@
 """Tests for rpc_device.device module."""
 
+import logging
 import re
 from collections.abc import AsyncGenerator
 from http import HTTPStatus
@@ -31,7 +32,7 @@ from aioshelly.rpc_device.device import (
     RpcUpdateType,
     mergedicts,
 )
-from aioshelly.rpc_device.models import ShellyWallDisplayUiConfig
+from aioshelly.rpc_device.models import ShellyStorageItem, ShellyWallDisplayUiConfig
 from aioshelly.rpc_device.wsrpc import RPCSource, WsRPC, WsServer
 
 from . import load_device_fixture
@@ -46,6 +47,34 @@ VIRT_COMP_CONFIG = {
 }
 VIRT_COMP_ATTRS = {"role": "current_humidity"}
 WEBSOCKET_URL = "ws://10.10.10.10:8123/api/shelly/ws"
+STORAGE_VIDEO_ITEM: ShellyStorageItem = {
+    "media_id": "video-1",
+    "type": "video",
+    "ts": 1789907507.382,
+    "duration": 20,
+    "size": 5287042,
+    "trigger": {
+        "component": "camerazone:200",
+        "event": "motion_detected",
+        "ts": 1789907507,
+    },
+    "url": "/storage/video-1/4db27786/MOV_20260920_123147381.mp4",
+    "thumbnail_url": "/storage/video-1/71cec2ae/IMG_20260920_123147381.jpg",
+}
+STORAGE_IMAGE_ITEM: ShellyStorageItem = {
+    "media_id": "image-1",
+    "type": "image",
+    "ts": 1789907362.923,
+    "size": 812345,
+    "url": "/storage/image-1/1c18d873/IMG_20260920_122922923.jpg",
+}
+
+
+def _storage_page(
+    items: list[ShellyStorageItem], total: int, offset: int = 0, rev: int = 1
+) -> dict[str, Any]:
+    """Build a 'Storage.List' response page."""
+    return {"total": total, "offset": offset, "rev": rev, "items": items}
 
 
 @pytest_asyncio.fixture
@@ -2660,6 +2689,126 @@ async def test_media_list_radio_stations(
             "name": "Radio Station 2",
         },
     ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("pages", "expected_offsets", "expected_media_ids", "expected_log"),
+    [
+        # single page with all items
+        (
+            [_storage_page([STORAGE_VIDEO_ITEM, STORAGE_IMAGE_ITEM], 2)],
+            [0],
+            ["video-1", "image-1"],
+            False,
+        ),
+        # empty storage
+        ([_storage_page([], 0)], [0], [], False),
+        # two pages
+        (
+            [
+                _storage_page([STORAGE_VIDEO_ITEM], 2),
+                _storage_page([STORAGE_IMAGE_ITEM], 2, offset=1),
+            ],
+            [0, 1],
+            ["video-1", "image-1"],
+            False,
+        ),
+        # the device stops returning items before `total` is reached
+        (
+            [
+                _storage_page([STORAGE_VIDEO_ITEM], 5),
+                _storage_page([], 5, offset=1),
+            ],
+            [0, 1],
+            ["video-1"],
+            True,
+        ),
+        # the same item is returned on two pages after the storage changed
+        (
+            [
+                _storage_page([STORAGE_VIDEO_ITEM], 2),
+                _storage_page([STORAGE_VIDEO_ITEM], 2, offset=1, rev=2),
+            ],
+            [0, 1],
+            ["video-1"],
+            True,
+        ),
+    ],
+)
+async def test_storage_list(
+    rpc_device: RpcDevice,
+    pages: list[dict[str, Any]],
+    expected_offsets: list[int],
+    expected_media_ids: list[str],
+    expected_log: bool,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test RpcDevice storage_list() method."""
+    caplog.set_level(logging.DEBUG)
+    rpc_device.call_rpc_multiple.side_effect = [[page] for page in pages]
+
+    result = await rpc_device.storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == len(expected_offsets)
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    for index, offset in enumerate(expected_offsets):
+        assert call_args_list[index][0][0][0][0] == "Storage.List"
+        assert call_args_list[index][0][0][0][1] == {"id": 0, "offset": offset}
+
+    assert [item["media_id"] for item in result] == expected_media_ids
+    assert ("list may be incomplete" in caplog.text) is expected_log
+
+
+@pytest.mark.asyncio
+async def test_storage_list_contents_changed(
+    rpc_device: RpcDevice,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test storage_list() does not restart when the storage changes, it only logs."""
+    caplog.set_level(logging.DEBUG)
+    rpc_device.call_rpc_multiple.side_effect = [
+        [_storage_page([STORAGE_VIDEO_ITEM], 2)],
+        # a new recording appeared while paginating
+        [_storage_page([STORAGE_IMAGE_ITEM], 3, offset=1, rev=2)],
+    ]
+
+    result = await rpc_device.storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert [args[0][0][0][1]["offset"] for args in call_args_list] == [0, 1]
+
+    assert [item["media_id"] for item in result] == ["video-1", "image-1"]
+    assert "fetched 2 of 3 items (rev 1 -> 2), list may be incomplete" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_storage_list_iteration_cap(
+    rpc_device: RpcDevice,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test storage_list() stops after MAX_STORAGE_ITERATIONS calls."""
+    caplog.set_level(logging.DEBUG)
+    monkeypatch.setattr("aioshelly.rpc_device.device.MAX_STORAGE_ITERATIONS", 2)
+    rpc_device.call_rpc_multiple.side_effect = [
+        [
+            _storage_page(
+                [{**STORAGE_VIDEO_ITEM, "media_id": f"video-{n}"}], 10, offset=n
+            )
+        ]
+        for n in range(10)
+    ]
+
+    result = await rpc_device.storage_list(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 2
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert [args[0][0][0][1]["offset"] for args in call_args_list] == [0, 1]
+
+    assert [item["media_id"] for item in result] == ["video-0", "video-1"]
+    assert "fetched 2 of 10 items (rev 1 -> 1), list may be incomplete" in caplog.text
 
 
 @pytest.mark.asyncio
