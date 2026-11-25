@@ -610,6 +610,10 @@ class RpcDevice:
         result = await self.call_rpc("LedStrip.ListAllPalettes")
         return {palette["key"]: palette["name"] for palette in result["palettes"]}
 
+    async def ledstrip_next_effect(self, id_: int) -> None:
+        """Switch the LED strip component to the next effect."""
+        await self.call_rpc("LedStrip.NextEffect", {"id": id_})
+
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
         params = {
