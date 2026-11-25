@@ -3118,6 +3118,19 @@ async def test_ledstrip_list_palettes(
 
 
 @pytest.mark.asyncio
+async def test_ledstrip_next_effect(
+    rpc_device: RpcDevice,
+) -> None:
+    """Test RpcDevice ledstrip_next_effect() method."""
+    await rpc_device.ledstrip_next_effect(0)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == "LedStrip.NextEffect"
+    assert call_args_list[0][0][0][0][1] == {"id": 0}
+
+
+@pytest.mark.asyncio
 async def test_ircode_emit(
     rpc_device: RpcDevice,
 ) -> None:
