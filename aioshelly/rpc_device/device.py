@@ -610,6 +610,26 @@ class RpcDevice:
         result = await self.call_rpc("LedStrip.ListAllPalettes")
         return {palette["key"]: palette["name"] for palette in result["palettes"]}
 
+    async def light_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the Light component."""
+        await self.call_rpc("Light.Set", params={"id": id_, **params})
+
+    async def cct_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the CCT component."""
+        await self.call_rpc("CCT.Set", params={"id": id_, **params})
+
+    async def rgb_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the RGB component."""
+        await self.call_rpc("RGB.Set", params={"id": id_, **params})
+
+    async def rgbw_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the RGBW component."""
+        await self.call_rpc("RGBW.Set", params={"id": id_, **params})
+
+    async def rgbcct_set(self, id_: int, params: dict[str, Any]) -> None:
+        """Set parameters for the RGBCCT component."""
+        await self.call_rpc("RGBCCT.Set", params={"id": id_, **params})
+
     async def number_set(self, id_: int, value: float) -> None:
         """Set the value for the number component."""
         params = {
