@@ -2988,6 +2988,32 @@ async def test_ledstrip_set(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "rpc_method", "params"),
+    [
+        ("light_set", "Light.Set", {"on": True, "brightness": 50}),
+        ("cct_set", "CCT.Set", {"ct": 4000, "transition_duration": 1.5}),
+        ("rgb_set", "RGB.Set", {"rgb": [255, 0, 0], "effect": "rainbow"}),
+        ("rgbw_set", "RGBW.Set", {"rgb": [0, 255, 0], "white": 128}),
+        ("rgbcct_set", "RGBCCT.Set", {"mode": "cct", "ct": 3000, "on": False}),
+    ],
+)
+async def test_light_component_set(
+    rpc_device: RpcDevice,
+    method: str,
+    rpc_method: str,
+    params: dict[str, Any],
+) -> None:
+    """Test RpcDevice light, cct, rgb, rgbw and rgbcct set methods."""
+    await getattr(rpc_device, method)(1, params)
+
+    assert rpc_device.call_rpc_multiple.call_count == 1
+    call_args_list = rpc_device.call_rpc_multiple.call_args_list
+    assert call_args_list[0][0][0][0][0] == rpc_method
+    assert call_args_list[0][0][0][0][1] == {"id": 1, **params}
+
+
+@pytest.mark.asyncio
 async def test_ledstrip_list_effects(
     rpc_device: RpcDevice,
 ) -> None:
