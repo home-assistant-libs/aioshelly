@@ -20,7 +20,6 @@ from .const import (
     VAR_ACTIVE,
     VAR_ALLOWED_ADDRESSES,
     VAR_EVENT_TYPE,
-    VAR_MIN_INTERVAL_MS,
     VAR_MIN_RSSI,
     VAR_VERSION,
 )
@@ -68,17 +67,12 @@ async def async_start_scanner(  # noqa: PLR0913
     *,
     allowed_addresses: Iterable[str] | None = None,
     min_rssi: int | None = None,
-    min_interval: float = 0,
 ) -> None:
     """Start scanner.
 
     The optional filter runs on the device, so dropped advertisements
     never use the network link.
     """
-    if min_interval < 0:
-        raise ValueError("min_interval must not be negative")
-    if min_interval and allowed_addresses is None:
-        raise ValueError("min_interval requires allowed_addresses")
     allowed_addresses_literal = _format_allowed_addresses(allowed_addresses)
 
     script_name_to_id = await _async_get_scripts_by_name(device)
@@ -96,7 +90,6 @@ async def async_start_scanner(  # noqa: PLR0913
         .replace(VAR_VERSION, str(data_version))
         .replace(VAR_ALLOWED_ADDRESSES, allowed_addresses_literal)
         .replace(VAR_MIN_RSSI, "null" if min_rssi is None else str(int(min_rssi)))
-        .replace(VAR_MIN_INTERVAL_MS, str(round(min_interval * 1000)))
     )
 
     needs_putcode = False

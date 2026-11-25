@@ -25,7 +25,6 @@ from aioshelly.ble.const import (
     VAR_ACTIVE,
     VAR_ALLOWED_ADDRESSES,
     VAR_EVENT_TYPE,
-    VAR_MIN_INTERVAL_MS,
     VAR_MIN_RSSI,
     VAR_VERSION,
 )
@@ -39,7 +38,6 @@ def _build_ble_script_code(
     data_version: int,
     allowed_addresses: str = "null",
     min_rssi: str = "null",
-    min_interval_ms: str = "0",
 ) -> str:
     """Build the expected BLE script code for a given configuration."""
     return (
@@ -48,7 +46,6 @@ def _build_ble_script_code(
         .replace(VAR_VERSION, str(data_version))
         .replace(VAR_ALLOWED_ADDRESSES, allowed_addresses)
         .replace(VAR_MIN_RSSI, min_rssi)
-        .replace(VAR_MIN_INTERVAL_MS, min_interval_ms)
     )
 
 
@@ -349,7 +346,6 @@ async def test_async_start_scanner_with_filter(mock_rpc_device: AsyncMock) -> No
             "aa:bb:cc:dd:ee:ff",
         ],
         min_rssi=-85,
-        min_interval=30,
     )
 
     expected = _build_ble_script_code(
@@ -358,7 +354,6 @@ async def test_async_start_scanner_with_filter(mock_rpc_device: AsyncMock) -> No
         2,
         allowed_addresses='{"aa:bb:cc:dd:ee:ff":true,"cc:dd:ee:ff:00:11":true}',
         min_rssi="-85",
-        min_interval_ms="30000",
     )
     assert "%" not in expected
     assert mock_rpc_device.script_putcode.call_args_list == [call(3, expected)]
@@ -366,27 +361,14 @@ async def test_async_start_scanner_with_filter(mock_rpc_device: AsyncMock) -> No
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("kwargs", "match"),
-    [
-        ({"allowed_addresses": ["not-an-address"]}, "Invalid Bluetooth address"),
-        ({"min_interval": 30}, "requires allowed_addresses"),
-        (
-            {"allowed_addresses": ["aa:bb:cc:dd:ee:ff"], "min_interval": -1},
-            "must not be negative",
-        ),
-    ],
-)
-async def test_async_start_scanner_invalid_filter(
-    mock_rpc_device: AsyncMock, kwargs: dict[str, Any], match: str
-) -> None:
-    """Test invalid filter options are rejected before touching the device."""
-    with pytest.raises(ValueError, match=match):
+async def test_async_start_scanner_invalid_address(mock_rpc_device: AsyncMock) -> None:
+    """Test an invalid address is rejected before touching the device."""
+    with pytest.raises(ValueError, match="Invalid Bluetooth address"):
         await async_start_scanner(
             mock_rpc_device,
             active=False,
             event_type="ble.scan_result",
             data_version=2,
-            **kwargs,
+            allowed_addresses=["not-an-address"],
         )
     mock_rpc_device.script_list.assert_not_called()

@@ -13,7 +13,6 @@ VAR_ACTIVE = "%active%"
 VAR_VERSION = "%version%"
 VAR_ALLOWED_ADDRESSES = "%allowed_addresses%"
 VAR_MIN_RSSI = "%min_rssi%"
-VAR_MIN_INTERVAL_MS = "%min_interval_ms%"
 
 BLE_CODE = """
 // aioshelly BLE script 2.2
@@ -31,41 +30,15 @@ const packetsInSingleEvent = 16; // max number of packets in single event
 // null = forward everything, otherwise {"aa:bb:cc:dd:ee:ff": true}
 const allowedAddresses = %allowed_addresses%;
 const minRssi = %min_rssi%; // in dBm, null = no limit
-// Forward at most one advertisement per address in this period;
-// 0 = no limit. Only applied when allowedAddresses is set, which
-// keeps the per-address state bounded.
-const minIntervalMs = %min_interval_ms%;
 
 let queue = [];
 let timerHandler = null;
-let lastForwarded = {};
-
-function nowMs() {
-  if (typeof Shelly.getUptimeMs === 'function') {
-    return Shelly.getUptimeMs();
-  }
-  return Date.now();
-}
 
 function isFiltered(res) {
   if (minRssi !== null && res.rssi < minRssi) {
     return true;
   }
-  if (allowedAddresses === null) {
-    return false;
-  }
-  if (allowedAddresses[res.addr] !== true) {
-    return true;
-  }
-  if (minIntervalMs > 0) {
-    let now = nowMs();
-    let last = lastForwarded[res.addr];
-    if (typeof last === 'number' && now >= last && now - last < minIntervalMs) {
-      return true;
-    }
-    lastForwarded[res.addr] = now;
-  }
-  return false;
+  return allowedAddresses !== null && allowedAddresses[res.addr] !== true;
 }
 
 function timerCallback() {
