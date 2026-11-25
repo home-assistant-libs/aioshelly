@@ -71,8 +71,8 @@ from .models import (
 )
 from .wsrpc import RPCSource, WsRPC, WsServer
 
-MAX_ITERATIONS = 10
-MAX_STORAGE_ITERATIONS = 10
+MAX_ITERATIONS = 128
+MAX_STORAGE_ITERATIONS = 20
 
 SCRIPT_SUPPORT_METHODS = {
     "Script.List",
@@ -978,6 +978,8 @@ class RpcDevice:
             next_page = await self.call_rpc(
                 "Shelly.GetComponents", {"dynamic_only": True, "offset": offset}
             )
+            if not next_page["components"]:
+                break
             first_page["components"].extend(next_page["components"])
         return first_page
 
