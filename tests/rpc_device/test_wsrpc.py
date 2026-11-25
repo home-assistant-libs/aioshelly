@@ -362,6 +362,62 @@ async def test_rpc_call_non401_error_raises_rpc_call_error(
         )
 
 
+def make_429_response() -> dict[str, Any]:
+    """Build a 429 Too Many Requests error response."""
+    return {
+        "src": "shellyplus2pm-aabbccddeeff",
+        "error": {"code": 429, "message": "Too many requests"},
+    }
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_429_retries_and_succeeds(ws_rpc: WsRPCMocker) -> None:
+    """Test 429 response triggers a single retry that succeeds."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+
+    results = await ws_rpc.calls_with_mocked_responses(
+        [("Switch.Set", {"id": 0, "on": True})],
+        [make_429_response(), make_success_response({"was_on": False})],
+    )
+
+    assert results[0] == {"was_on": False}
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_429_then_stale_401_succeeds(ws_rpc: WsRPCMocker) -> None:
+    """Test 429 followed by stale 401 retries and succeeds (firmware 2.0.0)."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+
+    results = await ws_rpc.calls_with_mocked_responses(
+        [("Switch.Set", {"id": 0, "on": True})],
+        [
+            make_429_response(),
+            make_401_response("new_nonce", stale=True, nc=1),
+            make_success_response({"was_on": False}),
+        ],
+    )
+
+    assert results[0] == {"was_on": False}
+    assert ws_rpc._session.auth_data is not None
+    assert ws_rpc._session.auth_data.nonce == "new_nonce"
+
+
+@pytest.mark.asyncio
+async def test_rpc_call_double_429_raises_rpc_call_error(
+    ws_rpc: WsRPCMocker,
+) -> None:
+    """Test two consecutive 429 responses raise RpcCallError."""
+    ws_rpc.set_auth_data("auth_domain", "username", "password")
+
+    with pytest.raises(RpcCallError) as exc_info:
+        await ws_rpc.calls_with_mocked_responses(
+            [("Switch.Set", {"id": 0, "on": True})],
+            [make_429_response(), make_429_response()],
+        )
+
+    assert exc_info.value.code == 429
+
+
 @pytest.mark.asyncio
 async def test_rpc_call_double_nonstale_401_raises_invalid_auth(
     ws_rpc: WsRPCMocker,
