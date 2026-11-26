@@ -606,6 +606,35 @@ class WsRPC(WsBase):
 
         return call.result
 
+    async def _rpc_call_with_rate_limit_retry(
+        self,
+        method: str,
+        params: dict[str, Any] | None,
+        deadline: float,
+    ) -> dict[str, Any]:
+        """Websocket RPC call with a single retry on 429 Too Many Requests.
+
+        Firmware 2.0.0 may respond with 429 instead of a stale 401 when the
+        nonce rotates. The device did not execute the rejected call, so a
+        retry is safe.
+        """
+        try:
+            return await self._rpc_call_with_auth_retry(
+                method, params, deadline - self._loop.time()
+            )
+        except RpcCallError as err:
+            if err.code != HTTPStatus.TOO_MANY_REQUESTS.value:
+                raise
+            _LOGGER.debug(
+                "Rate limited (%s:%s): %s, retrying",
+                self._ip_address,
+                self._port,
+                method,
+            )
+        return await self._rpc_call_with_auth_retry(
+            method, params, deadline - self._loop.time()
+        )
+
     async def calls(
         self,
         calls: Iterable[tuple[str, dict[str, Any] | None]],
@@ -622,9 +651,10 @@ class WsRPC(WsBase):
                 results = []
                 deadline = self._loop.time() + timeout
                 for method, params in calls:
-                    remaining = deadline - self._loop.time()
                     results.append(
-                        await self._rpc_call_with_auth_retry(method, params, remaining)
+                        await self._rpc_call_with_rate_limit_retry(
+                            method, params, deadline
+                        )
                     )
                 return results
 
