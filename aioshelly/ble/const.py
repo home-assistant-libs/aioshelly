@@ -11,9 +11,11 @@ BLE_SCAN_RESULT_VERSION = 2
 VAR_EVENT_TYPE = "%event_type%"
 VAR_ACTIVE = "%active%"
 VAR_VERSION = "%version%"
+VAR_ALLOWED_ADDRESSES = "%allowed_addresses%"
+VAR_MIN_RSSI = "%min_rssi%"
 
 BLE_CODE = """
-// aioshelly BLE script 2.1
+// aioshelly BLE script 2.2
 // Script automatically installed by Home Assistant for Bluetooth proxy support
 // https://www.home-assistant.io/integrations/bluetooth/#remote-adapters-bluetooth-proxies
 const queueServeTimer = 100; // in ms, timer for events emitting
@@ -21,8 +23,23 @@ const burstSendCount =  5; // number if events, emitted on timer event
 const maxQueue =  32; // if the queue exceeds the limit, all new events are ignored until it empties
 const packetsInSingleEvent = 16; // max number of packets in single event
 
+
+// Optional advertisement filter. Dropping advertisements on the device
+// keeps them off the network link, which matters on metered or slow
+// links (LTE, VPN) and in busy BLE environments.
+// null = forward everything, otherwise {"aa:bb:cc:dd:ee:ff": true}
+const allowedAddresses = %allowed_addresses%;
+const minRssi = %min_rssi%; // in dBm, null = no limit
+
 let queue = [];
 let timerHandler = null;
+
+function isFiltered(res) {
+  if (minRssi !== null && res.rssi < minRssi) {
+    return true;
+  }
+  return allowedAddresses !== null && allowedAddresses[res.addr] !== true;
+}
 
 function timerCallback() {
   for(let i = 0; i < burstSendCount; i++) {
@@ -47,6 +64,10 @@ function timerCallback() {
 
 function bleCallback(event, res) {
   if (event !== BLE.Scanner.SCAN_RESULT) {
+    return;
+  }
+
+  if (isFiltered(res)) {
     return;
   }
 
