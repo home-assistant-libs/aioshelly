@@ -1247,6 +1247,35 @@ async def test_get_all_pages(rpc_device: RpcDevice) -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_all_pages_stops_on_empty_page(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice get_all_pages stops when the device returns an empty page."""
+    rpc_device.call_rpc_multiple.return_value = [{"total": 5, "components": []}]
+
+    result = await rpc_device.get_all_pages(
+        {"total": 5, "components": [{"key": "component1"}]}
+    )
+
+    assert result == {"total": 5, "components": [{"key": "component1"}]}
+    assert rpc_device.call_rpc_multiple.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_get_all_pages_max_iterations(rpc_device: RpcDevice) -> None:
+    """Test RpcDevice get_all_pages stops after MAX_ITERATIONS pages."""
+    rpc_device.call_rpc_multiple.side_effect = [
+        [{"total": MAX_ITERATIONS + 10, "components": [{"key": f"component{i}"}]}]
+        for i in range(1, MAX_ITERATIONS + 1)
+    ]
+
+    result = await rpc_device.get_all_pages(
+        {"total": MAX_ITERATIONS + 10, "components": [{"key": "component0"}]}
+    )
+
+    assert len(result["components"]) == MAX_ITERATIONS + 1
+    assert rpc_device.call_rpc_multiple.call_count == MAX_ITERATIONS
+
+
+@pytest.mark.asyncio
 async def test_on_notification_ws_closed(rpc_device: RpcDevice) -> None:
     """Test RpcDevice _on_notification method when WS is closed."""
     rpc_device._update_listener = Mock()
@@ -3090,7 +3119,12 @@ async def test_ledstrip_list_effects_max_iterations(
 ) -> None:
     """Test RpcDevice ledstrip_list_effects() stops after MAX_ITERATIONS pages."""
     rpc_device.call_rpc_multiple.side_effect = [
-        [{"effects": [{"key": f"effect{i}", "name": f"Effect {i}"}], "total": 100}]
+        [
+            {
+                "effects": [{"key": f"effect{i}", "name": f"Effect {i}"}],
+                "total": MAX_ITERATIONS + 10,
+            }
+        ]
         for i in range(MAX_ITERATIONS)
     ]
 
