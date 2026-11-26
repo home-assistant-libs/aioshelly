@@ -21,6 +21,7 @@ from aioshelly.ble import (
 )
 from aioshelly.ble.const import (
     BLE_CODE,
+    BLE_CODE_X2I,
     BLE_SCRIPT_NAME,
     VAR_ACTIVE,
     VAR_EVENT_TYPE,
@@ -317,3 +318,42 @@ async def test_async_start_scanner(
         mock_rpc_device.script_putcode.call_args_list == expected_script_putcode_calls
     )
     assert mock_rpc_device.script_start.call_args_list == expected_script_start_calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("model", "expected_code"),
+    [
+        ("SAWD-5A1XX10EU0", BLE_CODE_X2I),
+        (
+            "SNSW-001P16EU",
+            _build_ble_script_code(True, "ble.scan_result", 2),
+        ),
+        (
+            "",
+            _build_ble_script_code(True, "ble.scan_result", 2),
+        ),
+    ],
+    ids=["wall_display_x2i", "plus_1pm", "unknown_model"],
+)
+async def test_async_start_scanner_model(
+    mock_rpc_device: AsyncMock,
+    model: str,
+    expected_code: str,
+) -> None:
+    """Test BLE scanner script selection by device model."""
+    mock_rpc_device.model = model
+    mock_rpc_device.script_list.return_value = [{"name": BLE_SCRIPT_NAME, "id": 42}]
+    mock_rpc_device.script_getcode.side_effect = RpcCallError(-1, "no code")
+
+    await async_start_scanner(
+        mock_rpc_device,
+        active=True,
+        event_type="ble.scan_result",
+        data_version=2,
+    )
+
+    mock_rpc_device.script_create.assert_not_called()
+    mock_rpc_device.script_stop.assert_awaited_once_with(42)
+    mock_rpc_device.script_putcode.assert_awaited_once_with(42, expected_code)
+    mock_rpc_device.script_start.assert_awaited_once_with(42)

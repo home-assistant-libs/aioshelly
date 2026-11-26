@@ -13,6 +13,7 @@ from ..rpc_device import RpcDevice
 from .backend.scanner import ShellyBLEScanner
 from .const import (
     BLE_CODE,
+    BLE_CODE_X2I,
     BLE_SCRIPT_NAME,
     VAR_ACTIVE,
     VAR_EVENT_TYPE,
@@ -56,6 +57,10 @@ async def async_start_scanner(
         .replace(VAR_EVENT_TYPE, event_type)
         .replace(VAR_VERSION, str(data_version))
     )
+
+    # Wall Display X2i compatibility
+    if device.model == "SAWD-5A1XX10EU0":
+        code = BLE_CODE_X2I
 
     needs_putcode = False
     try:

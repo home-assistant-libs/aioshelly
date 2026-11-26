@@ -132,3 +132,130 @@ function setActive(v) {
 
 setActive(%active%);
 """  # noqa: E501
+
+
+BLE_CODE_X2I = """// aioshelly Wall Display X2i compatibility
+// CloudRelay BTHome gateway
+
+var alphabet =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+var seen = {};
+var busy = false;
+
+function decode64(s) {
+  var bytes = [];
+  var buffer = 0;
+  var bits = 0;
+
+  for (var i = 0; i < s.length; i++) {
+    var v = alphabet.indexOf(s.charAt(i));
+    if (v < 0) continue;
+
+    buffer = (buffer << 6) | v;
+    bits += 6;
+
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 255);
+    }
+  }
+
+  return bytes;
+}
+
+function encode64(bytes) {
+  var out = "";
+
+  for (var i = 0; i < bytes.length; i += 3) {
+    var a = bytes[i];
+    var b = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    var c = i + 2 < bytes.length ? bytes[i + 2] : 0;
+
+    out += alphabet.charAt(a >> 2);
+    out += alphabet.charAt(((a & 3) << 4) | (b >> 4));
+
+    out += i + 1 < bytes.length
+      ? alphabet.charAt(((b & 15) << 2) | (c >> 6))
+      : "=";
+
+    out += i + 2 < bytes.length
+      ? alphabet.charAt(c & 63)
+      : "=";
+  }
+
+  return out;
+}
+
+// Compatibility with aioshelly scan-mode RPC.
+// CloudRelay does not expose active scan control.
+function setActive(v) {
+  return JSON.stringify(true);
+}
+
+function poll() {
+  if (busy) return;
+  busy = true;
+
+  Shelly.call(
+    "BLE.CloudRelay.ListInfos",
+    {},
+    function(result, error_code, error_message) {
+      busy = false;
+
+      if (error_code !== 0 || !result) return;
+      if (!result.devices) return;
+
+      var packets = [];
+
+      for (var i = 0; i < result.devices.length; i++) {
+        var device = result.devices[i];
+        var mac = Object.keys(device)[0];
+        var info = device[mac];
+
+        if (!info.sdata || !info.sdata.fcd2) continue;
+
+        if (typeof result.ts !== "number") continue;
+        if (typeof info.last_seen !== "number") continue;
+
+        var age = result.ts - info.last_seen;
+        if (age > 60 || age < 0) continue;
+
+        var signature =
+          info.last_seen + ":" + info.sdata.fcd2;
+
+        if (seen[mac] === signature) continue;
+
+        var payload = decode64(info.sdata.fcd2);
+
+        if (payload.length === 0) continue;
+        if (payload.length > 252) continue;
+
+        var adv = [payload.length + 3, 22, 210, 252];
+
+        for (var j = 0; j < payload.length; j++) {
+          adv.push(payload[j]);
+        }
+
+        packets.push([
+          mac,
+          -90,
+          encode64(adv),
+          ""
+        ]);
+
+        seen[mac] = signature;
+      }
+
+      if (packets.length > 0) {
+        Shelly.emitEvent("ble.scan_result", {
+          version: 2,
+          packets: packets
+        });
+      }
+    }
+  );
+}
+
+Timer.set(5000, true, poll);
+poll();"""
