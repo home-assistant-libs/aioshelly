@@ -10,9 +10,13 @@ LOGGER = logging.getLogger(__name__)
 
 
 def parse_ble_scan_result_event(
-    data: list[Any],
+    data: list[Any] | dict[str, Any],
 ) -> list[tuple[str, int, bytes]]:
     """Parse BLE scan result event."""
+    # Shelly Wall Display X2i compatibility
+    if isinstance(data, dict):
+        data = [data["version"], data["packets"]]
+
     version: int = data[0]
     if version == 1:
         return _parse_v1(data)

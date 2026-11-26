@@ -64,3 +64,37 @@ def test_parse_unsupported_version() -> None:
     """Test parse raises on unsupported version."""
     with pytest.raises(ValueError, match="Unsupported BLE scan result version: 3"):
         parse_ble_scan_result_event([3, []])
+
+
+def test_parse_x2i_v2() -> None:
+    """Test Wall Display X2i object-based BLE scan result."""
+    assert parse_ble_scan_result_event(
+        {
+            "version": 2,
+            "packets": [
+                [
+                    "AA:BB:CC:DD:EE:FF",
+                    -90,
+                    "DRbS/EAA8gFkLjJF7QA=",
+                    "",
+                ],
+            ],
+        }
+    ) == [
+        (
+            "AA:BB:CC:DD:EE:FF",
+            -90,
+            bytes.fromhex("0d16d2fc4000f201642e3245ed00"),
+        )
+    ]
+
+
+def test_parse_x2i_empty_packets() -> None:
+    """Test Wall Display X2i empty scan result."""
+    assert parse_ble_scan_result_event({"version": 2, "packets": []}) == []
+
+
+def test_parse_x2i_unsupported_version() -> None:
+    """Test Wall Display X2i unsupported scan result version."""
+    with pytest.raises(ValueError, match="Unsupported BLE scan result version: 3"):
+        parse_ble_scan_result_event({"version": 3, "packets": []})
